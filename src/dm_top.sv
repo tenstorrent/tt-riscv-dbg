@@ -27,7 +27,10 @@ module dm_top #(
   // toggle new behavior to drive master_be_o during a read
   parameter bit                 ReadByteEnable         = 1,
   // Maximum width supported by Access Register commands; must be 32 or 64.
-  parameter int unsigned        MaxRegisterAccessWidth = BusWidth
+  parameter int unsigned        MaxRegisterAccessWidth = BusWidth,
+  // Width of the SBA master address (master_add_o); sets sbcs.sbasize. The SBA data width and
+  // the debug-memory slave port stay BusWidth.
+  parameter int unsigned        SbaAddrWidth           = BusWidth
 ) (
   input  logic                  clk_i,       // clock
   // asynchronous reset active low, connect PoR here, not the system reset
@@ -55,7 +58,7 @@ module dm_top #(
   output logic [BusWidth-1:0]   slave_rdata_o,
 
   output logic                  master_req_o,
-  output logic [BusWidth-1:0]   master_add_o,
+  output logic [SbaAddrWidth-1:0] master_add_o,
   output logic                  master_we_o,
   output logic [BusWidth-1:0]   master_wdata_o,
   output logic [BusWidth/8-1:0] master_be_o,
@@ -98,8 +101,8 @@ module dm_top #(
   logic                             ndmreset;
   logic [19:0]                      hartsel;
   // System Bus Access Module
-  logic [BusWidth-1:0]              sbaddress_csrs_sba;
-  logic [BusWidth-1:0]              sbaddress_sba_csrs;
+  logic [SbaAddrWidth-1:0]          sbaddress_csrs_sba;
+  logic [SbaAddrWidth-1:0]          sbaddress_sba_csrs;
   logic                             sbaddress_write_valid;
   logic                             sbreadonaddr;
   logic                             sbautoincrement;
@@ -119,7 +122,8 @@ module dm_top #(
   dm_csrs #(
     .NrHarts(NrHarts),
     .BusWidth(BusWidth),
-    .SelectableHarts(SelectableHarts)
+    .SelectableHarts(SelectableHarts),
+    .SbaAddrWidth(SbaAddrWidth)
   ) i_dm_csrs (
     .clk_i,
     .rst_ni,
@@ -171,7 +175,8 @@ module dm_top #(
 
   dm_sba #(
     .BusWidth(BusWidth),
-    .ReadByteEnable(ReadByteEnable)
+    .ReadByteEnable(ReadByteEnable),
+    .SbaAddrWidth(SbaAddrWidth)
   ) i_dm_sba (
     .clk_i,
     .rst_ni,
