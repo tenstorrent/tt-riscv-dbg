@@ -18,7 +18,9 @@
 module dm_csrs #(
   parameter int unsigned        NrHarts          = 1,
   parameter int unsigned        BusWidth         = 32,
-  parameter logic [NrHarts-1:0] SelectableHarts  = {NrHarts{1'b1}}
+  parameter logic [NrHarts-1:0] SelectableHarts  = {NrHarts{1'b1}},
+  // Width of the system bus address; sets sbcs.sbasize. Data width stays BusWidth.
+  parameter int unsigned        SbaAddrWidth     = BusWidth
 ) (
   input  logic                              clk_i,           // Clock
   input  logic                              rst_ni,          // Asynchronous reset active low
@@ -62,8 +64,8 @@ module dm_csrs #(
   input  logic [dm::DataCount-1:0][31:0]    data_i,
   input  logic                              data_valid_i,
   // system bus access module (SBA)
-  output logic [BusWidth-1:0]               sbaddress_o,
-  input  logic [BusWidth-1:0]               sbaddress_i,
+  output logic [SbaAddrWidth-1:0]           sbaddress_o,
+  input  logic [SbaAddrWidth-1:0]           sbaddress_i,
   output logic                              sbaddress_write_valid_o,
   // control signals in
   output logic                              sbreadonaddr_o,
@@ -177,6 +179,11 @@ module dm_csrs #(
   logic [63:0]        sbaddr_d, sbaddr_q;
   logic [63:0]        sbdata_d, sbdata_q;
 
+  initial begin : p_validate_sba_addr_width
+    assert (SbaAddrWidth >= 1 && SbaAddrWidth <= 64) else
+      $fatal(1, "SbaAddrWidth must be between 1 and 64.");
+  end
+
   logic [NrHarts-1:0] havereset_d, havereset_q;
   logic [NrHarts-1:0] resume_pending_d, resume_pending_q;
   // program buffer
@@ -197,7 +204,7 @@ module dm_csrs #(
   assign sbreadondata_o    = sbcs_q.sbreadondata;
   assign sbaccess_o        = sbcs_q.sbaccess;
   assign sbdata_o          = sbdata_q[BusWidth-1:0];
-  assign sbaddress_o       = sbaddr_q[BusWidth-1:0];
+  assign sbaddress_o       = sbaddr_q[SbaAddrWidth-1:0];
 
   assign hartsel_o           = {dmcontrol_q.hartselhi, dmcontrol_q.hartsello};
   assign selected_hart       = hartsel_o[HartSelLen-1:0];
@@ -609,7 +616,7 @@ module dm_csrs #(
     // static values for dcsr
     sbcs_d.sbversion            = 3'd1;
     sbcs_d.sbbusy               = sbbusy_i;
-    sbcs_d.sbasize              = $bits(sbcs_d.sbasize)'(BusWidth);
+    sbcs_d.sbasize              = $bits(sbcs_d.sbasize)'(SbaAddrWidth);
     sbcs_d.sbaccess128          = logic'(BusWidth >= 32'd128);
     sbcs_d.sbaccess64           = logic'(BusWidth >= 32'd64);
     sbcs_d.sbaccess32           = logic'(BusWidth >= 32'd32);
