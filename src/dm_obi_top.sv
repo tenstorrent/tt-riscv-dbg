@@ -69,7 +69,10 @@ module dm_obi_top #(
   // that don't use hart numbers in a contiguous fashion.
   parameter logic [NrHarts-1:0] SelectableHarts        = {NrHarts{1'b1}},
   // Maximum width supported by Access Register commands; must be 32 or 64.
-  parameter int unsigned        MaxRegisterAccessWidth = BusWidth
+  parameter int unsigned        MaxRegisterAccessWidth = BusWidth,
+  // Width of the SBA master address (master_addr_o); sets sbcs.sbasize. The SBA data width and
+  // the debug-memory slave port stay BusWidth.
+  parameter int unsigned        SbaAddrWidth           = BusWidth
 ) (
   input  logic                  clk_i,           // clock
   // asynchronous reset active low, connect PoR here, not the system reset
@@ -98,7 +101,7 @@ module dm_obi_top #(
   output logic [IdWidth-1:0]    slave_rid_o,
 
   output logic                  master_req_o,
-  output logic [BusWidth-1:0]   master_addr_o,   // Renamed according to OBI spec
+  output logic [SbaAddrWidth-1:0] master_addr_o, // Renamed according to OBI spec
   output logic                  master_we_o,
   output logic [BusWidth-1:0]   master_wdata_o,
   output logic [BusWidth/8-1:0] master_be_o,
@@ -129,7 +132,8 @@ module dm_obi_top #(
     .BusWidth               ( BusWidth               ),
     .DmBaseAddress          ( DmBaseAddress          ),
     .SelectableHarts        ( SelectableHarts        ),
-    .MaxRegisterAccessWidth ( MaxRegisterAccessWidth )
+    .MaxRegisterAccessWidth ( MaxRegisterAccessWidth ),
+    .SbaAddrWidth           ( SbaAddrWidth           )
   ) i_dm_top (
     .clk_i                   ( clk_i                 ),
     .rst_ni                  ( rst_ni                ),

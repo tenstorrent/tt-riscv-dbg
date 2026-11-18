@@ -130,7 +130,8 @@ The debug system can be configured at synthesis time through parameters.
 **Parameter Name**      | **Valid values** | **Default** | **Description**
 ----------------------- | ---------------- | ----------- | -------------------------------------------------------------------------------------------------------------
 NrHarts                 | 1..2^20          | 1           | Number of connected harts
-BusWidth                | 32, 64           | 32          | Address and data width of the debug-memory and SBA interfaces
+BusWidth                | 32, 64           | 32          | Address and data width of the debug-memory interface, and data width of the SBA interface
+SbaAddrWidth            | 1..64            | BusWidth    | Address width of the SBA host interface (`sbcs.sbasize`); must cover the byte offset within a BusWidth word
 DmBaseAddress           |                  | 0x1000      | Base address of the 4 KiB debug-memory window
 SelectableHarts         | NrHarts-bit mask | All harts   | Physically available harts for systems that do not use contiguous hart numbers
 ReadByteEnable          | 0, 1             | 1           | Drive the SBA byte enables during reads; available on `dm_top`
@@ -243,6 +244,7 @@ trst_ni    | input         | Test Reset (active low). Usage of TRST is optional,
 The Debug Module connects to the system bus as device, exposing the debug memory (the Program Buffer and the Debug ROM), and as host for the System Bus Access (SBA) functionality.
 The same generic bus interface is used in both cases.
 The bus width is configurable to be 32 or 64 bit using the `BusWidth` parameter.
+The address width of the SBA host interface can be set separately with `SbaAddrWidth`, which defaults to `BusWidth`.
 
 #### Host (Master) Interface
 
@@ -251,7 +253,7 @@ The bus host interface is compatible to the [instruction and data interfaces of 
 **Signal** | **Width (bit)** | **Direction** | **Description**
 ---------- | --------------- | ------------- | ---------------------------------------------------------------------------------------------------------
 req        | 1               | output        | Request valid, must stay high until gnt is high for one cycle
-add        | BusWidth        | output        | Address, word aligned
+add        | SbaAddrWidth    | output        | Address, word aligned
 we         | 1               | output        | Write Enable, high for writes, low for reads. Sent together with req
 be         | BusWidth/8      | output        | Byte Enable. Is set for the bytes to write/read, sent together with req
 wdata      | BusWidth        | output        | Data to be written to device, sent together with req
@@ -267,7 +269,7 @@ Bus errors are reported through the `sberror` field of `sbcs`.
 
 ```verilog
 output logic                  req_o,
-output logic [BusWidth-1:0]   add_o,
+output logic [SbaAddrWidth-1:0] add_o,
 output logic                  we_o,
 output logic [BusWidth-1:0]   wdata_o,
 output logic [BusWidth/8-1:0] be_o,

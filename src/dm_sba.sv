@@ -17,14 +17,16 @@
 */
 module dm_sba #(
   parameter int unsigned BusWidth = 32,
-  parameter bit          ReadByteEnable = 1
+  parameter bit          ReadByteEnable = 1,
+  // Width of the system bus address. Data width stays BusWidth.
+  parameter int unsigned SbaAddrWidth = BusWidth
 ) (
   input  logic                   clk_i,       // Clock
   input  logic                   rst_ni,
   input  logic                   dmactive_i,  // synchronous reset active low
 
   output logic                   master_req_o,
-  output logic [BusWidth-1:0]    master_add_o,
+  output logic [SbaAddrWidth-1:0] master_add_o,
   output logic                   master_we_o,
   output logic [BusWidth-1:0]    master_wdata_o,
   output logic [BusWidth/8-1:0]  master_be_o,
@@ -34,11 +36,11 @@ module dm_sba #(
   input  logic                   master_r_other_err_i, // *other_err_i has priority over *err_i
   input  logic [BusWidth-1:0]    master_r_rdata_i,
 
-  input  logic [BusWidth-1:0]    sbaddress_i,
+  input  logic [SbaAddrWidth-1:0] sbaddress_i,
   input  logic                   sbaddress_write_valid_i,
   // control signals in
   input  logic                   sbreadonaddr_i,
-  output logic [BusWidth-1:0]    sbaddress_o,
+  output logic [SbaAddrWidth-1:0] sbaddress_o,
   input  logic                   sbautoincrement_i,
   input  logic [2:0]             sbaccess_i,
   // data in
@@ -56,9 +58,15 @@ module dm_sba #(
 );
 
   localparam int BeIdxWidth = $clog2(BusWidth/8);
+
+  initial begin : p_validate_sba_addr_width
+    assert (SbaAddrWidth >= $clog2(BusWidth/8) && SbaAddrWidth <= 64) else
+      $fatal(1, "SbaAddrWidth must cover the BusWidth byte offset and be at most 64.");
+  end
+
   dm::sba_state_e state_d, state_q;
 
-  logic [BusWidth-1:0]           address;
+  logic [SbaAddrWidth-1:0]       address;
   logic                          req;
   logic                          gnt;
   logic                          we;
@@ -88,12 +96,12 @@ module dm_sba #(
     endcase
   end
 
-  logic [BusWidth-1:0] sbaccess_mask;
-  assign sbaccess_mask = {BusWidth{1'b1}} << sbaccess_i;
+  logic [SbaAddrWidth-1:0] sbaccess_mask;
+  assign sbaccess_mask = {SbaAddrWidth{1'b1}} << sbaccess_i;
 
   logic addr_incr_en;
-  logic [BusWidth-1:0] addr_incr;
-  assign addr_incr = (addr_incr_en) ? (BusWidth'(1'b1) << sbaccess_i) : '0;
+  logic [SbaAddrWidth-1:0] addr_incr;
+  assign addr_incr = (addr_incr_en) ? (SbaAddrWidth'(1'b1) << sbaccess_i) : '0;
   assign sbaddress_o = sbaddress_i + addr_incr;
 
 
@@ -200,7 +208,7 @@ module dm_sba #(
   logic [BeIdxWidth-1:0] be_idx_masked;
   assign be_idx_masked   = be_idx & BeIdxWidth'(sbaccess_mask);
   assign master_req_o    = req;
-  assign master_add_o    = address[BusWidth-1:0];
+  assign master_add_o    = address[SbaAddrWidth-1:0];
   assign master_we_o     = we;
   assign master_wdata_o  = sbdata_i[BusWidth-1:0] << (8 * be_idx_masked);
   assign master_be_o     = be[BusWidth/8-1:0];

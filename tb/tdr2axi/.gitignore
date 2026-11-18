@@ -1,0 +1,6 @@
+sim_build_*/
+results_*.xml
+__pycache__/
+*.fst
+*.vcd
+ucli.key

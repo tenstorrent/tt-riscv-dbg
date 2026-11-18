@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+### Added
+- Add `SbaAddrWidth` to `dm_csrs`, `dm_sba`, `dm_top` and `dm_obi_top` so the system bus address
+  width (`sbcs.sbasize`, `master_add_o`) can differ from the SBA data width `BusWidth`. It defaults
+  to `BusWidth`, so existing configurations are unchanged.
+- Add `tdr2axi` (Bender target `tdr2axi`): AXI4 / AXI4-Lite bus access from a JTAG debugger
+  through one DMI test data register of an external TAP, built on `dm_csrs` and `dm_sba`, with a
+  cocotb testbench in `tb/tdr2axi`. See `doc/tdr2axi.md`.
+
 ### Fixed
 - Keep accepted resume requests pending per hart until acknowledged, clear resumeack only for the
   request target, and retain resumeack across ndmreset; widen the internal dm_csrs/dm_mem

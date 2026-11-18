@@ -20,7 +20,8 @@ The following features are currently supported
 * Parametrizable 32- or 64-bit debug-module bus width, independent of hart XLEN
 * Accessing 32- or 64-bit hart registers over abstract commands
 * Program buffer
-* System bus access over a 32- or 64-bit bus
+* System bus access over a 32- or 64-bit bus, with a separately configurable
+  address width of up to 64 bits
 * DTM with JTAG interface
 
 These are not implemented (yet)
