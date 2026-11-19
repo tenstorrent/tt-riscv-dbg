@@ -5,7 +5,7 @@
 The JTAG side is a TAP-state-accurate TDR host (OpenOCD dmi_jtag flow); the AXI side is a
 subordinate that records every handshake, checks valid/payload stability and models memory.
 Each SBA access must give exactly one transaction with the expected address, AxSIZE (AXI4),
-strobes and byte lanes. The build (AXI4_LITE, widths) comes from the Makefile CONFIG.
+strobes and byte lanes. The build (USE_AXI_LITE, widths) comes from the Makefile CONFIG.
 """
 
 import cocotb
