@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   through one DMI test data register of an external TAP, built on `dm_csrs` and `dm_sba`, with a
   cocotb testbench in `tb/tdr2axi`. See `doc/tdr2axi.md`.
 
+### Changed
+- Rename the `tdr2axi` parameter `AXI_LITE` to `AXI4_LITE`. `AXI_LITE` is also the name of an
+  interface in the PULP AXI library, and a synthesis front end that compiles both in one unit
+  rejects the parameter declaration.
+
 ### Fixed
 - Keep accepted resume requests pending per hart until acknowledged, clear resumeack only for the
   request target, and retain resumeack across ndmreset; widen the internal dm_csrs/dm_mem
