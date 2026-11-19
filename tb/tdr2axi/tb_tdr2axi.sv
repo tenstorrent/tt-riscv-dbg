@@ -11,7 +11,7 @@
 `include "axi/typedef.svh"
 
 module tb_tdr2axi #(
-    parameter bit          AXI_LITE       = 1'b0,
+    parameter bit          USE_AXI_LITE   = 1'b0,
     parameter int unsigned AXI_ADDR_WIDTH = 64,
     parameter int unsigned AXI_DATA_WIDTH = 64
 );
@@ -28,7 +28,7 @@ module tb_tdr2axi #(
   `AXI_LITE_TYPEDEF_ALL(axil, addr_t, data_t, strb_t)
 
   // Build configuration, read back by the test
-  wire        cfg_axi_lite = AXI_LITE;
+  wire        cfg_axi_lite = USE_AXI_LITE;
   wire [31:0] cfg_addr_width = AXI_ADDR_WIDTH;
   wire [31:0] cfg_data_width = AXI_DATA_WIDTH;
 
@@ -66,12 +66,12 @@ module tb_tdr2axi #(
   logic        b_ready;
 
   // Both branches share the name g_bus
-  if (!AXI_LITE) begin : g_bus
+  if (!USE_AXI_LITE) begin : g_bus
     axi_req_t  dut_req;
     axi_resp_t dut_rsp;
 
     tdr2axi #(
-        .AXI_LITE      (1'b0),
+        .USE_AXI_LITE  (1'b0),
         .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
         .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
         .axi_req_t     (axi_req_t),
@@ -121,7 +121,7 @@ module tb_tdr2axi #(
     axil_resp_t dut_rsp;
 
     tdr2axi #(
-        .AXI_LITE      (1'b1),
+        .USE_AXI_LITE  (1'b1),
         .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
         .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
         .axi_req_t     (axil_req_t),

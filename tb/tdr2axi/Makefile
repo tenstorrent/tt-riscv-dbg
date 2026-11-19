@@ -20,7 +20,7 @@ COCOTB_TEST_MODULES = $(MODULE)
 COCOTB_HDL_TIMEUNIT      = 1ps
 COCOTB_HDL_TIMEPRECISION = 1ps
 
-# name: AXI_LITE AXI_ADDR_WIDTH AXI_DATA_WIDTH CLK_PERIOD_PS TCK_PERIOD_PS
+# name: USE_AXI_LITE AXI_ADDR_WIDTH AXI_DATA_WIDTH CLK_PERIOD_PS TCK_PERIOD_PS
 CONFIGS := axi4_a64_d64 axi4_a64_d32 axi4_a32_d32 axil_a64_d64 axil_a64_d32 axil_a32_d32 \
            axi4_a64_d64_slowclk
 cfg_axi4_a64_d64         := 0 64 64 1000 20000
@@ -35,7 +35,7 @@ CONFIG ?= axi4_a64_d64
 ifeq ($(filter $(CONFIG),$(CONFIGS)),)
   $(error unknown CONFIG '$(CONFIG)', use one of: $(CONFIGS))
 endif
-AXI_LITE       := $(word 1,$(cfg_$(CONFIG)))
+USE_AXI_LITE   := $(word 1,$(cfg_$(CONFIG)))
 AXI_ADDR_WIDTH := $(word 2,$(cfg_$(CONFIG)))
 AXI_DATA_WIDTH := $(word 3,$(cfg_$(CONFIG)))
 # Clock periods are read by the test, not compiled in
@@ -53,14 +53,14 @@ VERILOG_SOURCES = $(CURDIR)/tb_tdr2axi.sv
 COMPILE_ARGS   += -f $(FLIST)
 
 ifeq ($(SIM),verilator)
-  COMPILE_ARGS += -GAXI_LITE=$(AXI_LITE) -GAXI_ADDR_WIDTH=$(AXI_ADDR_WIDTH) \
+  COMPILE_ARGS += -GUSE_AXI_LITE=$(USE_AXI_LITE) -GAXI_ADDR_WIDTH=$(AXI_ADDR_WIDTH) \
                   -GAXI_DATA_WIDTH=$(AXI_DATA_WIDTH)
   COMPILE_ARGS += --timing -Wno-fatal -Wno-lint -Wno-style -DCOMMON_CELLS_ASSERTS_OFF
   ifeq ($(WAVES),1)
     EXTRA_ARGS += --trace-fst --trace-structs
   endif
 else ifeq ($(SIM),vcs)
-  COMPILE_ARGS += -pvalue+$(TOPLEVEL).AXI_LITE=$(AXI_LITE) \
+  COMPILE_ARGS += -pvalue+$(TOPLEVEL).USE_AXI_LITE=$(USE_AXI_LITE) \
                   -pvalue+$(TOPLEVEL).AXI_ADDR_WIDTH=$(AXI_ADDR_WIDTH) \
                   -pvalue+$(TOPLEVEL).AXI_DATA_WIDTH=$(AXI_DATA_WIDTH)
   COMPILE_ARGS += -assert svaext
