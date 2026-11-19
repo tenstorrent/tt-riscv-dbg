@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   cocotb testbench in `tb/tdr2axi`. See `doc/tdr2axi.md`.
 
 ### Changed
-- Rename the `tdr2axi` parameter `AXI_LITE` to `AXI4_LITE`. `AXI_LITE` is also the name of an
+- Rename the `tdr2axi` parameter `AXI_LITE` to `USE_AXI_LITE`. `AXI_LITE` is also the name of an
   interface in the PULP AXI library, and a synthesis front end that compiles both in one unit
   rejects the parameter declaration.
 
