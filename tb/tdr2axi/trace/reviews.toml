@@ -1,0 +1,8 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[rtl_review]]
+rev = "71278cb"
+root = "src"
+date = "2026-11-21"
+report = "tdr2axi_spec_clarity_from_rtl.md"

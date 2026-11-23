@@ -1,0 +1,526 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[reference]]
+id = "R-AXI4"
+title = "AMBA AXI and ACE Protocol Specification (AXI4)"
+kind = "protocol"
+cites = ["AXI4"]
+version = "ARM IHI 0022H.c, 26 January 2021"
+location = "ARM IHI 0022H.c, https://developer.arm.com/documentation/ihi0022/hc"
+profile = { build = "USE_AXI_LITE = 0", addr_width = "AXI_ADDR_WIDTH: 2..64 with 32-bit data, 3..64 with 64-bit data; default 64", data_width = "AXI_DATA_WIDTH: 32 or 64; default 64", id_width = "set by axi_req_t; AxID driven 0", user = "width set by axi_req_t; AxUSER and WUSER driven 0", burst = "single beat: AxLEN = 0; the RTL drives AxBURST = FIXED (the spec names no burst type)", max_len = "1", exclusive = "no: AxLOCK = 0; rule X-AXI4-exclusive dropped", atop = "AWATOP = 0", qos = "tied 0 by the RTL; the spec is silent", region = "tied 0 by the RTL; the spec is silent", cache_prot = "driven from AXI_CACHE (default 0b0000) on both ARCACHE and AWCACHE, and AXI_PROT (default 0b010) on both ARPROT and AWPROT", outstanding = "1 transaction in total, reads and writes together (dm_sba one request; MaxRequests = 1)", narrow = "yes: AxSIZE = sbcs.sbaccess, 8 bits up to the data width", unaligned = "no: dm_sba issues only naturally aligned accesses (sberror = 3 otherwise)", responses = "accepts OKAY, SLVERR, DECERR; SLVERR and DECERR set sbcs.sberror = 2; EXOKAY is not expected and the RTL treats it as success", reset = "i_arst_n, synchronised into i_clk (asynchronous assertion, synchronous release)", adapter = "R-PULP_AXI axi_from_mem (axi_lite_from_mem plus axi_lite_to_axi); tdr2axi overrides AxSIZE", bench_model = "tdr2axi_util.AxiSub: DUT-local subordinate and monitor; tb_tdr2axi.sv exposes only valids, readys, AxADDR, AxSIZE, AxLEN, WDATA, WSTRB", edition_basis = "the edition pulp-platform/axi cites; Issue J and later drop AXI4 and AXI4-Lite" }
+
+[[reference]]
+id = "R-AXI4_LITE"
+title = "AMBA AXI and ACE Protocol Specification (AXI4-Lite, Part B)"
+kind = "protocol"
+cites = ["AXI4-Lite"]
+version = "ARM IHI 0022H.c, 26 January 2021"
+location = "ARM IHI 0022H.c Part B, https://developer.arm.com/documentation/ihi0022/hc"
+profile = { build = "USE_AXI_LITE = 1", addr_width = "AXI_ADDR_WIDTH: 2..64 with 32-bit data, 3..64 with 64-bit data; default 64", data_width = "AXI_DATA_WIDTH: 32 or 64, both legal for AXI4-Lite (B1.1.2)", strobes = "yes: WSTRB marks exactly the bytes of the SBA access; reads return the whole bus word", responses = "accepts OKAY, SLVERR, DECERR; SLVERR and DECERR set sbcs.sberror = 2", outstanding = "1 transaction in total (MaxRequests = 1)", prot = "AXI_PROT (default 0b010) on both ARPROT and AWPROT", cache = "no AxCACHE on AXI4-Lite; AXI_CACHE unused", reset = "i_arst_n, synchronised into i_clk (asynchronous assertion, synchronous release)", adapter = "R-PULP_AXI axi_lite_from_mem", bench_model = "tdr2axi_util.AxiSub in lite mode" }
+
+[[reference]]
+id = "R-IEEE1149_1"
+title = "IEEE Standard for Test Access Port and Boundary-Scan Architecture"
+kind = "protocol"
+cites = ["IEEE 1149.1"]
+version = "IEEE Std 1149.1-2013 (latest published edition; inactive-reserved since 2024-03-21)"
+location = "IEEE Std 1149.1-2013, IEEE Xplore (paywalled; cited by clause only)"
+profile = { tap = "external: tdr2axi has no TAP controller, TMS, TDI, TDO or instruction register", tdr_length = "41", tdr_ports = "i_tck, i_dmi_tdr (update-stage value), i_dmi_tdr_capture, i_dmi_tdr_update, o_dmi_tdr (capture value)", ir_length = "not applicable: the external TAP's", instructions = "one instruction of the external TAP (or an IJTAG path) selects this TDR; opcode chosen by the integrator", idcode = "not applicable", trst = "no TRST input: TRST does not reset tdr2axi and is asserted only while TCK is stopped", boundary_scan = "no", tdo_enable = "not applicable", excluded_rules = "tap-fsm, tdo-falling, tdo-enable, reset-tlr, ir-capture, bypass, idcode-lsb: the TAP is outside the DUT and the bench drives the TDR strobes directly", clause_basis = "clause level only: 6 (TAP controller states) and 9 (test data registers) from the public contents listing, 4 (TAP signals) and 7 (instruction register) by position; subclauses not verified", bench_model = "tdr2axi_util.TdrHost: walks the TAP states, drives the capture and update strobes and the update-stage value" }
+
+[[reference]]
+id = "R-IEEE1687"
+title = "IEEE Standard for Access and Control of Instrumentation Embedded within a Semiconductor Device"
+kind = "standard"
+cites = ["IEEE 1687"]
+version = "IEEE Std 1687-2014 (latest published edition; inactive-reserved since 2025-03-27)"
+location = "IEEE Std 1687-2014, IEEE Xplore (paywalled; cited by name only)"
+profile = { role = "the 41-bit TDR may sit in an IJTAG network instead of behind a TAP instruction", interface = "the same three-signal TDR interface as under R-IEEE1149_1; tdr2axi has no ScanInterface port, SIB, network reset input or ICL description", checks = "none specific to IEEE 1687; the R-IEEE1149_1 X-atoms cover the TDR interface" }
+
+[[reference]]
+id = "R-PULP_AXI"
+title = "pulp-platform/axi: AXI4 and AXI4-Lite SystemVerilog library (axi_from_mem, axi_lite_from_mem, axi_lite_to_axi)"
+kind = "document"
+cites = ["PULP AXI"]
+version = "v0.39.11, commit 42ca270ebd8bbbc1c64ddc0ca712e722eb9e3f06 (Bender.lock)"
+location = "https://github.com/pulp-platform/axi at 42ca270e; checkout .bender/git/checkouts/axi-ce089ad96ebc99cb"
+profile = { modules = "axi_from_mem (AXI4, wraps axi_lite_from_mem and axi_lite_to_axi), axi_lite_from_mem (AXI4-Lite)", parameters = "MaxRequests = 1, AxiProt = AXI_PROT, MemAddrWidth = AxiAddrWidth = AXI_ADDR_WIDTH, DataWidth = AXI_DATA_WIDTH", axi4_fixed_fields = "axi_lite_to_axi drives AxBURST = FIXED, AxLEN = 0, AxLOCK = 0, AxQOS = 0, AxREGION = 0, AWATOP = 0, AxUSER = 0, AxID = 0, WLAST = 1; AxSIZE full width, which tdr2axi replaces with sbcs.sbaccess", error_mapping = "mem_rsp_error = response is SLVERR or DECERR", axi_edition = "README cites ARM IHI 0022H.c" }
+
+[[reference]]
+id = "R-RISCV_DEBUG"
+title = "RISC-V External Debug Support"
+kind = "protocol"
+cites = ["RISC-V Debug Specification"]
+version = "0.13.2 (2019-03-22, git d5029366d59e8563c08b6b9435f82573b603e48e)"
+location = "https://riscv.org/wp-content/uploads/2019/03/riscv-debug-release.pdf; source https://github.com/riscv/riscv-debug-spec"
+profile = { dm_version = "dmstatus.version = 2 (0.13); DV takes 0.13.2", dtm = "no JTAG DTM: no IDCODE, BYPASS or dtmcs; the dmi register layout sits on one external 41-bit TDR", abits = "7", dmi_ops = "0 nop, 1 read, 2 write, 3 clear sticky status (reserved in 0.13.2; replaces dtmcs.dmireset)", dmi_status = "0 success, 2 failed, 3 busy; failed and busy sticky until op 3", dmihardreset = "none", idle_hint = "none (no dtmcs.idle); the debugger raises Run-Test/Idle cycles after a busy status", harts = "1, always unavailable", abstract_commands = "none: every command sets cmderr = 2", authentication = "none", ndmreset = "not connected", dm_reset = "i_arst_n, or dmcontrol.dmactive = 0", sba = "sbversion 1; sbasize = AXI_ADDR_WIDTH; sbaccess8, 16 and 32, plus sbaccess64 when AXI_DATA_WIDTH = 64; no 128-bit access", sba_registers = "sbcs, sbaddress0, sbaddress1 (sbasize > 32), sbdata0, sbdata1 (64-bit data)", sberror_codes = "2 on SLVERR or DECERR, 3 misaligned, 4 unsupported size; 1 and 7 never raised", departure_busy = "while sbbusy or sbbusyerror is set, a write of sbaddress0, sbaddress1, sbdata0 or sbdata1 or a read of sbdata0 or sbdata1 also answers DMI busy (dm_csrs.sv:393-395, 403-405, 525-527, 535-537, 544-546, 554-556), which the bridge keeps sticky until op 3 (dmi_tdr_bridge.sv:175-177, 229-230); 0.13.2 3.12.19, 3.12.20, 3.12.23 and 3.12.24 do nothing else; reads of sbaddress0 and sbaddress1 are never answered busy (dm_csrs.sv:385-390); an sbcs write while sbbusy is also answered busy (dm_csrs.sv:512-514), which 0.13.2 3.12.18 leaves undefined; documented by S-TDR2AXI-0043", departure_nop = "a nop update while an operation is pending sets sticky busy (dmi_tdr_bridge.sv:219-222, as dmi_jtag.sv:232-234), where 0.13.2 6.1.5 says a nop never causes busy or error; a nop in IDLE with a clear status sends nothing; documented by S-TDR2AXI-0043", departure_open = "sbaddress increments after a failed sbaddress0 read or sbdata0 write (dm_sba.sv:149, 166), where 0.13.2 3.12.19 and 3.12.23 increment only on success; question 3 of tdr2axi_spec_issues_references.md", sbdata0_read_increment = "0.13.2 3.12.23 step 4 reads as an increment on every sbdata0 read; DV takes 3.12.18 and Debug 1.0, which increment only after the read sbreadondata starts, as dm_sba.sv:129 does", enforcement = "feature: the DM and the DMI end of the DTM are inside the DUT, so their register semantics are checked by DUT features through the reference model, not by an interface VIP" }
+
+[[xatom]]
+id = "X-AXI4-boundary-4k"
+clause = "A3.4.1"
+text = "No burst crosses a 4KB address boundary."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-burst-length"
+clause = "A3.4.1"
+text = "Burst length is AxLEN+1: INCR 1 to 256 beats, FIXED 1 to 16, WRAP 2, 4, 8 or 16 beats from a size-aligned start."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-cache-legal"
+clause = "A4.4"
+text = "AxCACHE takes only the encodings of the memory type table (Table A4-5); every other value is reserved."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0017", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0017 = "8462fa5a51c6", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-id-order"
+clause = "A5.1; A5.2.1; A6.5.3"
+text = "A response carries its request's ID, and responses to one ID return in issue order, reads and writes separately."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-id-user-values"
+clause = "A5.1; A8.3"
+text = "The protocol leaves AXI ID values and the meaning of USER signals to the manager; it fixes neither."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-last-beat"
+clause = "A3.2.2"
+text = "The manager asserts WLAST with the final write beat and the subordinate RLAST with the final read beat of a burst."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-no-comb-path"
+clause = "A3.1.1; A3.2.1"
+text = "A manager or subordinate interface has no combinational path from its inputs to its outputs."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0034", "S-TDR2AXI-0035"]
+atom_hashes = { S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[xatom]]
+id = "X-AXI4-payload-stable"
+clause = "A3.2.1"
+text = "The source holds a channel's address, data and control information stable from VALID until the handshake completes."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0034", "S-TDR2AXI-0056", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-prot-encoding"
+clause = "A4.7"
+text = "AxPROT bit 0 marks a privileged access, bit 1 a non-secure access and bit 2 an instruction access; the manager chooses the value."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0016", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0016 = "18fce41befde", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-read-data-after-address"
+clause = "A3.3; A3.3.1"
+text = "The subordinate raises RVALID only after the AR handshake of the read it answers."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-reset-valid-low"
+clause = "A3.1.2"
+text = "In reset the manager holds ARVALID, AWVALID and WVALID low, raising them no earlier than a rising ACLK edge after ARESETn is high."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0026", "S-TDR2AXI-0052", "S-TDR2AXI-0057"]
+atom_hashes = { S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0057 = "b7b90795c926" }
+
+[[xatom]]
+id = "X-AXI4-response-codes"
+clause = "A3.4.5"
+text = "RRESP and BRESP encode OKAY, EXOKAY, SLVERR and DECERR; how a manager reports an error response is left to the implementation."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0061"]
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2" }
+
+[[xatom]]
+id = "X-AXI4-size-width"
+clause = "A3.4.1"
+text = "No transfer size (AxSIZE) exceeds the data bus width of either side of the transaction."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0015", "S-TDR2AXI-0059", "S-TDR2AXI-0060"]
+atom_hashes = { S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0059 = "24988ecd1470", S-TDR2AXI-0060 = "2ff85d8b5e3d" }
+
+[[xatom]]
+id = "X-AXI4-strobe-lanes"
+clause = "A3.4.4"
+text = "WSTRB is high only for byte lanes that hold valid data; for a narrow transfer the address and size select those lanes."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0059", "S-TDR2AXI-0060"]
+atom_hashes = { S-TDR2AXI-0059 = "24988ecd1470", S-TDR2AXI-0060 = "2ff85d8b5e3d" }
+
+[[xatom]]
+id = "X-AXI4-valid-held"
+clause = "A3.2.1; A3.2.2"
+text = "Once asserted, VALID stays high on every channel until the rising ACLK edge at which READY is also high."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0034", "S-TDR2AXI-0035", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-valid-independent"
+clause = "A3.2.1; A3.3.1"
+text = "A source asserts VALID without waiting for READY; the destination may wait for VALID before READY, never the reverse."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0034", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4-write-response-after-data"
+clause = "A3.3; A3.3.1"
+text = "The subordinate raises BVALID only after the AW handshake and the W handshake of the last beat (WLAST) of that write."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0058", "S-TDR2AXI-0061"]
+atom_hashes = { S-TDR2AXI-0058 = "b5989e954e15", S-TDR2AXI-0061 = "25f2d2d3ebc2" }
+
+[[xatom]]
+id = "X-AXI4_LITE-full-width"
+clause = "B1.1; B1.1.2; B1.1.3"
+text = "Every AXI4-Lite transfer is one beat of the full data bus width; a narrower write is expressed with strobes, and a read returns the whole word."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0015", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4_LITE-no-comb-path"
+clause = "A3.1.1 (Part A applies to AXI4-Lite)"
+text = "A manager or subordinate interface has no combinational path from its inputs to its outputs."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0034", "S-TDR2AXI-0035"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[xatom]]
+id = "X-AXI4_LITE-payload-stable"
+clause = "A3.2.1 (Part A applies to AXI4-Lite)"
+text = "The source holds a channel's address, data, strobes and AxPROT stable from VALID until the handshake completes."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0034", "S-TDR2AXI-0056", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4_LITE-prot-encoding"
+clause = "A4.7; B1.1.1"
+text = "AxPROT bit 0 marks a privileged access, bit 1 a non-secure access and bit 2 an instruction access; the manager chooses the value."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0016", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0016 = "18fce41befde", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4_LITE-read-data-after-address"
+clause = "A3.3; A3.3.1 (Part A applies to AXI4-Lite)"
+text = "The subordinate raises RVALID only after the AR handshake of the read it answers."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4_LITE-reset-valid-low"
+clause = "A3.1.2 (Part A applies to AXI4-Lite)"
+text = "In reset the manager holds ARVALID, AWVALID and WVALID low, raising them no earlier than a rising ACLK edge after ARESETn is high."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0026", "S-TDR2AXI-0052", "S-TDR2AXI-0057"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0057 = "b7b90795c926" }
+
+[[xatom]]
+id = "X-AXI4_LITE-response-codes"
+clause = "B1.1.1; A3.4.5"
+text = "AXI4-Lite responses are OKAY, SLVERR or DECERR, never EXOKAY; how a manager reports an error response is left to the implementation."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0061"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0061 = "25f2d2d3ebc2" }
+
+[[xatom]]
+id = "X-AXI4_LITE-strobe-lanes"
+clause = "B1.1.3; A3.4.4"
+text = "A manager drives correct write strobes: WSTRB is high only for byte lanes that hold valid data."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0060"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0060 = "2ff85d8b5e3d" }
+
+[[xatom]]
+id = "X-AXI4_LITE-valid-held"
+clause = "A3.2.1; A3.2.2 (Part A applies to AXI4-Lite)"
+text = "Once asserted, VALID stays high on every channel until the rising ACLK edge at which READY is also high."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0034", "S-TDR2AXI-0035", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4_LITE-valid-independent"
+clause = "A3.2.1; A3.3.1 (Part A applies to AXI4-Lite)"
+text = "A source asserts VALID without waiting for READY; the destination may wait for VALID before READY, never the reverse."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0034", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[xatom]]
+id = "X-AXI4_LITE-write-response-after-data"
+clause = "A3.3; A3.3.1 (Part A applies to AXI4-Lite)"
+text = "The subordinate raises BVALID only after both the AW and the W handshake of that write."
+enforce = "vip"
+vip = "tdr2axi_util.AxiSub (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0058", "S-TDR2AXI-0061"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0058 = "b5989e954e15", S-TDR2AXI-0061 = "25f2d2d3ebc2" }
+
+[[xatom]]
+id = "X-IEEE1149_1-capture-dr"
+clause = "6 (Capture-DR state); 9"
+text = "In Capture-DR, a test data register the current instruction selects may load its parallel input on the TCK rising edge that ends the state."
+enforce = "vip"
+vip = "tdr2axi_util.TdrHost (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0031", "S-TDR2AXI-0033"]
+atom_hashes = { S-TDR2AXI-0031 = "7f8d78a5c5e3", S-TDR2AXI-0033 = "6444e92de325" }
+
+[[xatom]]
+id = "X-IEEE1149_1-tck-static"
+clause = "4 (TCK)"
+text = "TCK may be stopped at 0 indefinitely without the test logic losing or changing state."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0029", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0029 = "25fa2b2bc2ad", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[xatom]]
+id = "X-IEEE1149_1-trst"
+clause = "4 (TRST*); 6 (Test-Logic-Reset); 7"
+text = "TRST* asynchronously forces the TAP controller to Test-Logic-Reset, which loads IDCODE or BYPASS and so deselects every other data register."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0054", "S-TDR2AXI-0055"]
+atom_hashes = { S-TDR2AXI-0054 = "527763ed1ef2", S-TDR2AXI-0055 = "c43a965a03de" }
+
+[[xatom]]
+id = "X-IEEE1149_1-update-dr"
+clause = "6 (Update-DR state); 9"
+text = "In Update-DR, a selected register's update stage latches the shifted value on the falling TCK edge and holds it until the next Update-DR."
+enforce = "vip"
+vip = "tdr2axi_util.TdrHost (tb/tdr2axi/tdr2axi_util.py)"
+atoms = ["S-TDR2AXI-0030", "S-TDR2AXI-0032", "S-TDR2AXI-0050"]
+atom_hashes = { S-TDR2AXI-0030 = "490293f7a458", S-TDR2AXI-0032 = "1cc1296534ac", S-TDR2AXI-0050 = "6a7087d817ff" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-authbusy"
+clause = "3.12.1"
+text = "dmstatus.authbusy (bit 6, read-only) resets to 0 and is set only in immediate response to an authdata access; while it is 1, accessing authdata is unspecified."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0002", "S-TDR2AXI-0062"]
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3", S-TDR2AXI-0062 = "be8f54303e36" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-authenticated"
+clause = "3.12.1"
+text = "dmstatus.authenticated (bit 7, read-only) is 1 when the authentication check has passed; a DM that implements no authentication presets it to 1."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0002", "S-TDR2AXI-0062"]
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3", S-TDR2AXI-0062 = "be8f54303e36" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-busy-retry"
+clause = "6.1.5; 6.1.4"
+text = "Busy means the target needed more TCK edges between Update-DR and Capture-DR; the debugger adds Run-Test/Idle cycles, hinted by dtmcs.idle."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0045", "S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0045 = "48f39cd80854", S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-cmderr"
+clause = "3.12.6"
+text = "cmderr = 2 reports a command that is not supported whatever the hart state; cmderr is write-1-to-clear and no command starts until it is 0."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0010"]
+atom_hashes = { S-TDR2AXI-0010 = "c74a68987a63" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-dm-addresses"
+clause = "3.12.1; 3.12.2; 3.12.6; 3.12.7; 3.12.18 to 3.12.24"
+text = "DMI addresses: dmcontrol 0x10, dmstatus 0x11, abstractcs 0x16, command 0x17, sbcs 0x38, sbaddress0 0x39, sbaddress1 0x3a, sbdata0 0x3c, sbdata1 0x3d."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0062"]
+atom_hashes = { S-TDR2AXI-0062 = "be8f54303e36" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-dm-version"
+clause = "3.12.1"
+text = "dmstatus.version = 2 states that the Debug Module conforms to version 0.13 of the specification."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0002", "S-TDR2AXI-0036"]
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3", S-TDR2AXI-0036 = "df8c48cc7bfb" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-dmactive"
+clause = "3.12.2; 3.2"
+text = "dmactive = 0 holds DM state at reset values; DM state resets only at power-up or through dmactive, or, not recommended, a platform-wide reset."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0026", "S-TDR2AXI-0056", "S-TDR2AXI-0057", "S-TDR2AXI-0064"]
+atom_hashes = { S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0057 = "b7b90795c926", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-dmi-format"
+clause = "6.1.5"
+text = "The dmi register holds an abits-wide address in its top bits, 32 data bits in 33:2 and a 2-bit op in 1:0."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0036", "S-TDR2AXI-0037", "S-TDR2AXI-0038", "S-TDR2AXI-0039"]
+atom_hashes = { S-TDR2AXI-0036 = "df8c48cc7bfb", S-TDR2AXI-0037 = "4a5e9aa31a94", S-TDR2AXI-0038 = "5186a81562e9", S-TDR2AXI-0039 = "66c5a0946bca" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-dmi-op"
+clause = "6.1.5"
+text = "Op 1 reads, 2 writes, 3 (reserved in 0.13.2) clears the sticky status; a nop sends nothing, but unlike 0.13.2 a nop update while an op is pending sets sticky busy."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0039", "S-TDR2AXI-0040", "S-TDR2AXI-0041", "S-TDR2AXI-0043"]
+atom_hashes = { S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0040 = "003dd154bc43", S-TDR2AXI-0041 = "52eaa0ab8644", S-TDR2AXI-0043 = "8e6844992030" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-dmi-status"
+clause = "6.1.5; 6.1.4"
+text = "Read back, op is 0 success, 2 failed or 3 busy; failed and busy are sticky, make the DTM ignore scanned-in data and clear only via dtmcs.dmireset."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0039", "S-TDR2AXI-0041", "S-TDR2AXI-0043", "S-TDR2AXI-0044", "S-TDR2AXI-0045"]
+atom_hashes = { S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0041 = "52eaa0ab8644", S-TDR2AXI-0043 = "8e6844992030", S-TDR2AXI-0044 = "d3814c86a0e3", S-TDR2AXI-0045 = "48f39cd80854" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-dmi-update-capture"
+clause = "6.1.5"
+text = "Update-DR starts the scanned op unless the status is sticky; Capture-DR loads that op's result into data and updates op unless it is sticky."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0037", "S-TDR2AXI-0038", "S-TDR2AXI-0043", "S-TDR2AXI-0063"]
+atom_hashes = { S-TDR2AXI-0037 = "4a5e9aa31a94", S-TDR2AXI-0038 = "5186a81562e9", S-TDR2AXI-0043 = "8e6844992030", S-TDR2AXI-0063 = "77901a52f302" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-hart-unavail"
+clause = "3.12.1"
+text = "dmstatus allunavail and anyunavail report when all or any of the selected harts are unavailable."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0009"]
+atom_hashes = { S-TDR2AXI-0009 = "0ee41daad228" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-ndmreset"
+clause = "3.2; 3.12.2"
+text = "ndmreset resets the platform except the DM and its access path; exactly what it covers is left to the implementation."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0011"]
+atom_hashes = { S-TDR2AXI-0011 = "1bba5bd02983" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-nop-capture"
+clause = "6.1.5"
+text = "After a nop, the address and data reported in the following Capture-DR are undefined, so the implementation decides them."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0037", "S-TDR2AXI-0038", "S-TDR2AXI-0063"]
+atom_hashes = { S-TDR2AXI-0037 = "4a5e9aa31a94", S-TDR2AXI-0038 = "5186a81562e9", S-TDR2AXI-0063 = "77901a52f302" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbaddress-regs"
+clause = "3.12.19 to 3.12.22"
+text = "sbaddress1 exists only when sbasize exceeds 32, sbaddress2 above 64 and sbaddress3 above 96; each holds 32 bits of the address."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0022", "S-TDR2AXI-0067", "S-TDR2AXI-0075"]
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0022 = "eee9256a3469", S-TDR2AXI-0067 = "7da09cf58456", S-TDR2AXI-0075 = "d8fe99ab1e82" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbaddress0-read"
+clause = "3.12.19"
+text = "With sbreadonaddr set and no error, writing sbaddress0 sets sbbusy, reads the new address, and increments sbaddress if the read succeeded and sbautoincrement is set."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0074", "S-TDR2AXI-0075", "S-TDR2AXI-0076"]
+atom_hashes = { S-TDR2AXI-0074 = "eb113e4e991c", S-TDR2AXI-0075 = "d8fe99ab1e82", S-TDR2AXI-0076 = "6459cabdca3b" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbautoincrement"
+clause = "3.12.18"
+text = "With sbautoincrement set, sbaddress advances by the access size in bytes, 2 to the power sbaccess, after a system bus access."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0079", "S-TDR2AXI-0080", "S-TDR2AXI-0081"]
+atom_hashes = { S-TDR2AXI-0079 = "e0443d029994", S-TDR2AXI-0080 = "6cd3d128b835", S-TDR2AXI-0081 = "0421360e73cf" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbbusy"
+clause = "3.12.18"
+text = "sbbusy rises as soon as an access is requested and falls only when it has fully completed; a debugger must not write sbcs while it reads 1."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0072", "S-TDR2AXI-0078"]
+atom_hashes = { S-TDR2AXI-0072 = "7f5f4b982a78", S-TDR2AXI-0078 = "7f5f4b982a78" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbbusyerror"
+clause = "3.12.18; 3.12.19; 3.12.20; 3.12.23; 3.12.24"
+text = "While sbbusy is set, writing sbaddress0, sbaddress1, sbdata0 or sbdata1, or reading sbdata0 or sbdata1, sets W1C sbbusyerror and does nothing else; reading sbaddress0 or sbaddress1 does not."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0043", "S-TDR2AXI-0072", "S-TDR2AXI-0078"]
+atom_hashes = { S-TDR2AXI-0043 = "8e6844992030", S-TDR2AXI-0072 = "7f5f4b982a78", S-TDR2AXI-0078 = "7f5f4b982a78" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbcs-fields"
+clause = "3.12.18"
+text = "sbcs reports sbversion 1, sbasize as the bus address width and one sbaccessN bit per supported size; sbaccess resets to 2 (32-bit)."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0015", "S-TDR2AXI-0021", "S-TDR2AXI-0023"]
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0021 = "8b0b7649cf7d", S-TDR2AXI-0023 = "0c4dd0b88aa6" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbdata-lanes"
+clause = "3.9 (Table 3.7); 3.12.23; 3.12.24"
+text = "Access size picks the sbdata bits (8, 16: low sbdata0; 32: sbdata0; 64: sbdata1:sbdata0); bits above a narrow read are undefined; only sbdata0 has side effects."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0065", "S-TDR2AXI-0069", "S-TDR2AXI-0077"]
+atom_hashes = { S-TDR2AXI-0065 = "fd440be76152", S-TDR2AXI-0069 = "159af99619a2", S-TDR2AXI-0077 = "db7a0e27f747" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbdata0-read"
+clause = "3.12.23; 3.12.18"
+text = "Reading sbdata0 returns the data and, with sbreadondata, reads at sbaddress; it increments only after that read (3.12.18, Debug 1.0), though 3.12.23 step 4 reads as unconditional."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0046", "S-TDR2AXI-0080", "S-TDR2AXI-0081", "S-TDR2AXI-0082"]
+atom_hashes = { S-TDR2AXI-0046 = "be798e55895e", S-TDR2AXI-0080 = "6cd3d128b835", S-TDR2AXI-0081 = "0421360e73cf", S-TDR2AXI-0082 = "5fde616b3875" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sbdata0-write"
+clause = "3.12.23"
+text = "Writing sbdata0 sets sbbusy, writes sbdata to sbaddress, and increments sbaddress if the write succeeded and sbautoincrement is set."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0070", "S-TDR2AXI-0071", "S-TDR2AXI-0079"]
+atom_hashes = { S-TDR2AXI-0070 = "8b8980356e02", S-TDR2AXI-0071 = "1a5ad1125a58", S-TDR2AXI-0079 = "e0443d029994" }
+
+[[xatom]]
+id = "X-RISCV_DEBUG-sberror"
+clause = "3.12.18"
+text = "sberror codes: 1 timeout, 2 bad address, 3 alignment, 4 unsupported size, 7 other; write-1-to-clear, and nonzero blocks new accesses."
+enforce = "feature"
+atoms = ["S-TDR2AXI-0060", "S-TDR2AXI-0061", "S-TDR2AXI-0072"]
+atom_hashes = { S-TDR2AXI-0060 = "2ff85d8b5e3d", S-TDR2AXI-0061 = "25f2d2d3ebc2", S-TDR2AXI-0072 = "7f5f4b982a78" }

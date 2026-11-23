@@ -1,0 +1,665 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[feature]]
+id = "F-AXI-axi4-size"
+title = "On AXI4, AxSIZE follows sbcs.sbaccess and WSTRB marks only the accessed bytes"
+priority = "P0"
+method = ["sim", "vip"]
+observe = "ARSIZE, AWSIZE, AxADDR and WSTRB of o_axi_req for each sbaccess and address offset"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0059"]
+atom_hashes = { S-TDR2AXI-0059 = "24988ecd1470" }
+
+[[feature]]
+id = "F-AXI-lite-full-width"
+title = "On AXI4-Lite every transfer is one full-width beat: a narrow write marks its bytes with WSTRB and a narrow read takes its bytes from the whole word"
+priority = "P1"
+method = ["sim", "vip"]
+observe = "WSTRB and WDATA lanes of o_axi_req and RDATA lanes of i_axi_rsp against sbdata, per access size and offset"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0015"]
+xatoms = ["X-AXI4_LITE-full-width"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0015 = "3abbe99ca471" }
+
+[[feature]]
+id = "F-AXI-manager-protocol"
+title = "o_axi_req obeys the AXI4 or AXI4-Lite manager handshake rules on every channel"
+priority = "P0"
+method = ["vip", "formal"]
+observe = "AR, AW and W valid and payload against ready, and R and B on i_axi_rsp, through the AxiSub monitor; assertions on o_axi_req"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0001", "S-TDR2AXI-0013", "S-TDR2AXI-0034", "S-TDR2AXI-0035"]
+atom_hashes = { S-TDR2AXI-0001 = "71535400dccd", S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[feature]]
+id = "F-AXI-no-comb-path"
+title = "No combinational path runs from i_axi_rsp to o_axi_req"
+priority = "P1"
+method = ["sim", "formal"]
+observe = "o_axi_req between i_clk edges while i_axi_rsp changes; the input cone of o_axi_req"
+configs = ["CFG-USE-AXI-LITE"]
+approved = true
+atoms = ["S-TDR2AXI-0034", "S-TDR2AXI-0035"]
+xatoms = ["X-AXI4-no-comb-path", "X-AXI4_LITE-no-comb-path"]
+atom_hashes = { S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[feature]]
+id = "F-AXI-one-outstanding"
+title = "The manager issues one single-beat transaction at a time, the next only after the previous response"
+priority = "P0"
+method = ["sim", "formal", "vip"]
+observe = "AR and AW handshakes against R and B handshakes; AxLEN and WLAST of o_axi_req"
+configs = ["CFG-USE-AXI-LITE"]
+approved = true
+atoms = ["S-TDR2AXI-0012", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0012 = "aa0b80647438", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[feature]]
+id = "F-AXI-request-attributes"
+title = "Every transaction carries AxPROT = AXI_PROT, AxCACHE = AXI_CACHE on AXI4, ID 0 and user 0"
+priority = "P0"
+method = ["sim", "formal"]
+observe = "ARPROT, AWPROT, ARCACHE, AWCACHE, ARID, AWID, ARUSER, AWUSER and WUSER of o_axi_req at each handshake"
+configs = ["CFG-AXI-PROT", "CFG-AXI-CACHE", "CFG-USE-AXI-LITE"]
+approved = true
+atoms = ["S-TDR2AXI-0016", "S-TDR2AXI-0017", "S-TDR2AXI-0058"]
+xatoms = ["X-AXI4-prot-encoding", "X-AXI4_LITE-prot-encoding", "X-AXI4-id-user-values"]
+atom_hashes = { S-TDR2AXI-0016 = "18fce41befde", S-TDR2AXI-0017 = "8462fa5a51c6", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[feature]]
+id = "F-CFG-bender-target"
+title = "The Bender target tdr2axi yields a file list that builds tdr2axi from src/tdr2axi"
+priority = "P3"
+method = ["sim"]
+observe = "bender script flist-plus -t tdr2axi output and the bench build that uses it"
+approved = true
+atoms = ["S-TDR2AXI-0004"]
+atom_hashes = { S-TDR2AXI-0004 = "8126c7f9c0c4" }
+
+[[feature]]
+id = "F-CFG-param-checks"
+title = "A build with an illegal AXI_DATA_WIDTH, AXI_ADDR_WIDTH or SYNC_STAGES, or with AXI structs not overridden to AXI_DATA_WIDTH data, stops before simulation starts"
+priority = "P2"
+method = ["sim"]
+observe = "The $fatal of p_validate_params, p_validate_sba_addr_width and cdc_2phase_clearable, or the elaboration error, in each illegal build; legal builds start"
+configs = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH", "CFG-SYNC-STAGES", "CFG-USE-AXI-LITE"]
+approved = true
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0015", "S-TDR2AXI-0018", "S-TDR2AXI-0019", "S-TDR2AXI-0020", "S-TDR2AXI-0021", "S-TDR2AXI-0024"]
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0019 = "068760d94671", S-TDR2AXI-0020 = "039ce450baa2", S-TDR2AXI-0021 = "8b0b7649cf7d", S-TDR2AXI-0024 = "db9e725ac4d1" }
+
+[[feature]]
+id = "F-DM-abstract-cmd-unsupported"
+title = "Every abstract command sets abstractcs.cmderr = 2 and runs nothing"
+priority = "P2"
+method = ["sim"]
+observe = "abstractcs.cmderr after writes of command, and its write-1-to-clear; o_axi_req idle"
+approved = true
+atoms = ["S-TDR2AXI-0010"]
+xatoms = ["X-RISCV_DEBUG-cmderr"]
+atom_hashes = { S-TDR2AXI-0010 = "c74a68987a63" }
+
+[[feature]]
+id = "F-DM-dmactive-clear"
+title = "dmactive = 0 holds the DM registers at their reset values and writing dmactive = 1 enables the DM, while op 3 clears only the bridge status"
+priority = "P0"
+method = ["sim"]
+observe = "sbaddress, sbdata and the sbcs control fields read through o_dmi_tdr around dmactive changes; o_dmi_tdr status after op 3"
+configs = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064"]
+xatoms = ["X-RISCV_DEBUG-dmactive"]
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[feature]]
+id = "F-DM-dmactive-inflight"
+title = "An SBA access in flight when dmactive drops completes with the address, data, strobes and size it started with"
+priority = "P0"
+method = ["sim", "vip", "formal"]
+observe = "AR, AW and W payload of o_axi_req while VALID is high and the AxiSub holds READY low across the dmcontrol write"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0056"]
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b" }
+
+[[feature]]
+id = "F-DM-dmactive-no-bus-access"
+title = "No bus access starts while dmactive = 0"
+priority = "P0"
+method = ["sim", "formal"]
+observe = "Every channel of o_axi_req after writes of sbdata0, sbaddress0 and sbcs while dmactive = 0"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064"]
+xatoms = ["X-RISCV_DEBUG-dmactive"]
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[feature]]
+id = "F-DM-hart-unavailable"
+title = "dmstatus reports the one hart as unavailable"
+priority = "P2"
+method = ["sim"]
+observe = "dmstatus.allunavail and dmstatus.anyunavail read through o_dmi_tdr"
+approved = true
+atoms = ["S-TDR2AXI-0009"]
+xatoms = ["X-RISCV_DEBUG-hart-unavail"]
+atom_hashes = { S-TDR2AXI-0009 = "0ee41daad228" }
+
+[[feature]]
+id = "F-DM-ndmreset-unconnected"
+title = "Setting dmcontrol.ndmreset resets nothing inside or outside tdr2axi"
+priority = "P2"
+method = ["sim"]
+observe = "DM and SBA registers, o_axi_req and subordinate memory after dmcontrol.ndmreset = 1; the tdr2axi port list has no reset output"
+approved = true
+atoms = ["S-TDR2AXI-0011"]
+xatoms = ["X-RISCV_DEBUG-ndmreset"]
+atom_hashes = { S-TDR2AXI-0011 = "1bba5bd02983" }
+
+[[feature]]
+id = "F-DM-register-map"
+title = "The DM answers dmcontrol, sbcs, sbaddress0, sbaddress1, sbdata0 and sbdata1 at the debug specification's DMI addresses"
+priority = "P0"
+method = ["sim"]
+observe = "DMI reads and writes at each address through i_dmi_tdr and o_dmi_tdr, and their effect on o_axi_req"
+configs = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0062"]
+xatoms = ["X-RISCV_DEBUG-dm-addresses"]
+atom_hashes = { S-TDR2AXI-0062 = "be8f54303e36" }
+
+[[feature]]
+id = "F-DM-version"
+title = "dmstatus.version reads 2 and sbcs.sbversion reads 1, the values of debug specification 0.13"
+priority = "P1"
+method = ["sim"]
+observe = "dmstatus and sbcs read through o_dmi_tdr"
+approved = true
+atoms = ["S-TDR2AXI-0002"]
+xatoms = ["X-RISCV_DEBUG-dm-version", "X-RISCV_DEBUG-authenticated", "X-RISCV_DEBUG-authbusy"]
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3" }
+
+[[feature]]
+id = "F-PORT-bus-and-reset"
+title = "The clock, reset and AXI ports are i_clk, i_arst_n, i_test_mode, i_arst_scan_n, o_axi_req and i_axi_rsp, with the table's directions and the AXI channels on i_clk"
+priority = "P1"
+method = ["sim"]
+observe = "The tdr2axi port list: names, directions and types; AXI channels sampled on i_clk"
+configs = ["CFG-USE-AXI-LITE"]
+approved = true
+atoms = ["S-TDR2AXI-0025", "S-TDR2AXI-0026", "S-TDR2AXI-0027", "S-TDR2AXI-0028", "S-TDR2AXI-0034", "S-TDR2AXI-0035"]
+atom_hashes = { S-TDR2AXI-0025 = "f9c0b3f52cb9", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0027 = "0c229dcac2ea", S-TDR2AXI-0028 = "2ce7ed98a2b9", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[feature]]
+id = "F-PORT-tdr-interface"
+title = "The TDR ports are i_tck, i_dmi_tdr[40:0], i_dmi_tdr_capture, i_dmi_tdr_update and o_dmi_tdr[40:0] on i_tck, with no TAP, shift or dtmcs port"
+priority = "P1"
+method = ["sim"]
+observe = "The tdr2axi port list: names, directions and widths"
+approved = true
+atoms = ["S-TDR2AXI-0008", "S-TDR2AXI-0029", "S-TDR2AXI-0030", "S-TDR2AXI-0031", "S-TDR2AXI-0032", "S-TDR2AXI-0033"]
+atom_hashes = { S-TDR2AXI-0008 = "ea832aea7efd", S-TDR2AXI-0029 = "25fa2b2bc2ad", S-TDR2AXI-0030 = "490293f7a458", S-TDR2AXI-0031 = "7f8d78a5c5e3", S-TDR2AXI-0032 = "1cc1296534ac", S-TDR2AXI-0033 = "6444e92de325" }
+
+[[feature]]
+id = "F-RESET-async-any-time"
+title = "i_arst_n at any time, an operation in flight included, returns both sides to reset with no AXI transaction left, and the bridge completes operations after release"
+priority = "P0"
+method = ["sim", "vip"]
+observe = "o_axi_req valids, o_dmi_tdr and DM registers after resets at random phases of i_clk and TCK; the first operations after release, a busy before the CDC clear sequence ends being recovered with op 3"
+configs = ["CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+approved = true
+atoms = ["S-TDR2AXI-0026", "S-TDR2AXI-0051", "S-TDR2AXI-0052"]
+atom_hashes = { S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0051 = "56b178b0aa12", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[feature]]
+id = "F-RESET-sync-release"
+title = "i_arst_n resets the i_clk and TCK sides at once and releases each SYNC_STAGES edges of its own clock later"
+priority = "P0"
+method = ["sim", "formal"]
+observe = "u_rst_clk_sync and u_rst_tck_sync outputs against i_arst_n and the i_clk and i_tck edges (T-TDR2AXI-tck-reset-release); o_axi_req valids low in reset"
+configs = ["CFG-SYNC-STAGES", "CFG-CLK-RATIO"]
+approved = true
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0026", "S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[feature]]
+id = "F-RESET-test-mode-bypass"
+title = "With i_test_mode = 1, i_arst_scan_n drives both internal resets directly, bypassing the synchronizers"
+priority = "P1"
+method = ["sim", "formal"]
+observe = "u_rst_clk_sync and u_rst_tck_sync outputs against i_arst_scan_n and i_test_mode"
+configs = ["CFG-TEST-MODE"]
+approved = true
+atoms = ["S-TDR2AXI-0027", "S-TDR2AXI-0028", "S-TDR2AXI-0052"]
+atom_hashes = { S-TDR2AXI-0027 = "0c229dcac2ea", S-TDR2AXI-0028 = "2ce7ed98a2b9", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[feature]]
+id = "F-RESET-trst-independent"
+title = "A TRST of the host TAP, asserted and released with TCK stopped, resets nothing in tdr2axi, and an operation in flight completes normally"
+priority = "P1"
+method = ["sim"]
+observe = "o_dmi_tdr, the sticky status and the bus access across a TAP reset that deselects the TDR while TCK is stopped"
+configs = ["CFG-CLK-RATIO"]
+approved = true
+atoms = ["S-TDR2AXI-0054", "S-TDR2AXI-0055"]
+xatoms = ["X-IEEE1149_1-trst"]
+atom_hashes = { S-TDR2AXI-0054 = "527763ed1ef2", S-TDR2AXI-0055 = "c43a965a03de" }
+
+[[feature]]
+id = "F-SBA-access-errors"
+title = "A misaligned access sets sberror = 3 and one wider than the bus sets sberror = 4, with no bus transaction"
+priority = "P2"
+method = ["sim"]
+observe = "sbcs.sberror read through o_dmi_tdr; o_axi_req idle"
+configs = ["CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0060"]
+xatoms = ["X-RISCV_DEBUG-sberror"]
+atom_hashes = { S-TDR2AXI-0060 = "2ff85d8b5e3d" }
+
+[[feature]]
+id = "F-SBA-address-width"
+title = "sbaddress0 and, above 32 bits, sbaddress1 reach every AxADDR bit up to AXI_ADDR_WIDTH whatever the data width"
+priority = "P1"
+method = ["sim"]
+observe = "ARADDR and AWADDR of o_axi_req against the sbaddress writes; sbaddress0 and sbaddress1 read back"
+configs = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0022"]
+xatoms = ["X-RISCV_DEBUG-sbaddress-regs"]
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0022 = "eee9256a3469" }
+
+[[feature]]
+id = "F-SBA-block-read"
+title = "Each read of sbdata0 returns one element; with sbreadondata set it starts the next read, after which sbautoincrement advances sbaddress, and with sbreadondata clear it issues no AR and leaves sbaddress unchanged"
+priority = "P1"
+method = ["sim"]
+observe = "sbdata0 read through o_dmi_tdr, AR addresses of o_axi_req, and sbaddress0 and sbaddress1 read back, the last read of a block included"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0081"]
+xatoms = ["X-RISCV_DEBUG-sbdata0-read", "X-RISCV_DEBUG-sbautoincrement"]
+atom_hashes = { S-TDR2AXI-0081 = "0421360e73cf" }
+
+[[feature]]
+id = "F-SBA-block-write"
+title = "With sbautoincrement set, each write of sbdata0 performs one bus write and advances sbaddress by the access size"
+priority = "P1"
+method = ["sim"]
+observe = "AW addresses and W data of o_axi_req, subordinate memory, and sbaddress0 and sbaddress1 read back"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0079"]
+xatoms = ["X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbautoincrement"]
+atom_hashes = { S-TDR2AXI-0079 = "e0443d029994" }
+
+[[feature]]
+id = "F-SBA-bus-error"
+title = "An SLVERR or DECERR response to a read or write sets sberror = 2, which blocks further accesses until cleared"
+priority = "P2"
+method = ["sim"]
+observe = "RRESP and BRESP of i_axi_rsp, sbcs.sberror read through o_dmi_tdr, and o_axi_req for the next access"
+configs = ["CFG-USE-AXI-LITE"]
+approved = true
+atoms = ["S-TDR2AXI-0061"]
+xatoms = ["X-AXI4-response-codes", "X-AXI4_LITE-response-codes", "X-RISCV_DEBUG-sberror"]
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2" }
+
+[[feature]]
+id = "F-SBA-busy-status"
+title = "sbbusy is set from the request until the access completes, and an sbaddress or sbdata access during it sets sbbusyerror, is answered busy and does nothing else"
+priority = "P1"
+method = ["sim"]
+observe = "sbcs.sbbusy and sbcs.sbbusyerror read through o_dmi_tdr while the AxiSub stalls; o_dmi_tdr status; o_axi_req for a refused access"
+configs = ["CFG-USE-AXI-LITE", "CFG-CLK-RATIO"]
+approved = true
+atoms = ["S-TDR2AXI-0002", "S-TDR2AXI-0043"]
+xatoms = ["X-RISCV_DEBUG-sbbusy", "X-RISCV_DEBUG-sbbusyerror"]
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3", S-TDR2AXI-0043 = "8e6844992030" }
+
+[[feature]]
+id = "F-SBA-data-lanes"
+title = "The access size selects the sbdata bits, a 64-bit access spans sbdata1:sbdata0, and reading or writing sbdata1 issues no AR or AW"
+priority = "P0"
+method = ["sim"]
+observe = "sbdata0 and sbdata1 read through o_dmi_tdr per size and offset; o_axi_req idle after a read or write of sbdata1"
+configs = ["CFG-AXI-DATA-WIDTH", "CFG-USE-AXI-LITE"]
+approved = true
+atoms = ["S-TDR2AXI-0015", "S-TDR2AXI-0077"]
+xatoms = ["X-RISCV_DEBUG-sbdata-lanes"]
+atom_hashes = { S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0077 = "db7a0e27f747" }
+
+[[feature]]
+id = "F-SBA-no-increment-after-error"
+title = "With sbautoincrement set, a read started by writing sbaddress0 or a write started by writing sbdata0 that ends in SLVERR or DECERR leaves sbaddress at the failing address"
+priority = "P2"
+method = ["sim"]
+observe = "sbaddress0 and sbaddress1 read through o_dmi_tdr after an error response on R or B"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-ADDR-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0061", "S-TDR2AXI-0076", "S-TDR2AXI-0079"]
+xatoms = ["X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbaddress0-read"]
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2", S-TDR2AXI-0076 = "6459cabdca3b", S-TDR2AXI-0079 = "e0443d029994" }
+
+[[feature]]
+id = "F-SBA-sbcs-fields"
+title = "sbcs reports sbversion 1, sbasize = AXI_ADDR_WIDTH and an sbaccess bit per supported size, sbaccess64 only on a 64-bit bus"
+priority = "P1"
+method = ["sim"]
+observe = "sbcs read through o_dmi_tdr after dmactive = 1"
+configs = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0015", "S-TDR2AXI-0023"]
+xatoms = ["X-RISCV_DEBUG-sbcs-fields"]
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0023 = "0c4dd0b88aa6" }
+
+[[feature]]
+id = "F-SBA-single-read"
+title = "With sbreadonaddr set, writing sbaddress0 starts one bus read whose data reaches sbdata; with it clear, the write issues no AR or AW"
+priority = "P0"
+method = ["sim"]
+observe = "AR of o_axi_req, R of i_axi_rsp, and sbdata0 and sbdata1 read through o_dmi_tdr; o_axi_req idle after an sbaddress0 write with sbreadonaddr clear"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0001", "S-TDR2AXI-0076"]
+xatoms = ["X-RISCV_DEBUG-sbaddress0-read"]
+atom_hashes = { S-TDR2AXI-0001 = "71535400dccd", S-TDR2AXI-0076 = "6459cabdca3b" }
+
+[[feature]]
+id = "F-SBA-single-write"
+title = "Writing sbdata0 starts one bus write of sbdata to sbaddress at the sbaccess size, landing only on the addressed bytes"
+priority = "P0"
+method = ["sim"]
+observe = "AW and W of o_axi_req (address, size, strobes, data lanes) and subordinate memory, against the DMI writes"
+configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+approved = true
+atoms = ["S-TDR2AXI-0001", "S-TDR2AXI-0071"]
+xatoms = ["X-RISCV_DEBUG-sbdata0-write"]
+atom_hashes = { S-TDR2AXI-0001 = "71535400dccd", S-TDR2AXI-0071 = "1a5ad1125a58" }
+
+[[feature]]
+id = "F-TDR-any-clock-ratio"
+title = "Every operation completes with the same result at any i_clk to TCK ratio"
+priority = "P1"
+method = ["sim"]
+observe = "DMI results on o_dmi_tdr and AXI transactions on o_axi_req, compared across clock ratios"
+configs = ["CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+approved = true
+atoms = ["S-TDR2AXI-0048"]
+atom_hashes = { S-TDR2AXI-0048 = "719d2a15043e" }
+
+[[feature]]
+id = "F-TDR-busy-recovery"
+title = "After a busy status, op 3 and a resend with more Run-Test/Idle cycles complete the operation; a resent read may reach the bus twice"
+priority = "P1"
+method = ["sim"]
+observe = "o_dmi_tdr after the resend; AR handshakes on o_axi_req, where a second read of the resent address is accepted; subordinate memory"
+configs = ["CFG-CLK-RATIO"]
+approved = true
+atoms = ["S-TDR2AXI-0045", "S-TDR2AXI-0046"]
+xatoms = ["X-RISCV_DEBUG-busy-retry"]
+atom_hashes = { S-TDR2AXI-0045 = "48f39cd80854", S-TDR2AXI-0046 = "be798e55895e" }
+
+[[feature]]
+id = "F-TDR-capture-image"
+title = "A capture shows the address and data of the last operation accepted in IDLE with a clear status: a read's result, a write's data, a NOP's or op 3's own fields"
+priority = "P0"
+method = ["sim"]
+observe = "o_dmi_tdr at each TCK edge with i_dmi_tdr_capture high, against the updates before it"
+configs = ["CFG-CLK-RATIO"]
+approved = true
+atoms = ["S-TDR2AXI-0033", "S-TDR2AXI-0037", "S-TDR2AXI-0038", "S-TDR2AXI-0063"]
+xatoms = ["X-RISCV_DEBUG-dmi-update-capture", "X-RISCV_DEBUG-nop-capture"]
+atom_hashes = { S-TDR2AXI-0033 = "6444e92de325", S-TDR2AXI-0037 = "4a5e9aa31a94", S-TDR2AXI-0038 = "5186a81562e9", S-TDR2AXI-0063 = "77901a52f302" }
+
+[[feature]]
+id = "F-TDR-op-decode"
+title = "An update in IDLE with a clear status decodes the dmi layout: op 0 sends nothing and sets no busy, 1 reads and 2 writes the addressed DM register, 3 clears the sticky status"
+priority = "P0"
+method = ["sim", "formal"]
+observe = "i_dmi_tdr at the edge with i_dmi_tdr_update high; the DMI request u_dmi_tdr_bridge sends u_dm_csrs (address, op, data), none for a NOP; DM registers read back; o_dmi_tdr status"
+configs = ["CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+approved = true
+atoms = ["S-TDR2AXI-0030", "S-TDR2AXI-0036", "S-TDR2AXI-0039", "S-TDR2AXI-0041", "S-TDR2AXI-0063"]
+xatoms = ["X-RISCV_DEBUG-dmi-format", "X-RISCV_DEBUG-dmi-op"]
+atom_hashes = { S-TDR2AXI-0030 = "490293f7a458", S-TDR2AXI-0036 = "df8c48cc7bfb", S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0041 = "52eaa0ab8644", S-TDR2AXI-0063 = "77901a52f302" }
+
+[[feature]]
+id = "F-TDR-result-latency"
+title = "A DMI response reaches o_dmi_tdr SYNC_STAGES + 2 to SYNC_STAGES + 3 TCK edges after the DM answers, and a capture before that reads busy"
+priority = "P2"
+method = ["sim"]
+observe = "TCK edges from the u_dm_csrs response handshake into u_cdc_resp until o_dmi_tdr holds the response with u_dmi_tdr_bridge in IDLE (T-TDR2AXI-resp-to-tdr); capture status swept across the bound"
+configs = ["CFG-SYNC-STAGES", "CFG-CLK-RATIO"]
+approved = true
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0049"]
+xatoms = ["X-RISCV_DEBUG-busy-retry"]
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[feature]]
+id = "F-TDR-sticky-busy"
+title = "Busy sets and sticks on an update of any op, NOP included, while an operation is pending, a capture while a read is pending, or a DM busy answer (read data 0xB051B051); while set, updates are ignored until op 3, and the captured status never reads 2"
+priority = "P0"
+method = ["sim", "formal"]
+observe = "o_dmi_tdr status and data at each capture, the capture that trips the rule included, and o_dmi_tdr[1:0] never 2; u_dmi_tdr_bridge error_q and state_q; DMI requests reaching u_dm_csrs while the status is set"
+configs = ["CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+approved = true
+atoms = ["S-TDR2AXI-0007", "S-TDR2AXI-0039", "S-TDR2AXI-0041", "S-TDR2AXI-0042", "S-TDR2AXI-0043", "S-TDR2AXI-0045", "S-TDR2AXI-0056"]
+xatoms = ["X-RISCV_DEBUG-dmi-status"]
+atom_hashes = { S-TDR2AXI-0007 = "f67ee0461541", S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0041 = "52eaa0ab8644", S-TDR2AXI-0042 = "0094b86c5492", S-TDR2AXI-0043 = "8e6844992030", S-TDR2AXI-0045 = "48f39cd80854", S-TDR2AXI-0056 = "1dc45f92f42b" }
+
+[[feature]]
+id = "F-TDR-strobes"
+title = "Each TCK rising edge with i_dmi_tdr_update high is one update of the parallel TDR value, and o_dmi_tdr is valid at each edge with i_dmi_tdr_capture high"
+priority = "P1"
+method = ["sim", "vip"]
+observe = "i_dmi_tdr_update, i_dmi_tdr_capture, i_dmi_tdr and o_dmi_tdr on i_tck; an update strobe held for two edges reads busy at the next capture"
+configs = ["CFG-CLK-RATIO"]
+approved = true
+atoms = ["S-TDR2AXI-0008", "S-TDR2AXI-0031", "S-TDR2AXI-0032"]
+atom_hashes = { S-TDR2AXI-0008 = "ea832aea7efd", S-TDR2AXI-0031 = "7f8d78a5c5e3", S-TDR2AXI-0032 = "1cc1296534ac" }
+
+[[feature]]
+id = "F-TDR-tck-stop-hold"
+title = "With TCK stopped between scans the TCK side holds its state, and a pending result waits in the response CDC until TCK edges arrive"
+priority = "P0"
+method = ["sim"]
+observe = "o_dmi_tdr and u_dmi_tdr_bridge state_q, error_q, address_q and data_q across TCK stops of varying length while i_clk runs and the bus access completes"
+configs = ["CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+approved = true
+atoms = ["S-TDR2AXI-0029", "S-TDR2AXI-0049"]
+xatoms = ["X-IEEE1149_1-tck-static"]
+atom_hashes = { S-TDR2AXI-0029 = "25fa2b2bc2ad", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[disposition]]
+atom = "S-TDR2AXI-0003"
+disposition = "informative"
+reason = "Purpose statement naming the systems tdr2axi is meant for; it states no behavior."
+approved = true
+hash = "111697625a06"
+
+[[disposition]]
+atom = "S-TDR2AXI-0005"
+disposition = "informative"
+reason = "Licensing note pointing at the SPDX headers; it states no behavior."
+approved = true
+hash = "7fe130ea9d87"
+
+[[disposition]]
+atom = "S-TDR2AXI-0006"
+disposition = "informative"
+reason = "Block-diagram literal. Its claims are transcribed in derived atom S-TDR2AXI-0088, and its two crossings are CDC-REQ and CDC-RESP in clockreset.toml; the datapath it draws is verified by the TDR, SBA and AXI features."
+approved = true
+hash = "04516bf4a90b"
+
+[[disposition]]
+atom = "S-TDR2AXI-0040"
+disposition = "informative"
+reason = "States that the debug specification reserves op 3; F-TDR-op-decode verifies the use tdr2axi gives op 3 (S-TDR2AXI-0041)."
+approved = true
+hash = "003dd154bc43"
+
+[[disposition]]
+atom = "S-TDR2AXI-0044"
+disposition = "issue"
+reason = "Unreachable in tdr2axi, so no test can hit it: dm_csrs answers every DMI request with success or busy (src/dm_csrs.sv:328-329, :395, :514) and nothing in src/ answers DTM_ERR, so status 2 and the 0xDEADBEEF and 0xBAADC0DE markers never reach o_dmi_tdr. Draft 3 of tdr2axi_spec_issues.md ('Whether the status can be failed at all') asks the designer whether failed is meant to be reachable or the document should say it does not occur. F-TDR-sticky-busy checks DV's reading at o_dmi_tdr: the captured status never reads 2. Under D6 the bridge's failed-status branches (src/tdr2axi/dmi_tdr_bridge.sv:171-174, :197-199, :233-235, the failed arm of :265-266), and the reserved-response arm that loads 0xBAADC0DE (:179-181), leave code coverage only behind a SymbiYosys unreachability proof that error_q never holds the failed value and dm_csrs never answers an error or reserved code, owned by dv-cov-closure-fv-sby."
+approved = true
+hash = "d3814c86a0e3"
+
+[[disposition]]
+atom = "S-TDR2AXI-0047"
+disposition = "assumption"
+reason = "Debugger rule for side-effecting reads. The bench sets the Run-Test/Idle count from the bound of draft 2 in tdr2axi_spec_issues.md (T-TDR2AXI-resp-to-tdr) before any sbreadondata read of a side-effecting location, and the subordinate model flags a read of one that arrives twice."
+approved = true
+hash = "412a5819f37c"
+
+[[disposition]]
+atom = "S-TDR2AXI-0050"
+disposition = "assumption"
+reason = "Environment rule on the op field at the update edge. TdrHost drives i_dmi_tdr before the edge that samples i_dmi_tdr_update, and a bench assertion checks i_dmi_tdr is stable on that edge; the edge is the one draft 3 of tdr2axi_spec_issues.md ('The update edge') reads."
+approved = true
+hash = "6a7087d817ff"
+
+[[disposition]]
+atom = "S-TDR2AXI-0057"
+disposition = "assumption"
+reason = "Integration rule that a system reset also resets the fabric. The bench resets the AxiSub with every i_arst_n, so no transaction survives on one side; F-RESET-async-any-time checks the DUT side."
+approved = true
+hash = "b7b90795c926"
+
+[[disposition]]
+atom = "S-TDR2AXI-0065"
+disposition = "definition"
+reason = "Defines the size encoding (0: 8-bit to 3: 64-bit) that S-TDR2AXI-0066 and -0074 use for sbaccess."
+approved = true
+hash = "fd440be76152"
+
+[[disposition]]
+atom = "S-TDR2AXI-0066"
+disposition = "assumption"
+reason = "Programming step the bench's SBA sequences follow; F-SBA-single-write checks the result."
+approved = true
+hash = "5e085b9311c6"
+
+[[disposition]]
+atom = "S-TDR2AXI-0067"
+disposition = "assumption"
+reason = "Programming step the bench's SBA sequences follow when AXI_ADDR_WIDTH > 32; F-SBA-address-width checks the result."
+approved = true
+hash = "7da09cf58456"
+
+[[disposition]]
+atom = "S-TDR2AXI-0068"
+disposition = "assumption"
+reason = "Programming step the bench's SBA sequences follow; F-SBA-single-write checks the result."
+approved = true
+hash = "0f54be0d0cc0"
+
+[[disposition]]
+atom = "S-TDR2AXI-0069"
+disposition = "assumption"
+reason = "Programming step the bench's SBA sequences follow for 64-bit accesses; F-SBA-data-lanes checks the result."
+approved = true
+hash = "159af99619a2"
+
+[[disposition]]
+atom = "S-TDR2AXI-0070"
+disposition = "assumption"
+reason = "Programming step the bench's SBA sequences follow; F-SBA-single-write checks the write it starts (S-TDR2AXI-0071)."
+approved = true
+hash = "8b8980356e02"
+
+[[disposition]]
+atom = "S-TDR2AXI-0072"
+disposition = "assumption"
+reason = "Debugger polling rule after a write. The bench polls sbcs until sbbusy = 0 before the next access and checks sberror and sbbusyerror there; F-SBA-busy-status, F-SBA-bus-error and F-SBA-access-errors check the flags it reads."
+approved = true
+hash = "7f5f4b982a78"
+
+[[disposition]]
+atom = "S-TDR2AXI-0073"
+disposition = "informative"
+reason = "Heading of the single-read example; the steps under it are S-TDR2AXI-0074 to -0078."
+approved = true
+hash = "11efa358f623"
+
+[[disposition]]
+atom = "S-TDR2AXI-0074"
+disposition = "assumption"
+reason = "Programming step the bench's SBA sequences follow; F-SBA-single-read checks the read it sets up."
+approved = true
+hash = "eb113e4e991c"
+
+[[disposition]]
+atom = "S-TDR2AXI-0075"
+disposition = "assumption"
+reason = "Programming step the bench's SBA sequences follow; F-SBA-single-read and F-SBA-address-width check the result."
+approved = true
+hash = "d8fe99ab1e82"
+
+[[disposition]]
+atom = "S-TDR2AXI-0078"
+disposition = "assumption"
+reason = "Debugger polling rule after a read. The bench polls sbcs until sbbusy = 0 before reading sbdata and checks sberror and sbbusyerror there; F-SBA-busy-status, F-SBA-bus-error and F-SBA-access-errors check the flags it reads."
+approved = true
+hash = "7f5f4b982a78"
+
+[[disposition]]
+atom = "S-TDR2AXI-0080"
+disposition = "assumption"
+reason = "Programming step the bench's block-read sequence follows; F-SBA-block-read checks the reads it starts."
+approved = true
+hash = "6cd3d128b835"
+
+[[disposition]]
+atom = "S-TDR2AXI-0082"
+disposition = "assumption"
+reason = "Programming step the bench's block-read sequence follows, so nothing past the block is read; F-SBA-block-read checks the address that last read leaves."
+approved = true
+hash = "5fde616b3875"
+
+[[disposition]]
+atom = "S-TDR2AXI-0083"
+disposition = "informative"
+reason = "Points to the bench directory; it states no DUT behavior."
+approved = true
+hash = "08a72bbce7c2"
+
+[[disposition]]
+atom = "S-TDR2AXI-0084"
+disposition = "informative"
+reason = "Describes the bench models TdrHost and AxiSub, which the vip X-atoms in references.toml name as their checkers; it states no DUT behavior."
+approved = true
+hash = "01c57e3454e5"
+
+[[disposition]]
+atom = "S-TDR2AXI-0085"
+disposition = "informative"
+reason = "Summarizes what the existing bench exercises; the behaviors it lists are verified by the SBA, AXI, TDR and RESET features."
+approved = true
+hash = "0d7c247e227d"
+
+[[disposition]]
+atom = "S-TDR2AXI-0086"
+disposition = "informative"
+reason = "Literal block of bench make commands; it states no DUT behavior."
+approved = true
+hash = "406c4dee4f9e"
+
+[[disposition]]
+atom = "S-TDR2AXI-0087"
+disposition = "informative"
+reason = "Lists the bench's tool versions; it states no DUT behavior."
+approved = true
+hash = "636eab1dd669"
+
+[[disposition]]
+atom = "S-TDR2AXI-0088"
+disposition = "other-signoff"
+reason = "States the structural clock-domain partition and the two cdc_2phase_clearable crossings, modeled as CDC-REQ and CDC-RESP in clockreset.toml; structural CDC sign-off checks them, and cost.md leaves that sign-off to the integrating SoC. Its conflict with S-TDR2AXI-0007 over where the bridge's domain line runs is draft 3 of tdr2axi_spec_issues.md ('The clock domain of dmi_tdr_bridge'), where DV takes S-TDR2AXI-0007's reading. The crossings' functional effect, the same result at any clock ratio, is verified by F-TDR-any-clock-ratio (S-TDR2AXI-0048)."
+flow = "CDC"
+approved = true
+hash = "585e71f1dacf"

@@ -1,0 +1,159 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[dimension]]
+id = "CFG-AXI-ADDR-WIDTH"
+kind = "parameter"
+values = ["2", "3", "32", "48", "64"]
+default = "64"
+build = true
+signals = ["AXI_ADDR_WIDTH"]
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0021", "S-TDR2AXI-0022", "S-TDR2AXI-0023", "S-TDR2AXI-0067"]
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0021 = "8b0b7649cf7d", S-TDR2AXI-0022 = "eee9256a3469", S-TDR2AXI-0023 = "0c4dd0b88aa6", S-TDR2AXI-0067 = "7da09cf58456" }
+
+[[dimension]]
+id = "CFG-AXI-CACHE"
+kind = "parameter"
+values = ["4'b0000", "4'b1111"]
+default = "4'b0000"
+build = true
+signals = ["AXI_CACHE"]
+atoms = ["S-TDR2AXI-0017", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0017 = "8462fa5a51c6", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[dimension]]
+id = "CFG-AXI-DATA-WIDTH"
+kind = "parameter"
+values = ["32", "64"]
+default = "64"
+build = true
+signals = ["AXI_DATA_WIDTH", "axi_req_t", "axi_rsp_t"]
+atoms = ["S-TDR2AXI-0015", "S-TDR2AXI-0019", "S-TDR2AXI-0020", "S-TDR2AXI-0022"]
+atom_hashes = { S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0019 = "068760d94671", S-TDR2AXI-0020 = "039ce450baa2", S-TDR2AXI-0022 = "eee9256a3469" }
+
+[[dimension]]
+id = "CFG-AXI-PROT"
+kind = "parameter"
+values = ["3'b010", "3'b101"]
+default = "3'b010"
+build = true
+signals = ["AXI_PROT"]
+atoms = ["S-TDR2AXI-0016", "S-TDR2AXI-0058"]
+atom_hashes = { S-TDR2AXI-0016 = "18fce41befde", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[dimension]]
+id = "CFG-CLK-RATIO"
+kind = "clock-ratio"
+values = ["20:1", "20:19", "20:21", "1:2", "1:20"]
+default = "20:1"
+build = false
+signals = ["i_clk", "i_tck"]
+atoms = ["S-TDR2AXI-0048"]
+atom_hashes = { S-TDR2AXI-0048 = "719d2a15043e" }
+
+[[dimension]]
+id = "CFG-SYNC-STAGES"
+kind = "parameter"
+values = ["3", "4"]
+default = "3"
+build = true
+signals = ["SYNC_STAGES"]
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0053"]
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[dimension]]
+id = "CFG-TEST-MODE"
+kind = "mode"
+values = ["0", "1"]
+default = "0"
+build = false
+signals = ["i_test_mode"]
+atoms = ["S-TDR2AXI-0027", "S-TDR2AXI-0028", "S-TDR2AXI-0052"]
+atom_hashes = { S-TDR2AXI-0027 = "0c229dcac2ea", S-TDR2AXI-0028 = "2ce7ed98a2b9", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[dimension]]
+id = "CFG-USE-AXI-LITE"
+kind = "parameter"
+values = ["0", "1"]
+default = "0"
+build = true
+signals = ["USE_AXI_LITE", "axi_req_t", "axi_rsp_t"]
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0019", "S-TDR2AXI-0020", "S-TDR2AXI-0024"]
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0019 = "068760d94671", S-TDR2AXI-0020 = "039ce450baa2", S-TDR2AXI-0024 = "db9e725ac4d1" }
+
+[[constraint]]
+id = "CFGC-ADDR-MIN-D64"
+when = { CFG-AXI-DATA-WIDTH = "64" }
+allow = { CFG-AXI-ADDR-WIDTH = ["3", "32", "48", "64"] }
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0021"]
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0021 = "8b0b7649cf7d" }
+
+[[target]]
+name = "axi4_a2_d32_cachef_sync4"
+config = { CFG-USE-AXI-LITE = "0", CFG-AXI-ADDR-WIDTH = "2", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b1111", CFG-SYNC-STAGES = "4" }
+description = "AXI4, smallest address width for 32-bit data; bring-up only in the runner"
+
+[[target]]
+name = "axi4_a32_d32"
+config = { CFG-USE-AXI-LITE = "0", CFG-AXI-ADDR-WIDTH = "32", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "AXI4, 32-bit address and data"
+
+[[target]]
+name = "axi4_a3_d32_cachef"
+config = { CFG-USE-AXI-LITE = "0", CFG-AXI-ADDR-WIDTH = "3", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b1111", CFG-SYNC-STAGES = "3" }
+description = "AXI4, address width 3 under 32-bit data; bring-up only in the runner"
+
+[[target]]
+name = "axi4_a48_d64"
+config = { CFG-USE-AXI-LITE = "0", CFG-AXI-ADDR-WIDTH = "48", CFG-AXI-DATA-WIDTH = "64", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "AXI4, a 48-bit address under 64-bit data: an address wider than 32 bits that does not fill sbaddress1"
+
+[[target]]
+name = "axi4_a64_d32"
+config = { CFG-USE-AXI-LITE = "0", CFG-AXI-ADDR-WIDTH = "64", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "AXI4, 32-bit data reaching a 64-bit address space"
+
+[[target]]
+name = "axi4_a64_d64"
+config = { CFG-USE-AXI-LITE = "0", CFG-AXI-ADDR-WIDTH = "64", CFG-AXI-DATA-WIDTH = "64", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "Every parameter at its default. Runs at any CFG-CLK-RATIO through the run-time knobs CLK_PERIOD_PS and TCK_PERIOD_PS (TCK 20000 ps): 20:1 by default (i_clk 1000 ps), 20:19 (19000 ps), 20:21 (21000 ps), 1:2 (40000 ps, the runner's CONFIG=axi4_a64_d64_slowclk) and 1:20 (400000 ps)"
+
+[[target]]
+name = "axi4_a64_d64_prot5_cachef_sync4"
+config = { CFG-USE-AXI-LITE = "0", CFG-AXI-ADDR-WIDTH = "64", CFG-AXI-DATA-WIDTH = "64", CFG-AXI-PROT = "3'b101", CFG-AXI-CACHE = "4'b1111", CFG-SYNC-STAGES = "4" }
+description = "AXI4, every parameter at its largest modeled value"
+
+[[target]]
+name = "axil_a2_d32_prot5"
+config = { CFG-USE-AXI-LITE = "1", CFG-AXI-ADDR-WIDTH = "2", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b101", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "AXI4-Lite, smallest address width for 32-bit data; bring-up only in the runner"
+
+[[target]]
+name = "axil_a32_d32"
+config = { CFG-USE-AXI-LITE = "1", CFG-AXI-ADDR-WIDTH = "32", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "AXI4-Lite, 32-bit address and data"
+
+[[target]]
+name = "axil_a32_d64_prot5_cachef_sync4"
+config = { CFG-USE-AXI-LITE = "1", CFG-AXI-ADDR-WIDTH = "32", CFG-AXI-DATA-WIDTH = "64", CFG-AXI-PROT = "3'b101", CFG-AXI-CACHE = "4'b1111", CFG-SYNC-STAGES = "4" }
+description = "AXI4-Lite, 32-bit address under 64-bit data, with an AXI_CACHE that AXI4-Lite ignores"
+
+[[target]]
+name = "axil_a3_d64_prot5_sync4"
+config = { CFG-USE-AXI-LITE = "1", CFG-AXI-ADDR-WIDTH = "3", CFG-AXI-DATA-WIDTH = "64", CFG-AXI-PROT = "3'b101", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "4" }
+description = "AXI4-Lite, smallest address width for 64-bit data; bring-up only in the runner"
+
+[[target]]
+name = "axil_a48_d32_prot5_cachef_sync4"
+config = { CFG-USE-AXI-LITE = "1", CFG-AXI-ADDR-WIDTH = "48", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b101", CFG-AXI-CACHE = "4'b1111", CFG-SYNC-STAGES = "4" }
+description = "AXI4-Lite, a 48-bit address under 32-bit data, with every other parameter at its non-default value"
+
+[[target]]
+name = "axil_a64_d32"
+config = { CFG-USE-AXI-LITE = "1", CFG-AXI-ADDR-WIDTH = "64", CFG-AXI-DATA-WIDTH = "32", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "AXI4-Lite, 32-bit data reaching a 64-bit address space"
+
+[[target]]
+name = "axil_a64_d64"
+config = { CFG-USE-AXI-LITE = "1", CFG-AXI-ADDR-WIDTH = "64", CFG-AXI-DATA-WIDTH = "64", CFG-AXI-PROT = "3'b010", CFG-AXI-CACHE = "4'b0000", CFG-SYNC-STAGES = "3" }
+description = "AXI4-Lite, 64-bit address and data"

@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2026 Tenstorrent USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# The site layer of run_sim.py: a template for site.local.toml beside this file, which git
+# ignores, or for the file TDR2AXI_DV_SITE names, which wins over it.
+#
+#   cp tb/tdr2axi/scripts/site.local.example.toml tb/tdr2axi/scripts/site.local.toml
+#
+# Every value below is a neutral placeholder. A path is relative to this file's directory.
+
+schema_version = 1
+description = "Example site: one LSF queue, VCS set up by a hook"
+
+# --executor lsf. Without a template here the executor submits
+#   bsub [-q {queue}] [-n {cores}] [-R rusage[mem={mem}]] [-W {walltime}]
+#        -J {jobname} -o {joblog} {extra_args} {script}
+# where a bracketed group renders only when the tables below set its value. A template here
+# replaces the executor's whole; a nested list in it is an optional group.
+[lsf]
+# The unit LSF reads rusage[mem=...] in, the cluster's LSF_UNIT_FOR_LIMITS: KB, MB, GB or TB.
+mem_unit = "MB"
+# Job arrays name[1-N]; false submits one job per task.
+arrays = true
+# Spliced in at {extra_args} on every submission; build_extra_args follow them on build,
+# build-check and merge jobs.
+extra_args = []
+build_extra_args = []
+# submit_argv = ["bsub", ["-q", "{queue}"], "-J", "{jobname}", "-o", "{joblog}", "{script}"]
+# query_argv = ["bjobs", "-json", "-o", "jobid jobindex stat exit_code exit_reason pend_reason",
+#               "{job_ids}"]
+# cancel_argv = ["bkill", "{job_ids}"]
+
+# Every job's request: queue, cores, mem_mb (megabytes, rendered in mem_unit) and walltime
+# (minutes, or "H:MM").
+[lsf.defaults]
+queue = "normal"
+cores = 1
+mem_mb = 4096
+walltime = 60
+
+# Build, build-check and merge jobs, over the defaults; make builds with -j<cores>.
+[lsf.build_defaults]
+cores = 4
+mem_mb = 16384
+walltime = "2:00"
+
+[lsf.limits]
+max_in_flight = 400      # jobs queued or running at once; unset is unbounded
+poll_interval_s = 30     # seconds between bjobs queries
+array_chunk_size = 200   # elements per job array
+artifact_grace_s = 60    # seconds a finished job's status file may take to appear
+command_timeout_s = 120  # seconds a bsub, bjobs or bkill may take
+max_pend_s = 21600       # seconds a job may wait queued (PEND, PSUSP) before it is killed
+kill_grace_s = 300       # seconds a killed job may stay unfinished (UNKWN, ZOMBI) before it settles
+
+[simulators.vcs]
+# Sourced by every job before make: it puts the simulator, its licence and the Python
+# environment with cocotb on PATH. The job sources it in a non-interactive bash, where
+# aliases do not expand and a startup file that returns early for non-interactive shells
+# defines nothing, so a setup written for an interactive shell needs the hook to run
+# "shopt -s expand_aliases" and source that setup itself. The hook also exports what the
+# tools need and the scheduler leaves unset, TMPDIR included. The job turns set -e and
+# set -u off after the hook, so a failing step records its exit status.
+# setup_hook = "vcs.env"
+# The cocotb major release the hook provides, when the submitting host has no cocotb-config.
+# cocotb_major = 1
+# Joined to every VCS build's compile options, and to every VCS run's options.
+compile_args = []
+sim_args = []
+# --wave: options and sources the wave build compiles in, and the run options, with
+# {wave_file} and {run_dir}, that replace the runner's +TDR2AXI_VCD plusarg; wave_file
+# names the dump in the run directory.
+# wave_compile_args = []
+# wave_sources = ["wave_dump.sv"]
+# wave_sim_args = ["+dumpfile={wave_file}"]
+# wave_file = "waves.vcd"
+# --cov-merge: the merge tool's command over {inputs} (one token per database),
+# {inputs_file} (one path per line), {output} and {merge_dir}, and the merged database's name.
+# The same command merges each build's runs alone. Databases of builds whose parameters
+# differ join one merge only through the tool's flexible-merge options.
+# cov_merge_argv = ["<merge-tool>", "<flexible-merge-options>", "-f", "{inputs_file}",
+#                   "-dbname", "{output}"]
+# cov_merge_output = "merged.vdb"
+# --cov: the command that merges one test's databases, {inputs} or {inputs_file}, and writes
+# their text assertion report, asserts.txt, into {report_dir}; run_sim.py reads each cover
+# property's matches from it into the test's cover-hit file.
+# cov_hits_argv = ["<merge-tool>", "<flexible-merge-options>", "-f", "{inputs_file}",
+#                  "<assertion-text-report-options>", "{report_dir}"]
+
+[simulators.verilator]
+# setup_hook = "verilator.env"
+compile_args = []
+# --cov-merge runs verilator_coverage --write {output} {inputs} unless this replaces it. The
+# cover-hit files of --cov come from each run's coverage.dat, without a merge.
+# cov_merge_argv = ["verilator_coverage", "--write", "{output}", "{inputs}"]
