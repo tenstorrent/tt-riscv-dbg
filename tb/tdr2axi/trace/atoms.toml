@@ -1,0 +1,1234 @@
+schema_version = 1
+dut = "tdr2axi"
+prefix = "TDR2AXI"
+next_id = 89
+
+[[source]]
+key = "spec"
+path = "doc/tdr2axi.md"
+format = "markdown"
+sha256 = "8e5c34989ea0541fbe94025e83d4323beb4a9642622092b502bc92673c6ac901"
+
+[[atom]]
+id = "S-TDR2AXI-0001"
+kind = "normative"
+status = "current"
+text = "`tdr2axi` gives a JTAG debugger access to an AXI4 or AXI4-Lite bus through a single 41-bit test data register (TDR) of an existing TAP or IEEE 1687 (IJTAG) network."
+source = "spec"
+anchor = "tdr2axi-tdr-to-axi-through-the-system-bus-access"
+section = "tdr2axi: TDR to AXI through the System Bus Access"
+line = 8
+classified = "model"
+hash = "71535400dccd"
+terms = ["TDR"]
+refs = ["AXI4", "AXI4-Lite", "IEEE 1687"]
+quantities = ["41-bit TDR"]
+
+[[atom]]
+id = "S-TDR2AXI-0002"
+kind = "normative"
+status = "current"
+text = "Behind the TDR it reuses this repository's Debug Module registers (`dm_csrs`) and System Bus Access engine (`dm_sba`), so the debugger drives it with the standard RISC-V debug DMI protocol: OpenOCD and other RISC-V debuggers reach memory through `sbcs`, `sbaddress*` and `sbdata*` without any custom tooling."
+source = "spec"
+anchor = "tdr2axi-tdr-to-axi-through-the-system-bus-access"
+section = "tdr2axi: TDR to AXI through the System Bus Access"
+line = 10
+classified = "model"
+hash = "4717e71a44f3"
+flags = ["missing-value"]
+terms = ["dm_csrs", "dm_sba", "sbcs", "sbaddress*", "sbdata*"]
+refs = ["RISC-V Debug Specification"]
+
+[[atom]]
+id = "S-TDR2AXI-0003"
+kind = "informative"
+status = "current"
+text = "It is meant for systems that already own a TAP, for example a DFT or IJTAG network, and want bus access without a second TAP or a core-side debug module."
+source = "spec"
+anchor = "tdr2axi-tdr-to-axi-through-the-system-bus-access"
+section = "tdr2axi: TDR to AXI through the System Bus Access"
+line = 15
+classified = "model"
+hash = "111697625a06"
+
+[[atom]]
+id = "S-TDR2AXI-0004"
+kind = "normative"
+status = "current"
+text = "The sources are in `src/tdr2axi/` and are compiled with the Bender target `tdr2axi`."
+source = "spec"
+anchor = "tdr2axi-tdr-to-axi-through-the-system-bus-access"
+section = "tdr2axi: TDR to AXI through the System Bus Access"
+line = 18
+classified = "model"
+hash = "8126c7f9c0c4"
+
+[[atom]]
+id = "S-TDR2AXI-0005"
+kind = "informative"
+status = "current"
+text = "They are licensed under Apache-2.0, unlike the rest of this repository (see the SPDX header of each file)."
+source = "spec"
+anchor = "tdr2axi-tdr-to-axi-through-the-system-bus-access"
+section = "tdr2axi: TDR to AXI through the System Bus Access"
+line = 19
+classified = "model"
+hash = "7fe130ea9d87"
+
+[[atom]]
+id = "S-TDR2AXI-0006"
+kind = "literal"
+status = "current"
+text = "TCK domain                 |                 i_clk domain\n                                     |\n TDR ---> dmi_tdr_bridge --- dmi_req_t ---> dm_csrs ---> dm_sba ---> axi_from_mem      ---> AXI4\n cell <---  (dmi_jtag FSM) <-- dmi_resp_t --  (DMI      (SBA        or                     or\n                                     |       registers)  engine)   axi_lite_from_mem ---> AXI4-Lite\n                       2 x cdc_2phase_clearable"
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 25
+classified = "model"
+hash = "04516bf4a90b"
+flags = ["undefined-term"]
+terms = ["dmi_tdr_bridge", "dm_csrs", "dm_sba", "axi_from_mem", "axi_lite_from_mem", "cdc_2phase_clearable", "dmi_req_t", "dmi_resp_t", "i_clk"]
+refs = ["AXI4", "AXI4-Lite"]
+quantities = ["2 cdc_2phase_clearable"]
+
+[[atom]]
+id = "S-TDR2AXI-0088"
+kind = "normative"
+status = "current"
+text = "dmi_tdr_bridge is in the TCK domain; dm_csrs, dm_sba and the AXI adapter are in the i_clk domain; two cdc_2phase_clearable instances carry dmi_req_t from TCK to i_clk and dmi_resp_t from i_clk to TCK."
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 25
+derived_from = "S-TDR2AXI-0006"
+classified = "model"
+hash = "585e71f1dacf"
+flags = ["conflict", "needs-review"]
+terms = ["dmi_tdr_bridge", "dm_csrs", "dm_sba", "cdc_2phase_clearable", "dmi_req_t", "dmi_resp_t", "i_clk"]
+quantities = ["2 cdc_2phase_clearable"]
+
+[[atom]]
+id = "S-TDR2AXI-0007"
+kind = "normative"
+status = "current"
+text = "`dmi_tdr_bridge` is the DMI part of `dmi_jtag` and `dmi_cdc`, kept rule for rule: the same state machine, sticky busy and failed status, and read-data markers."
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 33
+classified = "model"
+hash = "f67ee0461541"
+flags = ["missing-value"]
+terms = ["dmi_tdr_bridge", "dmi_jtag", "dmi_cdc"]
+
+[[atom]]
+id = "S-TDR2AXI-0008"
+kind = "normative"
+status = "current"
+text = "It has no TAP, shift register or `dtmcs`; the external TAP owns the TDR cell and hands the bridge the parallel TDR value with an update strobe."
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 34
+classified = "model"
+hash = "ea832aea7efd"
+terms = ["dtmcs", "TDR"]
+refs = ["IEEE 1149.1"]
+
+[[atom]]
+id = "S-TDR2AXI-0009"
+kind = "normative"
+status = "current"
+text = "`dm_csrs` and `dm_sba` are instantiated with one hart that always reports unavailable, so only the SBA registers are useful."
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 37
+classified = "model"
+hash = "0ee41daad228"
+terms = ["dm_csrs", "dm_sba"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["1 hart"]
+
+[[atom]]
+id = "S-TDR2AXI-0010"
+kind = "normative"
+status = "current"
+text = "Every abstract command fails with `cmderr` = 2 (not supported)."
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 38
+classified = "model"
+hash = "c74a68987a63"
+terms = ["cmderr"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["cmderr=2"]
+
+[[atom]]
+id = "S-TDR2AXI-0011"
+kind = "normative"
+status = "current"
+text = "`ndmreset` is not connected, so the debugger cannot reset the system through `tdr2axi`."
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 39
+classified = "model"
+hash = "1bba5bd02983"
+terms = ["ndmreset"]
+refs = ["RISC-V Debug Specification"]
+
+[[atom]]
+id = "S-TDR2AXI-0012"
+kind = "normative"
+status = "current"
+text = "The `dm_sba` memory port is converted to AXI by `axi_from_mem` or `axi_lite_from_mem` from the PULP AXI library, with one request in flight."
+source = "spec"
+anchor = "block-diagram"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Block diagram"
+line = 41
+classified = "model"
+hash = "aa0b80647438"
+terms = ["dm_sba", "axi_from_mem", "axi_lite_from_mem"]
+refs = ["PULP AXI"]
+quantities = ["1 request in flight"]
+
+[[atom]]
+id = "S-TDR2AXI-0013"
+kind = "normative"
+status = "current"
+text = "Name: `USE_AXI_LITE`; Valid values: 0, 1; Default: 0; Description: 1: AXI4-Lite manager, 0: AXI4 manager"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 49
+classified = "model"
+hash = "63ae7c91436e"
+terms = ["USE_AXI_LITE"]
+refs = ["AXI4", "AXI4-Lite"]
+quantities = ["default 0"]
+
+[[atom]]
+id = "S-TDR2AXI-0014"
+kind = "normative"
+status = "current"
+text = "Name: `AXI_ADDR_WIDTH`; Valid values: 2..64 / 3..64 (1); Default: 64; Description: AXI address width; also `sbcs.sbasize`"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 50
+classified = "model"
+hash = "b0d1597d458b"
+flags = ["missing-value"]
+terms = ["AXI_ADDR_WIDTH", "sbcs", "sbasize"]
+quantities = ["2-64 bits", "3-64 bits", "default 64"]
+
+[[atom]]
+id = "S-TDR2AXI-0015"
+kind = "normative"
+status = "current"
+text = "Name: `AXI_DATA_WIDTH`; Valid values: 32, 64; Default: 64; Description: AXI data width; also the largest SBA access size"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 51
+classified = "model"
+hash = "3abbe99ca471"
+terms = ["AXI_DATA_WIDTH"]
+quantities = ["32 bits", "64 bits", "default 64"]
+
+[[atom]]
+id = "S-TDR2AXI-0016"
+kind = "normative"
+status = "current"
+text = "Name: `AXI_PROT`; Valid values: 3 bits; Default: `3'b010`; Description: AxPROT of every transaction (non-secure, unprivileged, data)"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 52
+classified = "model"
+hash = "18fce41befde"
+terms = ["AXI_PROT", "AxPROT"]
+refs = ["AXI4", "AXI4-Lite"]
+quantities = ["3 bits", "default 3'b010"]
+
+[[atom]]
+id = "S-TDR2AXI-0017"
+kind = "normative"
+status = "current"
+text = "Name: `AXI_CACHE`; Valid values: 4 bits; Default: `4'b0000`; Description: AxCACHE of every transaction (AXI4 only)"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 53
+classified = "model"
+hash = "8462fa5a51c6"
+terms = ["AXI_CACHE", "AxCACHE"]
+refs = ["AXI4"]
+quantities = ["4 bits", "default 4'b0000"]
+
+[[atom]]
+id = "S-TDR2AXI-0018"
+kind = "normative"
+status = "current"
+text = "Name: `SYNC_STAGES`; Valid values: 3 or more; Default: 3; Description: Synchroniser depth of the reset synchronisers and both CDCs"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 54
+classified = "model"
+hash = "d0a75c21b626"
+terms = ["SYNC_STAGES"]
+quantities = ["3 stages", "default 3"]
+
+[[atom]]
+id = "S-TDR2AXI-0019"
+kind = "normative"
+status = "current"
+text = "Name: `axi_req_t`; Valid values: AXI4 / AXI4-Lite type; Default: none (must be set); Description: Request struct; its data width must be `AXI_DATA_WIDTH`"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 55
+classified = "model"
+hash = "068760d94671"
+flags = ["conflict"]
+terms = ["axi_req_t", "AXI_DATA_WIDTH"]
+refs = ["AXI4", "AXI4-Lite"]
+
+[[atom]]
+id = "S-TDR2AXI-0020"
+kind = "normative"
+status = "current"
+text = "Name: `axi_rsp_t`; Valid values: AXI4 / AXI4-Lite type; Default: none (must be set); Description: Response struct; its data width must be `AXI_DATA_WIDTH`"
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 56
+classified = "model"
+hash = "039ce450baa2"
+flags = ["conflict"]
+terms = ["axi_rsp_t", "AXI_DATA_WIDTH"]
+refs = ["AXI4", "AXI4-Lite"]
+
+[[atom]]
+id = "S-TDR2AXI-0021"
+kind = "normative"
+status = "current"
+text = "(1) `AXI_ADDR_WIDTH` must cover the byte offset within a data word: at least 2 for 32-bit data and at least 3 for 64-bit data (checked by `dm_sba`)."
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 58
+classified = "model"
+hash = "8b0b7649cf7d"
+terms = ["AXI_ADDR_WIDTH", "dm_sba"]
+quantities = ["minimum 2 for 32-bit data", "minimum 3 for 64-bit data"]
+
+[[atom]]
+id = "S-TDR2AXI-0022"
+kind = "normative"
+status = "current"
+text = "The address and data widths are independent, so for example a 32-bit data bus can reach a 64-bit address space."
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 61
+classified = "model"
+hash = "eee9256a3469"
+quantities = ["32-bit data", "64-bit address"]
+
+[[atom]]
+id = "S-TDR2AXI-0023"
+kind = "normative"
+status = "current"
+text = "This uses the `SbaAddrWidth` parameter of `dm_csrs` and `dm_sba`."
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 62
+classified = "model"
+hash = "0c4dd0b88aa6"
+terms = ["SbaAddrWidth", "dm_csrs", "dm_sba"]
+
+[[atom]]
+id = "S-TDR2AXI-0024"
+kind = "normative"
+status = "current"
+text = "`axi_req_t` and `axi_rsp_t` default to `logic`, as in PULP's `axi_from_mem`, so a parent must always override them with its own AXI4 or AXI4-Lite types."
+source = "spec"
+anchor = "parameters"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Parameters"
+line = 65
+classified = "model"
+hash = "db9e725ac4d1"
+terms = ["axi_req_t", "axi_rsp_t", "axi_from_mem"]
+refs = ["AXI4", "AXI4-Lite"]
+quantities = ["default logic"]
+
+[[atom]]
+id = "S-TDR2AXI-0025"
+kind = "normative"
+status = "current"
+text = "Name: `i_clk`; Direction: input; Description: Bus clock"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 72
+classified = "model"
+hash = "f9c0b3f52cb9"
+terms = ["i_clk"]
+
+[[atom]]
+id = "S-TDR2AXI-0026"
+kind = "normative"
+status = "current"
+text = "Name: `i_arst_n`; Direction: input; Clock: async; Description: Reset, active low: power-on or system reset, never TRST"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 73
+classified = "model"
+hash = "122754e00bef"
+terms = ["i_arst_n", "TRST"]
+
+[[atom]]
+id = "S-TDR2AXI-0027"
+kind = "normative"
+status = "current"
+text = "Name: `i_test_mode`; Direction: input; Clock: async; Description: DFT test mode: selects `i_arst_scan_n` for the internal resets"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 74
+classified = "model"
+hash = "0c229dcac2ea"
+terms = ["i_test_mode", "i_arst_scan_n"]
+
+[[atom]]
+id = "S-TDR2AXI-0028"
+kind = "normative"
+status = "current"
+text = "Name: `i_arst_scan_n`; Direction: input; Clock: async; Description: Reset used while `i_test_mode` = 1"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 75
+classified = "model"
+hash = "2ce7ed98a2b9"
+terms = ["i_arst_scan_n", "i_test_mode"]
+quantities = ["i_test_mode=1"]
+
+[[atom]]
+id = "S-TDR2AXI-0029"
+kind = "normative"
+status = "current"
+text = "Name: `i_tck`; Direction: input; Description: JTAG test clock"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 76
+classified = "model"
+hash = "25fa2b2bc2ad"
+terms = ["i_tck"]
+
+[[atom]]
+id = "S-TDR2AXI-0030"
+kind = "normative"
+status = "current"
+text = "Name: `i_dmi_tdr[40:0]`; Direction: input; Clock: `i_tck`; Description: Parallel (update-stage) value of the TDR"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 77
+classified = "model"
+hash = "490293f7a458"
+terms = ["i_dmi_tdr", "i_tck"]
+quantities = ["41 bits"]
+
+[[atom]]
+id = "S-TDR2AXI-0031"
+kind = "normative"
+status = "current"
+text = "Name: `i_dmi_tdr_capture`; Direction: input; Clock: `i_tck`; Description: High for the TCK rising edge at which the TDR cell loads `o_dmi_tdr` (Capture-DR and this TDR selected)"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 78
+classified = "model"
+hash = "7f8d78a5c5e3"
+terms = ["i_dmi_tdr_capture", "o_dmi_tdr", "Capture-DR"]
+refs = ["IEEE 1149.1"]
+
+[[atom]]
+id = "S-TDR2AXI-0032"
+kind = "normative"
+status = "current"
+text = "Name: `i_dmi_tdr_update`; Direction: input; Clock: `i_tck`; Description: High for one TCK rising edge after Update-DR of this TDR"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 79
+classified = "model"
+hash = "1cc1296534ac"
+flags = ["ambiguous"]
+terms = ["i_dmi_tdr_update", "Update-DR"]
+refs = ["IEEE 1149.1"]
+quantities = ["1 TCK rising edge"]
+
+[[atom]]
+id = "S-TDR2AXI-0033"
+kind = "normative"
+status = "current"
+text = "Name: `o_dmi_tdr[40:0]`; Direction: output; Clock: `i_tck`; Description: Capture value for the TDR cell"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 80
+classified = "model"
+hash = "6444e92de325"
+terms = ["o_dmi_tdr", "i_tck"]
+quantities = ["41 bits"]
+
+[[atom]]
+id = "S-TDR2AXI-0034"
+kind = "normative"
+status = "current"
+text = "Name: `o_axi_req`; Direction: output; Clock: `i_clk`; Description: AXI request"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 81
+classified = "model"
+hash = "91256593195c"
+terms = ["o_axi_req", "i_clk"]
+refs = ["AXI4", "AXI4-Lite"]
+
+[[atom]]
+id = "S-TDR2AXI-0035"
+kind = "normative"
+status = "current"
+text = "Name: `i_axi_rsp`; Direction: input; Clock: `i_clk`; Description: AXI response"
+source = "spec"
+anchor = "ports"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Ports"
+line = 82
+classified = "model"
+hash = "76db3e8aaeed"
+terms = ["i_axi_rsp", "i_clk"]
+refs = ["AXI4", "AXI4-Lite"]
+
+[[atom]]
+id = "S-TDR2AXI-0036"
+kind = "register"
+status = "current"
+text = "The TDR has the layout of the `dmi` register of the RISC-V debug specification."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 86
+classified = "model"
+hash = "df8c48cc7bfb"
+terms = ["dmi", "TDR"]
+refs = ["RISC-V Debug Specification"]
+
+[[atom]]
+id = "S-TDR2AXI-0037"
+kind = "register"
+status = "current"
+text = "Bits: `40:34`; Update (`i_dmi_tdr`): DMI address; Capture (`o_dmi_tdr`): Address of the last operation"
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 90
+classified = "model"
+hash = "4a5e9aa31a94"
+flags = ["ambiguous"]
+terms = ["i_dmi_tdr", "o_dmi_tdr"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["bits 40:34"]
+
+[[atom]]
+id = "S-TDR2AXI-0038"
+kind = "register"
+status = "current"
+text = "Bits: `33:2`; Update (`i_dmi_tdr`): Write data; Capture (`o_dmi_tdr`): Read data of the last operation"
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 91
+classified = "model"
+hash = "5186a81562e9"
+flags = ["ambiguous"]
+terms = ["i_dmi_tdr", "o_dmi_tdr"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["bits 33:2"]
+
+[[atom]]
+id = "S-TDR2AXI-0039"
+kind = "register"
+status = "current"
+text = "Bits: `1:0`; Update (`i_dmi_tdr`): op: 0 NOP, 1 read, 2 write, 3 clear sticky status; Capture (`o_dmi_tdr`): status: 0 success, 2 failed, 3 busy"
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 92
+classified = "model"
+hash = "66c5a0946bca"
+terms = ["i_dmi_tdr", "o_dmi_tdr"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["bits 1:0", "op 0 NOP", "op 1 read", "op 2 write", "op 3 clear", "status 0 success", "status 2 failed", "status 3 busy"]
+
+[[atom]]
+id = "S-TDR2AXI-0040"
+kind = "informative"
+status = "current"
+text = "op 3 is reserved in the specification."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 94
+classified = "model"
+hash = "003dd154bc43"
+refs = ["RISC-V Debug Specification"]
+
+[[atom]]
+id = "S-TDR2AXI-0041"
+kind = "normative"
+status = "current"
+text = "`tdr2axi` uses it in place of `dtmcs.dmireset`, which a lone TDR does not have: it clears the sticky status."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 94
+classified = "model"
+hash = "52eaa0ab8644"
+terms = ["dtmcs", "dmireset"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["op 3"]
+
+[[atom]]
+id = "S-TDR2AXI-0042"
+kind = "normative"
+status = "current"
+text = "The status follows `dmi_jtag`."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 97
+classified = "model"
+hash = "0094b86c5492"
+flags = ["ambiguous"]
+terms = ["dmi_jtag"]
+
+[[atom]]
+id = "S-TDR2AXI-0043"
+kind = "normative"
+status = "current"
+text = "It becomes busy and sticky when a scan updates the TDR while an operation is still pending, when a scan captures while a read is still pending, or when the DM answers busy."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 97
+classified = "model"
+hash = "8e6844992030"
+
+[[atom]]
+id = "S-TDR2AXI-0044"
+kind = "normative"
+status = "current"
+text = "It becomes failed when the DM answers with an error."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 99
+classified = "model"
+hash = "d3814c86a0e3"
+flags = ["missing-value"]
+
+[[atom]]
+id = "S-TDR2AXI-0045"
+kind = "normative"
+status = "current"
+text = "While the sticky status is set, new operations are ignored; the debugger clears it with op 3 and retries with more Run-Test/Idle cycles after each scan, as OpenOCD does with `dtmcs.dmireset`."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 100
+classified = "model"
+hash = "48f39cd80854"
+terms = ["dtmcs", "dmireset"]
+quantities = ["op 3"]
+
+[[atom]]
+id = "S-TDR2AXI-0046"
+kind = "normative"
+status = "current"
+text = "As upstream, a read that was resent after a busy status may run twice."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 104
+classified = "model"
+hash = "be798e55895e"
+
+[[atom]]
+id = "S-TDR2AXI-0047"
+kind = "assumption"
+status = "current"
+text = "Avoid side-effecting reads with `sbreadondata` unless enough Run-Test/Idle cycles are used."
+source = "spec"
+anchor = "tdr-format"
+section = "tdr2axi: TDR to AXI through the System Bus Access / TDR format"
+line = 104
+classified = "model"
+hash = "412a5819f37c"
+flags = ["missing-value"]
+terms = ["sbreadondata"]
+
+[[atom]]
+id = "S-TDR2AXI-0048"
+kind = "normative"
+status = "current"
+text = "Both crossings are valid/ready handshakes, so correctness does not depend on the `i_clk` / `i_tck` ratio."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 109
+classified = "model"
+hash = "719d2a15043e"
+terms = ["i_clk", "i_tck"]
+
+[[atom]]
+id = "S-TDR2AXI-0049"
+kind = "timing"
+status = "current"
+text = "TCK only runs during scans, so a result reaches `o_dmi_tdr` a few TCK cycles after the bus completes; Run-Test/Idle cycles after each operation scan give it time."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 110
+classified = "model"
+hash = "a21af701e756"
+flags = ["missing-value"]
+terms = ["o_dmi_tdr"]
+
+[[atom]]
+id = "S-TDR2AXI-0050"
+kind = "assumption"
+status = "current"
+text = "The op field of `i_dmi_tdr` must be valid at the TCK rising edge that samples `i_dmi_tdr_update`."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 113
+classified = "model"
+hash = "6a7087d817ff"
+terms = ["i_dmi_tdr", "i_dmi_tdr_update"]
+
+[[atom]]
+id = "S-TDR2AXI-0051"
+kind = "normative"
+status = "current"
+text = "`i_arst_n` may be fully asynchronous."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 115
+classified = "model"
+hash = "56b178b0aa12"
+terms = ["i_arst_n"]
+
+[[atom]]
+id = "S-TDR2AXI-0052"
+kind = "normative"
+status = "current"
+text = "It is synchronised into `i_clk` and `i_tck` (asynchronous assertion, synchronous release, test-mode bypass)."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 115
+classified = "model"
+hash = "a2c835cc4ea4"
+terms = ["i_clk", "i_tck"]
+
+[[atom]]
+id = "S-TDR2AXI-0053"
+kind = "timing"
+status = "current"
+text = "The TCK side leaves reset `SYNC_STAGES` TCK cycles after release."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 116
+classified = "model"
+hash = "d81fd3f0d3cd"
+flags = ["ambiguous"]
+terms = ["SYNC_STAGES"]
+
+[[atom]]
+id = "S-TDR2AXI-0054"
+kind = "normative"
+status = "current"
+text = "TRST does not reset `tdr2axi`."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 118
+classified = "model"
+hash = "527763ed1ef2"
+terms = ["TRST"]
+refs = ["IEEE 1149.1"]
+
+[[atom]]
+id = "S-TDR2AXI-0055"
+kind = "normative"
+status = "current"
+text = "TRST must be asserted and released only while TCK is stopped; an operation in flight when TRST asserts completes normally."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 118
+classified = "model"
+hash = "c43a965a03de"
+terms = ["TRST"]
+refs = ["IEEE 1149.1"]
+
+[[atom]]
+id = "S-TDR2AXI-0056"
+kind = "normative"
+status = "current"
+text = "Software clears the bridge with op 3 and the DM with `dmcontrol.dmactive` = 0."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 119
+classified = "model"
+hash = "1dc45f92f42b"
+flags = ["ambiguous"]
+terms = ["dmcontrol", "dmactive"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["dmcontrol.dmactive=0"]
+
+[[atom]]
+id = "S-TDR2AXI-0057"
+kind = "assumption"
+status = "current"
+text = "If `i_arst_n` is a system reset, it must also reset the fabric `tdr2axi` accesses, so that an outstanding AXI transaction never survives on one side only."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 121
+classified = "model"
+hash = "b7b90795c926"
+terms = ["i_arst_n"]
+refs = ["AXI4", "AXI4-Lite"]
+
+[[atom]]
+id = "S-TDR2AXI-0058"
+kind = "normative"
+status = "current"
+text = "One transaction at a time, single beat, ID 0, user 0, `AxPROT` = `AXI_PROT`, `AxCACHE` = `AXI_CACHE`."
+source = "spec"
+anchor = "axi-transactions"
+section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
+line = 126
+classified = "model"
+hash = "b5989e954e15"
+flags = ["missing-value"]
+terms = ["AxPROT", "AXI_PROT", "AxCACHE", "AXI_CACHE"]
+refs = ["AXI4", "AXI4-Lite"]
+quantities = ["1 transaction at a time", "1 beat", "ID 0", "user 0"]
+
+[[atom]]
+id = "S-TDR2AXI-0059"
+kind = "normative"
+status = "current"
+text = "AXI4: `AxSIZE` follows `sbcs.sbaccess`, so a narrow read does not fetch the whole bus word."
+source = "spec"
+anchor = "axi-transactions"
+section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
+line = 128
+classified = "model"
+hash = "24988ecd1470"
+terms = ["AxSIZE", "sbcs", "sbaccess"]
+refs = ["AXI4"]
+
+[[atom]]
+id = "S-TDR2AXI-0060"
+kind = "normative"
+status = "current"
+text = "`dm_sba` only issues naturally aligned accesses (`sberror` = 3 otherwise) and accesses up to the data width (`sberror` = 4 otherwise)."
+source = "spec"
+anchor = "axi-transactions"
+section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
+line = 129
+classified = "model"
+hash = "2ff85d8b5e3d"
+flags = ["missing-value"]
+terms = ["dm_sba", "sberror"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["sberror=3", "sberror=4"]
+
+[[atom]]
+id = "S-TDR2AXI-0061"
+kind = "normative"
+status = "current"
+text = "`SLVERR` and `DECERR` responses set `sbcs.sberror` = 2."
+source = "spec"
+anchor = "axi-transactions"
+section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
+line = 131
+classified = "model"
+hash = "25f2d2d3ebc2"
+terms = ["SLVERR", "DECERR", "sbcs", "sberror"]
+refs = ["AXI4", "AXI4-Lite"]
+quantities = ["sberror=2"]
+
+[[atom]]
+id = "S-TDR2AXI-0062"
+kind = "register"
+status = "current"
+text = "The DMI addresses are those of the RISC-V debug specification: `dmcontrol` 0x10, `sbcs` 0x38, `sbaddress0` 0x39, `sbaddress1` 0x3A, `sbdata0` 0x3C, `sbdata1` 0x3D."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 135
+classified = "model"
+hash = "be8f54303e36"
+terms = ["dmcontrol", "sbcs", "sbaddress0", "sbaddress1", "sbdata0", "sbdata1"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["0x10", "0x38", "0x39", "0x3A", "0x3C", "0x3D"]
+
+[[atom]]
+id = "S-TDR2AXI-0063"
+kind = "normative"
+status = "current"
+text = "Each write or read below is one TDR scan with op 2 or op 1; a read returns its data in the capture of the next scan (a NOP, or the next operation)."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 137
+classified = "model"
+hash = "77901a52f302"
+quantities = ["op 2", "op 1"]
+
+[[atom]]
+id = "S-TDR2AXI-0064"
+kind = "assumption"
+status = "current"
+text = "Enable the DM once: write `dmcontrol` = 0x0000_0001 (`dmactive`)."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 140
+classified = "model"
+hash = "602666509c6e"
+flags = ["missing-value"]
+terms = ["dmcontrol", "dmactive"]
+refs = ["RISC-V Debug Specification"]
+quantities = ["0x0000_0001"]
+
+[[atom]]
+id = "S-TDR2AXI-0065"
+kind = "definition"
+status = "current"
+text = "Single write of `size` (0: 8-bit, 1: 16-bit, 2: 32-bit, 3: 64-bit):"
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 142
+classified = "model"
+hash = "fd440be76152"
+refs = ["RISC-V Debug Specification"]
+quantities = ["0 8-bit", "1 16-bit", "2 32-bit", "3 64-bit"]
+
+[[atom]]
+id = "S-TDR2AXI-0066"
+kind = "assumption"
+status = "current"
+text = "Write `sbcs` with `sbaccess` = `size`."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 144
+classified = "model"
+hash = "5e085b9311c6"
+terms = ["sbcs", "sbaccess"]
+
+[[atom]]
+id = "S-TDR2AXI-0067"
+kind = "assumption"
+status = "current"
+text = "If `AXI_ADDR_WIDTH` > 32, write `sbaddress1` with address bits 63:32."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 145
+classified = "model"
+hash = "7da09cf58456"
+terms = ["AXI_ADDR_WIDTH", "sbaddress1"]
+quantities = ["bits 63:32"]
+
+[[atom]]
+id = "S-TDR2AXI-0068"
+kind = "assumption"
+status = "current"
+text = "Write `sbaddress0` with address bits 31:0."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 146
+classified = "model"
+hash = "0f54be0d0cc0"
+terms = ["sbaddress0"]
+quantities = ["bits 31:0"]
+
+[[atom]]
+id = "S-TDR2AXI-0069"
+kind = "assumption"
+status = "current"
+text = "For 64-bit accesses, write `sbdata1` with data bits 63:32."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 147
+classified = "model"
+hash = "159af99619a2"
+terms = ["sbdata1"]
+quantities = ["bits 63:32"]
+
+[[atom]]
+id = "S-TDR2AXI-0070"
+kind = "assumption"
+status = "current"
+text = "Write `sbdata0` with data bits 31:0."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 148
+classified = "model"
+hash = "8b8980356e02"
+terms = ["sbdata0"]
+quantities = ["bits 31:0"]
+
+[[atom]]
+id = "S-TDR2AXI-0071"
+kind = "normative"
+status = "current"
+text = "This starts the bus write."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 148
+classified = "model"
+hash = "1a5ad1125a58"
+flags = ["missing-value"]
+
+[[atom]]
+id = "S-TDR2AXI-0072"
+kind = "assumption"
+status = "current"
+text = "Read `sbcs` until `sbbusy` = 0, then check `sberror` and `sbbusyerror`."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 149
+classified = "model"
+hash = "7f5f4b982a78"
+terms = ["sbcs", "sbbusy", "sberror", "sbbusyerror"]
+quantities = ["sbbusy=0"]
+
+[[atom]]
+id = "S-TDR2AXI-0073"
+kind = "informative"
+status = "current"
+text = "Single read:"
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 151
+classified = "model"
+hash = "11efa358f623"
+
+[[atom]]
+id = "S-TDR2AXI-0074"
+kind = "assumption"
+status = "current"
+text = "Write `sbcs` with `sbaccess` = `size` and `sbreadonaddr` = 1."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 153
+classified = "model"
+hash = "eb113e4e991c"
+terms = ["sbcs", "sbaccess", "sbreadonaddr"]
+quantities = ["sbreadonaddr=1"]
+
+[[atom]]
+id = "S-TDR2AXI-0075"
+kind = "assumption"
+status = "current"
+text = "Write `sbaddress1` (if needed), then `sbaddress0`."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 154
+classified = "model"
+hash = "d8fe99ab1e82"
+terms = ["sbaddress1", "sbaddress0"]
+
+[[atom]]
+id = "S-TDR2AXI-0076"
+kind = "normative"
+status = "current"
+text = "Writing `sbaddress0` starts the bus read."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 154
+classified = "model"
+hash = "6459cabdca3b"
+terms = ["sbaddress0"]
+
+[[atom]]
+id = "S-TDR2AXI-0077"
+kind = "normative"
+status = "current"
+text = "For 64-bit accesses read `sbdata1` (it does not start a read), then read `sbdata0`."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 156
+classified = "model"
+hash = "db7a0e27f747"
+terms = ["sbdata1", "sbdata0"]
+
+[[atom]]
+id = "S-TDR2AXI-0078"
+kind = "assumption"
+status = "current"
+text = "Read `sbcs` until `sbbusy` = 0, then check `sberror` and `sbbusyerror`."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 157
+classified = "model"
+hash = "7f5f4b982a78"
+terms = ["sbcs", "sbbusy", "sberror", "sbbusyerror"]
+quantities = ["sbbusy=0"]
+
+[[atom]]
+id = "S-TDR2AXI-0079"
+kind = "normative"
+status = "current"
+text = "Block write: as a single write, with `sbautoincrement` = 1 in `sbcs`; each write of `sbdata0` writes one element and advances the address."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 159
+classified = "model"
+hash = "e0443d029994"
+terms = ["sbautoincrement", "sbcs", "sbdata0"]
+quantities = ["sbautoincrement=1"]
+
+[[atom]]
+id = "S-TDR2AXI-0080"
+kind = "assumption"
+status = "current"
+text = "Block read: write `sbcs` with `sbreadonaddr`, `sbreadondata` and `sbautoincrement` set, then the address."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 162
+classified = "model"
+hash = "6cd3d128b835"
+terms = ["sbcs", "sbreadonaddr", "sbreadondata", "sbautoincrement"]
+
+[[atom]]
+id = "S-TDR2AXI-0081"
+kind = "normative"
+status = "current"
+text = "Each read of `sbdata0` returns one element and starts the next read."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 163
+classified = "model"
+hash = "0421360e73cf"
+terms = ["sbdata0"]
+
+[[atom]]
+id = "S-TDR2AXI-0082"
+kind = "assumption"
+status = "current"
+text = "Before reading the last element, write `sbcs` again with `sbreadondata` = 0, so that nothing past the end of the block is read."
+source = "spec"
+anchor = "programming-examples"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
+line = 164
+classified = "model"
+hash = "5fde616b3875"
+terms = ["sbcs", "sbreadondata"]
+quantities = ["sbreadondata=0"]
+
+[[atom]]
+id = "S-TDR2AXI-0083"
+kind = "informative"
+status = "current"
+text = "`tb/tdr2axi/` holds a cocotb testbench."
+source = "spec"
+anchor = "verification"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
+line = 169
+classified = "model"
+hash = "08a72bbce7c2"
+
+[[atom]]
+id = "S-TDR2AXI-0084"
+kind = "informative"
+status = "current"
+text = "Its TDR host models the TAP states and the OpenOCD DMI flow (busy, op 3, longer Run-Test/Idle, resend); its AXI subordinate checks every handshake, the address, size, strobes and byte lanes, and models memory."
+source = "spec"
+anchor = "verification"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
+line = 169
+classified = "model"
+hash = "01c57e3454e5"
+
+[[atom]]
+id = "S-TDR2AXI-0085"
+kind = "informative"
+status = "current"
+text = "It covers every access size and lane, block accesses, bus errors, busy SBA accesses, refused and pipelined operations, resets with an operation in flight, and AXI4 and AXI4-Lite at several address and data widths."
+source = "spec"
+anchor = "verification"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
+line = 172
+classified = "model"
+hash = "0d7c247e227d"
+
+[[atom]]
+id = "S-TDR2AXI-0086"
+kind = "literal"
+status = "current"
+text = "cd tb/tdr2axi\nmake                       # 64-bit AXI4 with Verilator\nmake CONFIG=axil_a64_d32   # one configuration\nmake sim_all               # every configuration\nmake SIM=vcs               # Synopsys VCS"
+source = "spec"
+anchor = "verification"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
+line = 177
+classified = "model"
+hash = "406c4dee4f9e"
+
+[[atom]]
+id = "S-TDR2AXI-0087"
+kind = "informative"
+status = "current"
+text = "It needs cocotb 1.9, Bender and Verilator 5.036 or later."
+source = "spec"
+anchor = "verification"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
+line = 184
+classified = "model"
+hash = "636eab1dd669"

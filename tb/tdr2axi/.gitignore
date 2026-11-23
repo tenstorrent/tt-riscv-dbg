@@ -1,6 +1,10 @@
+sim/
+sim_build/
 sim_build_*/
 results_*.xml
 __pycache__/
 *.fst
 *.vcd
+coverage*.dat
 ucli.key
+scripts/site.local.toml

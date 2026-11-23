@@ -1,0 +1,338 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[clock]]
+id = "CLK-BUS"
+ports = ["i_clk"]
+relation = "asynchronous to CLK-TCK; any ratio (S-TDR2AXI-0048). The spec states no frequency or ratio range."
+gating = "The spec states no gating. An operation crosses into the DM, and both CDCs finish their post-reset clear sequence (T-TDR2AXI-cdc-clear-20to1, T-TDR2AXI-cdc-clear-20to19, T-TDR2AXI-cdc-clear-20to21, T-TDR2AXI-cdc-clear-1to2, T-TDR2AXI-cdc-clear-1to20), only while i_clk runs; with i_clk stopped an operation stays pending and the TCK side reports busy (S-TDR2AXI-0043)."
+mode = "functional"
+atoms = ["S-TDR2AXI-0025", "S-TDR2AXI-0043", "S-TDR2AXI-0048", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0025 = "f9c0b3f52cb9", S-TDR2AXI-0043 = "8e6844992030", S-TDR2AXI-0048 = "719d2a15043e", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[clock]]
+id = "CLK-TCK"
+ports = ["i_tck"]
+relation = "asynchronous to CLK-BUS; the two crossings are valid/ready handshakes, so correctness does not depend on the i_clk / TCK ratio (S-TDR2AXI-0048). The spec states no frequency or ratio range."
+gating = "TCK runs only during scans and stops between them (S-TDR2AXI-0049), and is stopped whenever TRST changes (S-TDR2AXI-0055). While it is stopped the TCK-side state holds and a DMI response waits in the response CDC; it reaches o_dmi_tdr only as TCK edges arrive (T-TDR2AXI-resp-to-tdr, T-TDR2AXI-resp-to-tdr-ss4). The post-reset clear sequence of both CDCs also advances only on TCK edges (T-TDR2AXI-cdc-clear-20to1, T-TDR2AXI-cdc-clear-20to19, T-TDR2AXI-cdc-clear-20to21, T-TDR2AXI-cdc-clear-1to2, T-TDR2AXI-cdc-clear-1to20)."
+mode = "functional"
+atoms = ["S-TDR2AXI-0029", "S-TDR2AXI-0048", "S-TDR2AXI-0049", "S-TDR2AXI-0055", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0029 = "25fa2b2bc2ad", S-TDR2AXI-0048 = "719d2a15043e", S-TDR2AXI-0049 = "a21af701e756", S-TDR2AXI-0055 = "c43a965a03de", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[reset]]
+id = "RST-ARST-BUS"
+polarity = "low"
+assertion = "async"
+deassertion = "sync"
+ports = ["i_arst_n"]
+signals = ["arst_clk_n"]
+clock = "CLK-BUS"
+sequence = "Same i_arst_n as RST-ARST-TCK (S-TDR2AXI-0051): asserted at once and released synchronously (S-TDR2AXI-0052) through SYNC_STAGES i_clk flops (S-TDR2AXI-0018), SYNC_STAGES i_clk rising edges after i_arst_n rises, plus one when the release lands in the first synchronizer flop's sampling window, so i_clk must run after the release. If i_arst_n is a system reset it must also reset the fabric tdr2axi accesses, so an outstanding AXI transaction never survives on one side only (S-TDR2AXI-0057). It is never TRST (S-TDR2AXI-0026)."
+scope = "i_clk side: dm_csrs (every DM register, dmcontrol.dmactive included, and the DMI response queue), dm_sba, the AXI or AXI4-Lite adapter with any transaction in flight, and the i_clk halves of both CDCs. The software clears are separate: RST-DMACTIVE clears dm_csrs, and op 3 clears the bridge status."
+mode = "functional"
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0026", "S-TDR2AXI-0051", "S-TDR2AXI-0052", "S-TDR2AXI-0057"]
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0051 = "56b178b0aa12", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0057 = "b7b90795c926" }
+
+[[reset]]
+id = "RST-ARST-TCK"
+polarity = "low"
+assertion = "async"
+deassertion = "sync"
+ports = ["i_arst_n"]
+signals = ["arst_tck_n"]
+clock = "CLK-TCK"
+sequence = "i_arst_n may assert and release at any time, fully asynchronously (S-TDR2AXI-0051). It asserts the TCK side at once and releases it synchronously (S-TDR2AXI-0052) through SYNC_STAGES TCK flops (S-TDR2AXI-0018), SYNC_STAGES TCK rising edges after i_arst_n rises (S-TDR2AXI-0053; T-TDR2AXI-tck-reset-release at SYNC_STAGES = 3, T-TDR2AXI-tck-reset-release-ss4 at 4), so TCK must run after the release. Asserted together with RST-ARST-BUS and released independently of it. Once both are released, both CDCs run their clear sequence, which needs TCK and i_clk edges before the first operation can cross (T-TDR2AXI-cdc-clear-20to1, T-TDR2AXI-cdc-clear-20to19, T-TDR2AXI-cdc-clear-20to21, T-TDR2AXI-cdc-clear-1to2, T-TDR2AXI-cdc-clear-1to20). TRST does not reset this domain (S-TDR2AXI-0054)."
+scope = "TCK side of the bridge: the dmi_tdr_bridge FSM state, the captured address and data registers, the sticky busy/failed status, and the TCK halves of both CDCs. Not reset: the CDC payload registers (no reset, only sampled after a request toggle) and the external TDR cell. The capture after release reads address 0, data 0, status ok."
+mode = "functional"
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0026", "S-TDR2AXI-0051", "S-TDR2AXI-0052", "S-TDR2AXI-0053", "S-TDR2AXI-0054"]
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0051 = "56b178b0aa12", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd", S-TDR2AXI-0054 = "527763ed1ef2" }
+
+[[reset]]
+id = "RST-DMACTIVE"
+polarity = "low"
+assertion = "sync"
+deassertion = "sync"
+signals = ["u_dm_csrs.dmcontrol_q.dmactive (dm_csrs dmactive_o)"]
+clock = "CLK-BUS"
+sequence = "Software asserts it with a DMI write of dmcontrol (address 0x10) with dmactive = 0 and releases it with a write of dmactive = 1 (S-TDR2AXI-0056, -0064), each an operation through the TDR, so only while RST-ARST-TCK and RST-ARST-BUS are released and the CDC clear sequence has ended. dmactive changes at the i_clk edge where dm_csrs takes the write; from the next edge dm_csrs holds the registers in its scope at their reset values for as long as dmactive = 0, and dmactive is the only field a write changes then (src/dm_csrs.sv:688-712)."
+scope = "dm_csrs only: dmcontrol except dmactive, cmderr, command, abstractauto, progbuf, data, sbcs (back to its reset value, sbaccess = 2), sbaddress, sbdata and the pending resume request (src/dm_csrs.sv:688-712). Untouched: havereset, which updates outside that branch (src/dm_csrs.sv:686); the DMI response queue, whose flush input is tied off (src/tdr2axi/tdr2axi.sv:150); dm_sba, which declares dmactive_i (src/dm_sba.sv:26) and reads it nowhere, so a system-bus access in flight runs to completion; the AXI or AXI4-Lite adapter and any AXI transaction it has open; both CDCs; and the whole TCK side, whose sticky status only op 3 or i_arst_n clears."
+mode = "functional"
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064"]
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[reset]]
+id = "RST-SCAN"
+polarity = "low"
+assertion = "async"
+deassertion = "async"
+ports = ["i_arst_scan_n"]
+sequence = "Used only while i_test_mode = 1, when it drives both internal resets directly and bypasses the synchronizers (S-TDR2AXI-0027, -0028, -0052). The bench holds i_test_mode = 0 and i_arst_scan_n = 1."
+scope = "Everything RST-ARST-TCK and RST-ARST-BUS reset, while i_test_mode = 1."
+mode = "test"
+atoms = ["S-TDR2AXI-0027", "S-TDR2AXI-0028", "S-TDR2AXI-0052"]
+atom_hashes = { S-TDR2AXI-0027 = "0c229dcac2ea", S-TDR2AXI-0028 = "2ce7ed98a2b9", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[reset]]
+id = "RST-TRST"
+polarity = "low"
+assertion = "async"
+deassertion = "async"
+signals = ["TRST of the environment TAP (not a tdr2axi port)"]
+sequence = "Asserted and released only while TCK is stopped (S-TDR2AXI-0055)."
+scope = "Nothing in tdr2axi (S-TDR2AXI-0054): an operation in flight when TRST asserts completes normally (S-TDR2AXI-0055), and the sticky status survives until op 3."
+mode = "functional"
+atoms = ["S-TDR2AXI-0054", "S-TDR2AXI-0055"]
+atom_hashes = { S-TDR2AXI-0054 = "527763ed1ef2", S-TDR2AXI-0055 = "c43a965a03de" }
+
+[[crossing]]
+id = "CDC-REQ"
+kind = "cdc"
+source = "CLK-TCK"
+dest = "CLK-BUS"
+signals = ["dmi_req_t (addr, op, data) with valid/ready, u_dmi_tdr_bridge.u_cdc_req"]
+sync = "handshake: cdc_2phase_clearable, two-phase req/ack through SYNC_STAGES-flop synchronizers, payload held stable while req toggles"
+atoms = ["S-TDR2AXI-0006", "S-TDR2AXI-0018", "S-TDR2AXI-0048", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0006 = "04516bf4a90b", S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0048 = "719d2a15043e", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[crossing]]
+id = "CDC-RESP"
+kind = "cdc"
+source = "CLK-BUS"
+dest = "CLK-TCK"
+signals = ["dmi_resp_t (data, resp) with valid/ready, u_dmi_tdr_bridge.u_cdc_resp; the TCK side is always ready"]
+sync = "handshake: cdc_2phase_clearable, two-phase req/ack through SYNC_STAGES-flop synchronizers, payload held stable while req toggles"
+atoms = ["S-TDR2AXI-0006", "S-TDR2AXI-0018", "S-TDR2AXI-0048", "S-TDR2AXI-0049", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0006 = "04516bf4a90b", S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0048 = "719d2a15043e", S-TDR2AXI-0049 = "a21af701e756", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[crossing]]
+id = "RDC-ARST"
+kind = "rdc"
+source = "RST-ARST-TCK"
+dest = "RST-ARST-BUS"
+signals = ["async_req, async_ack and async_data of u_cdc_req and u_cdc_resp, whose halves sit in the two reset domains and leave reset at different times", "async_a2b_req, async_a2b_ack, async_a2b_next_phase, async_b2a_req, async_b2a_ack and async_b2a_next_phase of i_cdc_reset_ctrlr in u_cdc_req and u_cdc_resp: the reset controller's own four-phase crossings (cdc_4phase_src and cdc_4phase_dst with 2-flop synchronizers, cdc_reset_ctrlr.sv:138-183, :389-436), whose halves also sit in the two reset domains"]
+sync = "cdc_reset_ctrlr in each cdc_2phase_clearable (CLEAR_ON_ASYNC_RESET = 1): an asynchronous reset of either side starts an isolate and clear sequence mirrored on the other side through the controller's four-phase crossings. Their source halves put the ISOLATE phase on the crossing while still in reset (SEND_RESET_MSG = 1, cdc_reset_ctrlr.sv:395-397), and they run non-decoupled, so a phase advances only after the other side acknowledges it (T-TDR2AXI-cdc-clear-20to1, T-TDR2AXI-cdc-clear-20to19, T-TDR2AXI-cdc-clear-20to21, T-TDR2AXI-cdc-clear-1to2, T-TDR2AXI-cdc-clear-1to20)."
+atoms = ["S-TDR2AXI-0051", "S-TDR2AXI-0052"]
+atom_hashes = { S-TDR2AXI-0051 = "56b178b0aa12", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[timing]]
+id = "T-TDR2AXI-cdc-clear-1to2"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-CLK-RATIO = 1:2 (T_clk / T_tck = 2), both clocks running, i_test_mode = 0, any SYNC_STAGES. The later of the two synchronized releases after i_arst_n rises: arst_tck_n (T-TDR2AXI-tck-reset-release) or arst_clk_n, SYNC_STAGES i_clk edges after i_arst_n, plus one when the release lands in the first synchronizer flop's sampling window."
+end = "All four isolate requests are low (s_src_isolate_req and s_dst_isolate_req of u_cdc_req and u_cdc_resp), so both CDCs pass valid and ready again and the first operation crosses without busy. Counted in TCK rising edges after the start: at most 79. Derivation: each cdc_reset_ctrlr half leaves reset in ISOLATE (cdc_reset_ctrlr.sv:371-378) and steps through the ISOLATE, CLEAR, POST_CLEAR and IDLE phases, each a non-decoupled four-phase handshake through 2-flop synchronizers (cdc_reset_ctrlr.sv:389-436, cdc_4phase.sv:130-170, :244-282). A handshake costs at most 4 receiver, 3 sender, 3 receiver and 3 sender edges, plus one sender edge to raise the next request; the first request is up from reset (SEND_RESET_MSG = 1). A side's sequence therefore ends within 27 edges of one clock and 28 of the other, so ceil(27 x (1 + T_clk / T_tck) + max(1, T_clk / T_tck)) = 83 bounds it from above. An edge model that replays these counts for both initiators, each toggle taken by the first receiving edge strictly after it, over i_clk phase and release time, gives 79 as the exact maximum at SYNC_STAGES 3 and 4 alike. No synchronizer on this path depends on SYNC_STAGES. Across i_clk phase and release time the window spans 73 to 79 TCK edges at SYNC_STAGES 3 and 4; 79 needs coincident i_clk and TCK rising edges."
+max_cycles = 79
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[timing]]
+id = "T-TDR2AXI-cdc-clear-1to20"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-CLK-RATIO = 1:20 (T_clk / T_tck = 20), both clocks running, i_test_mode = 0, any SYNC_STAGES. The later of the two synchronized releases after i_arst_n rises: arst_tck_n (T-TDR2AXI-tck-reset-release) or arst_clk_n, SYNC_STAGES i_clk edges after i_arst_n, plus one when the release lands in the first synchronizer flop's sampling window."
+end = "All four isolate requests are low (s_src_isolate_req and s_dst_isolate_req of u_cdc_req and u_cdc_resp), so both CDCs pass valid and ready again and the first operation crosses without busy. Counted in TCK rising edges after the start: at most 563. Derivation: each cdc_reset_ctrlr half leaves reset in ISOLATE (cdc_reset_ctrlr.sv:371-378) and steps through the ISOLATE, CLEAR, POST_CLEAR and IDLE phases, each a non-decoupled four-phase handshake through 2-flop synchronizers (cdc_reset_ctrlr.sv:389-436, cdc_4phase.sv:130-170, :244-282). A handshake costs at most 4 receiver, 3 sender, 3 receiver and 3 sender edges, plus one sender edge to raise the next request; the first request is up from reset (SEND_RESET_MSG = 1). A side's sequence therefore ends within 27 edges of one clock and 28 of the other, so ceil(27 x (1 + T_clk / T_tck) + max(1, T_clk / T_tck)) = 587 bounds it from above. An edge model that replays these counts for both initiators, each toggle taken by the first receiving edge strictly after it, over i_clk phase and release time, gives 563 as the exact maximum at SYNC_STAGES 3 and 4 alike. No synchronizer on this path depends on SYNC_STAGES. The window is 563 TCK edges at every i_clk phase and release time, at SYNC_STAGES 3 and 4."
+max_cycles = 563
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[timing]]
+id = "T-TDR2AXI-cdc-clear-20to1"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-CLK-RATIO = 20:1 (T_clk / T_tck = 1/20), both clocks running, i_test_mode = 0, any SYNC_STAGES. The later of the two synchronized releases after i_arst_n rises: arst_tck_n (T-TDR2AXI-tck-reset-release) or arst_clk_n, SYNC_STAGES i_clk edges after i_arst_n, plus one when the release lands in the first synchronizer flop's sampling window."
+end = "All four isolate requests are low (s_src_isolate_req and s_dst_isolate_req of u_cdc_req and u_cdc_resp), so both CDCs pass valid and ready again and the first operation crosses without busy. Counted in TCK rising edges after the start: at most 28. Derivation: each cdc_reset_ctrlr half leaves reset in ISOLATE (cdc_reset_ctrlr.sv:371-378) and steps through the ISOLATE, CLEAR, POST_CLEAR and IDLE phases, each a non-decoupled four-phase handshake through 2-flop synchronizers (cdc_reset_ctrlr.sv:389-436, cdc_4phase.sv:130-170, :244-282). A handshake costs at most 4 receiver, 3 sender, 3 receiver and 3 sender edges, plus one sender edge to raise the next request; the first request is up from reset (SEND_RESET_MSG = 1). A side's sequence therefore ends within 27 edges of one clock and 28 of the other, so ceil(27 x (1 + T_clk / T_tck) + max(1, T_clk / T_tck)) = 30 bounds it from above. An edge model that replays these counts for both initiators, each toggle taken by the first receiving edge strictly after it, over i_clk phase and release time, gives 28 as the exact maximum at SYNC_STAGES 3 and 4 alike. No synchronizer on this path depends on SYNC_STAGES. The window is 28 TCK edges at every i_clk phase and release time, at SYNC_STAGES 3 and 4."
+max_cycles = 28
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[timing]]
+id = "T-TDR2AXI-cdc-clear-20to19"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-CLK-RATIO = 20:19 (T_clk / T_tck = 19/20), both clocks running, i_test_mode = 0, any SYNC_STAGES. The later of the two synchronized releases after i_arst_n rises: arst_tck_n (T-TDR2AXI-tck-reset-release) or arst_clk_n, SYNC_STAGES i_clk edges after i_arst_n, plus one when the release lands in the first synchronizer flop's sampling window."
+end = "All four isolate requests are low (s_src_isolate_req and s_dst_isolate_req of u_cdc_req and u_cdc_resp), so both CDCs pass valid and ready again and the first operation crosses without busy. Counted in TCK rising edges after the start: at most 48. Derivation: each cdc_reset_ctrlr half leaves reset in ISOLATE (cdc_reset_ctrlr.sv:371-378) and steps through the ISOLATE, CLEAR, POST_CLEAR and IDLE phases, each a non-decoupled four-phase handshake through 2-flop synchronizers (cdc_reset_ctrlr.sv:389-436, cdc_4phase.sv:130-170, :244-282). A handshake costs at most 4 receiver, 3 sender, 3 receiver and 3 sender edges, plus one sender edge to raise the next request; the first request is up from reset (SEND_RESET_MSG = 1). A side's sequence therefore ends within 27 edges of one clock and 28 of the other, so ceil(27 x (1 + T_clk / T_tck) + max(1, T_clk / T_tck)) = 54 bounds it from above. An edge model that replays these counts for both initiators, each toggle taken by the first receiving edge strictly after it, over i_clk phase and release time, gives 48 as the exact maximum at SYNC_STAGES 3 and 4 alike. No synchronizer on this path depends on SYNC_STAGES. Across i_clk phase and release time the window spans 46 to 48 TCK edges at SYNC_STAGES 3 and 4."
+max_cycles = 48
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[timing]]
+id = "T-TDR2AXI-cdc-clear-20to21"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-CLK-RATIO = 20:21 (T_clk / T_tck = 21/20), both clocks running, i_test_mode = 0, any SYNC_STAGES. The later of the two synchronized releases after i_arst_n rises: arst_tck_n (T-TDR2AXI-tck-reset-release) or arst_clk_n, SYNC_STAGES i_clk edges after i_arst_n, plus one when the release lands in the first synchronizer flop's sampling window."
+end = "All four isolate requests are low (s_src_isolate_req and s_dst_isolate_req of u_cdc_req and u_cdc_resp), so both CDCs pass valid and ready again and the first operation crosses without busy. Counted in TCK rising edges after the start: at most 51. Derivation: each cdc_reset_ctrlr half leaves reset in ISOLATE (cdc_reset_ctrlr.sv:371-378) and steps through the ISOLATE, CLEAR, POST_CLEAR and IDLE phases, each a non-decoupled four-phase handshake through 2-flop synchronizers (cdc_reset_ctrlr.sv:389-436, cdc_4phase.sv:130-170, :244-282). A handshake costs at most 4 receiver, 3 sender, 3 receiver and 3 sender edges, plus one sender edge to raise the next request; the first request is up from reset (SEND_RESET_MSG = 1). A side's sequence therefore ends within 27 edges of one clock and 28 of the other, so ceil(27 x (1 + T_clk / T_tck) + max(1, T_clk / T_tck)) = 57 bounds it from above. An edge model that replays these counts for both initiators, each toggle taken by the first receiving edge strictly after it, over i_clk phase and release time, gives 51 as the exact maximum at SYNC_STAGES 3 and 4 alike. No synchronizer on this path depends on SYNC_STAGES. Across i_clk phase and release time the window spans 48 to 51 TCK edges at SYNC_STAGES 3 and 4; 51 needs coincident i_clk and TCK rising edges."
+max_cycles = 51
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053", "S-TDR2AXI-0088"]
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd", S-TDR2AXI-0088 = "585e71f1dacf" }
+
+[[timing]]
+id = "T-TDR2AXI-resp-to-tdr"
+kind = "latency"
+clock = "CLK-TCK"
+start = "The DM's DMI response is handed to the response CDC: the i_clk rising edge with dm_csrs dmi_resp_valid and u_cdc_resp ready, one i_clk cycle after the DM accepts the request. The system-bus (AXI) access an operation starts is not on this path."
+end = "o_dmi_tdr carries the response data (or marker) and the bridge FSM is back in IDLE, so a Capture-DR or Update-DR on the next TCK rising edge raises no busy. Counted in TCK rising edges: SYNC_STAGES + 2, plus one when the asynchronous response toggle lands in a synchronizer's sampling window; the numbers here are for SYNC_STAGES = 3."
+min_cycles = 5
+max_cycles = 6
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-resp-to-tdr-ss4"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 4. The DM's DMI response is handed to the response CDC: the i_clk rising edge with dm_csrs dmi_resp_valid and u_cdc_resp ready, one i_clk cycle after the DM accepts the request. The system-bus (AXI) access an operation starts is not on this path."
+end = "o_dmi_tdr carries the response data (or marker) and the bridge FSM is back in IDLE, so a Capture-DR or Update-DR on the next TCK rising edge raises no busy. Counted in TCK rising edges: SYNC_STAGES + 2 = 6, plus one when the asynchronous response toggle lands in a synchronizer's sampling window; T-TDR2AXI-resp-to-tdr holds it at SYNC_STAGES = 3."
+min_cycles = 6
+max_cycles = 7
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss3-1to2"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 3 and CFG-CLK-RATIO = 1:2 (T_clk / T_tck = 2), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 16 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 18. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 12 is a whole number, so the maximum occurs only with coincident edges and is one above SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck) = 17. The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 16 to 18 TCK edges."
+min_cycles = 16
+max_cycles = 18
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss3-1to20"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 3 and CFG-CLK-RATIO = 1:20 (T_clk / T_tck = 20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 106 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 126. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 120 is a whole number, so the maximum occurs only with coincident edges and is one above SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck) = 125. The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 106 to 126 TCK edges."
+min_cycles = 106
+max_cycles = 126
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss3-20to1"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 3 and CFG-CLK-RATIO = 20:1 (T_clk / T_tck = 1/20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at most N = SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 6 and at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 6. One edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge after it. N is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path."
+min_cycles = 6
+max_cycles = 6
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss3-20to19"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 3 and CFG-CLK-RATIO = 20:19 (T_clk / T_tck = 19/20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 10 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 11. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 5.7 is not a whole number, so phases near coincidence reach the same maximum and it equals SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck). The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 10 to 11 TCK edges."
+min_cycles = 10
+max_cycles = 11
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss3-20to21"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 3 and CFG-CLK-RATIO = 20:21 (T_clk / T_tck = 21/20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 11 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 12. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 6.3 is not a whole number, so phases near coincidence reach the same maximum and it equals SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck). The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 11 to 12 TCK edges."
+min_cycles = 11
+max_cycles = 12
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss4-1to2"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 4 and CFG-CLK-RATIO = 1:2 (T_clk / T_tck = 2), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 19 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 21. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 14 is a whole number, so the maximum occurs only with coincident edges and is one above SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck) = 20. The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 19 to 21 TCK edges."
+min_cycles = 19
+max_cycles = 21
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss4-1to20"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 4 and CFG-CLK-RATIO = 1:20 (T_clk / T_tck = 20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 127 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 147. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 140 is a whole number, so the maximum occurs only with coincident edges and is one above SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck) = 146. The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 127 to 147 TCK edges."
+min_cycles = 127
+max_cycles = 147
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss4-20to1"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 4 and CFG-CLK-RATIO = 20:1 (T_clk / T_tck = 1/20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at most N = SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 7 and at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 7. One edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge after it. N is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path."
+min_cycles = 7
+max_cycles = 7
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss4-20to19"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 4 and CFG-CLK-RATIO = 20:19 (T_clk / T_tck = 19/20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 12 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 13. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 6.65 is not a whole number, so phases near coincidence reach the same maximum and it equals SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck). The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 12 to 13 TCK edges."
+min_cycles = 12
+max_cycles = 13
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-round-trip-ss4-20to21"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 4 and CFG-CLK-RATIO = 20:21 (T_clk / T_tck = 21/20), TCK running. The TCK rising edge that samples i_dmi_tdr_update with op 1 or 2, the bridge FSM in IDLE and the sticky status clear: the Update-DR of an operation scan."
+end = "The bridge FSM is back in IDLE with o_dmi_tdr holding the DMI response, so a Capture-DR or Update-DR on any later TCK rising edge raises no busy. Counted in TCK rising edges after the start: at least SYNC_STAGES + 3 + floor((SYNC_STAGES + 2) x T_clk / T_tck) = 13 and at most SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) = 14. The next TCK edge launches the request (src/tdr2axi/dmi_tdr_bridge.sv:158-163), SYNC_STAGES + 3 i_clk edges carry it through the request CDC and the DM into the response CDC (src/dm_csrs.sv:198-200), and SYNC_STAGES + 2 TCK edges bring it to o_dmi_tdr; each synchronizer takes a toggle on the first edge strictly after it. The response toggle therefore leaves more than (SYNC_STAGES + 2) x T_clk and at most (SYNC_STAGES + 3) x T_clk after the launch edge, and the count is SYNC_STAGES + 3 plus the TCK edges in that span. The span is longest when an i_clk edge coincides with the launch edge, since that i_clk edge does not take the toggle launched on it; if the span is then a whole number of TCK periods, the response toggle lands on a TCK edge that does not take it either, and that edge adds one to the count. (SYNC_STAGES + 3) x T_clk / T_tck = 7.35 is not a whole number, so phases near coincidence reach the same maximum and it equals SYNC_STAGES + 2 + ceil((SYNC_STAGES + 3) x T_clk / T_tck). The maximum is the count a host's Run-Test/Idle wait after the operation scan must cover; the AXI access the operation starts is not on this path. Across i_clk phase and release time the window spans 13 to 14 TCK edges."
+min_cycles = 13
+max_cycles = 14
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0047", "S-TDR2AXI-0049"]
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[timing]]
+id = "T-TDR2AXI-tck-reset-release"
+kind = "latency"
+clock = "CLK-TCK"
+start = "i_arst_n rises with i_test_mode = 0 (asynchronous to TCK)."
+end = "The TCK-side reset arst_tck_n (u_rst_tck_sync) deasserts. Counted in TCK rising edges: SYNC_STAGES, plus one when the release lands in the first synchronizer flop's sampling window; the numbers here are for SYNC_STAGES = 3."
+min_cycles = 3
+max_cycles = 4
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0053"]
+atom_hashes = { S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[timing]]
+id = "T-TDR2AXI-tck-reset-release-ss4"
+kind = "latency"
+clock = "CLK-TCK"
+start = "CFG-SYNC-STAGES = 4. i_arst_n rises with i_test_mode = 0 (asynchronous to TCK)."
+end = "The TCK-side reset arst_tck_n (u_rst_tck_sync) deasserts. Counted in TCK rising edges: SYNC_STAGES = 4, plus one when the release lands in the first synchronizer flop's sampling window; T-TDR2AXI-tck-reset-release holds it at SYNC_STAGES = 3."
+min_cycles = 4
+max_cycles = 5
+basis = "dv-reading"
+atoms = ["S-TDR2AXI-0053"]
+atom_hashes = { S-TDR2AXI-0053 = "d81fd3f0d3cd" }

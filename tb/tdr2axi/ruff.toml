@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Tenstorrent USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# The cocotb directory is the import root: env and tests are this bench's packages.
+
+line-length = 100
+# The lowest Python the CI runs; tomllib is stdlib from 3.11
+target-version = "py312"
+
+[lint.isort]
+known-first-party = ["env", "tests"]
+known-third-party = ["cocotb"]

@@ -1,0 +1,1019 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[cover]]
+id = "axi_attr_cg.cp_cache"
+feature = "F-AXI-request-attributes"
+model = ["CFG-AXI-CACHE"]
+group = "axi_attr_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "axi_attr_cg.cp_prot"
+feature = "F-AXI-request-attributes"
+model = ["CFG-AXI-PROT"]
+group = "axi_attr_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "axi_cfg_cg.cp_lite"
+feature = "F-AXI-manager-protocol"
+model = ["CFG-USE-AXI-LITE"]
+group = "axi_cfg_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "axi_size_cg.cx_size_lane_dir_axi4"
+feature = "F-AXI-axi4-size"
+model = ["CFG-AXI-DATA-WIDTH", "CFG-USE-AXI-LITE"]
+group = "axi_size_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "axi_size_cg.cx_size_lane_dir_lite"
+feature = "F-AXI-lite-full-width"
+model = ["CFG-AXI-DATA-WIDTH", "CFG-USE-AXI-LITE"]
+group = "axi_size_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi4_narrow_read"
+feature = "F-AXI-axi4-size"
+tests = ["tdr2axi_sba_single_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi4_narrow_write"
+feature = "F-AXI-axi4-size"
+tests = ["tdr2axi_sba_single_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_ar_wait"
+feature = "F-AXI-manager-protocol"
+tests = ["tdr2axi_axi_protocol_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_attr_read"
+feature = "F-AXI-request-attributes"
+tests = ["tdr2axi_axi_attributes_test"]
+model = ["CFG-AXI-PROT"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_attr_write"
+feature = "F-AXI-request-attributes"
+tests = ["tdr2axi_axi_attributes_test"]
+model = ["CFG-AXI-PROT", "CFG-AXI-CACHE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_aw_wait"
+feature = "F-AXI-manager-protocol"
+tests = ["tdr2axi_axi_protocol_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_b_late"
+feature = "F-AXI-one-outstanding"
+tests = ["tdr2axi_axi_protocol_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_r_late"
+feature = "F-AXI-one-outstanding"
+tests = ["tdr2axi_axi_protocol_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_ready_before_valid"
+feature = "F-AXI-manager-protocol"
+tests = ["tdr2axi_axi_protocol_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_rsp_change_mid_cycle"
+feature = "F-AXI-no-comb-path"
+tests = ["tdr2axi_axi_protocol_test"]
+model = ["CLK-BUS"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_w_before_aw"
+feature = "F-AXI-manager-protocol"
+tests = ["tdr2axi_axi_protocol_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axi_w_wait"
+feature = "F-AXI-manager-protocol"
+tests = ["tdr2axi_axi_protocol_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axil_narrow_read"
+feature = "F-AXI-lite-full-width"
+tests = ["tdr2axi_sba_single_test", "tdr2axi_sba_stress_test"]
+model = ["CFG-USE-AXI-LITE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_axil_narrow_write"
+feature = "F-AXI-lite-full-width"
+tests = ["tdr2axi_sba_single_test", "tdr2axi_sba_stress_test"]
+model = ["CFG-USE-AXI-LITE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_addr_width_2"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_smoke_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_addr_width_3"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_smoke_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_addr_width_32"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_smoke_test", "tdr2axi_sba_address_width_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_addr_width_48"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_smoke_test", "tdr2axi_sba_address_width_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_addr_width_64"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_smoke_test", "tdr2axi_sba_address_width_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_axi4"
+feature = "F-AXI-manager-protocol"
+tests = ["tdr2axi_smoke_test", "tdr2axi_axi_protocol_test"]
+model = ["CFG-USE-AXI-LITE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_axi4_lite"
+feature = "F-AXI-manager-protocol"
+tests = ["tdr2axi_smoke_test", "tdr2axi_axi_protocol_test"]
+model = ["CFG-USE-AXI-LITE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_cache_0000"
+feature = "F-AXI-request-attributes"
+tests = ["tdr2axi_axi_attributes_test"]
+model = ["CFG-AXI-CACHE", "CFG-USE-AXI-LITE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_cache_1111"
+feature = "F-AXI-request-attributes"
+tests = ["tdr2axi_axi_attributes_test"]
+model = ["CFG-AXI-CACHE", "CFG-USE-AXI-LITE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_data_width_32"
+feature = "F-SBA-data-lanes"
+tests = ["tdr2axi_smoke_test", "tdr2axi_sba_single_test"]
+model = ["CFG-AXI-DATA-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_data_width_64"
+feature = "F-SBA-data-lanes"
+tests = ["tdr2axi_smoke_test", "tdr2axi_sba_single_test"]
+model = ["CFG-AXI-DATA-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_first_access"
+feature = "F-CFG-bender-target"
+tests = ["tdr2axi_smoke_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_min_addr_width"
+feature = "F-CFG-param-checks"
+tests = ["tdr2axi_axi_attributes_test", "tdr2axi_sba_address_width_test"]
+model = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_min_addr_width_sbcs"
+feature = "F-CFG-param-checks"
+tests = ["tdr2axi_param_checks_test"]
+model = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_prot_010"
+feature = "F-AXI-request-attributes"
+tests = ["tdr2axi_axi_attributes_test"]
+model = ["CFG-AXI-PROT"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_cfg_prot_101"
+feature = "F-AXI-request-attributes"
+tests = ["tdr2axi_axi_attributes_test"]
+model = ["CFG-AXI-PROT"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_command_write"
+feature = "F-DM-abstract-cmd-unsupported"
+tests = ["tdr2axi_dm_registers_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_fall"
+feature = "F-DM-dmactive-clear"
+tests = ["tdr2axi_dmactive_clear_test", "tdr2axi_dmactive_inflight_test", "tdr2axi_dmactive_no_bus_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_fall_ar_wait"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_fall_aw_wait"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_fall_w_wait"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmstatus_read"
+feature = "F-DM-version"
+tests = ["tdr2axi_smoke_test", "tdr2axi_dm_registers_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_hart_request_write"
+feature = "F-DM-hart-unavailable"
+tests = ["tdr2axi_dm_registers_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_ndmreset_set"
+feature = "F-DM-ndmreset-unconnected"
+tests = ["tdr2axi_dm_registers_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_op3_dm_written"
+feature = "F-DM-dmactive-clear"
+tests = ["tdr2axi_dmactive_clear_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_sbaddress0_write_inactive"
+feature = "F-DM-dmactive-no-bus-access"
+tests = ["tdr2axi_dmactive_no_bus_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_sbdata0_write_inactive"
+feature = "F-DM-dmactive-no-bus-access"
+tests = ["tdr2axi_dmactive_no_bus_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_unmapped_access"
+feature = "F-DM-register-map"
+tests = ["tdr2axi_dm_registers_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_port_axi_read_write"
+feature = "F-PORT-bus-and-reset"
+tests = ["tdr2axi_smoke_test"]
+model = ["CFG-USE-AXI-LITE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_port_tdr_scan"
+feature = "F-PORT-tdr-interface"
+tests = ["tdr2axi_smoke_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_ar_wait"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-BUS"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_b_pending"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-BUS"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_bridge_busy"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_busy_after_release"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test", "tdr2axi_reset_release_test"]
+model = ["RDC-ARST"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_cdc_clear_1to2"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["T-TDR2AXI-cdc-clear-1to2", "RDC-ARST", "CFG-CLK-RATIO"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_cdc_clear_1to20"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["T-TDR2AXI-cdc-clear-1to20", "RDC-ARST", "CFG-CLK-RATIO"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_cdc_clear_20to1"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["T-TDR2AXI-cdc-clear-20to1", "RDC-ARST", "CFG-CLK-RATIO"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_cdc_clear_20to19"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["T-TDR2AXI-cdc-clear-20to19", "RDC-ARST", "CFG-CLK-RATIO"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_cdc_clear_20to21"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["T-TDR2AXI-cdc-clear-20to21", "RDC-ARST", "CFG-CLK-RATIO"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_cdc_req_inflight"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-TCK", "CDC-REQ"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_dmactive_alone"
+feature = "F-DM-dmactive-clear"
+tests = ["tdr2axi_dmactive_reset_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_dmactive_idle"
+feature = "F-DM-dmactive-clear"
+tests = ["tdr2axi_dmactive_reset_test", "tdr2axi_dmactive_clear_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_dmactive_sba_access"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_during_cdc_clear"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RDC-ARST"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_during_live_cdc_clear"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RDC-ARST", "RST-ARST-BUS", "RST-ARST-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_idle"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_release_test", "tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_r_pending"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-BUS"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_release_clk_first"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_release_tck_first"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_release_tck_stopped"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["RST-ARST-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_release_test_mode_off"
+feature = "F-RESET-test-mode-bypass"
+tests = ["tdr2axi_reset_test_mode_test"]
+model = ["CFG-TEST-MODE", "RST-ARST-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_scan_reset"
+feature = "F-RESET-test-mode-bypass"
+tests = ["tdr2axi_reset_test_mode_test"]
+model = ["CFG-TEST-MODE", "RST-SCAN"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_tck_release_ss3"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["T-TDR2AXI-tck-reset-release", "RST-ARST-TCK", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_tck_release_ss4"
+feature = "F-RESET-sync-release"
+tests = ["tdr2axi_reset_release_test"]
+model = ["T-TDR2AXI-tck-reset-release-ss4", "RST-ARST-TCK", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_test_mode_access"
+feature = "F-RESET-test-mode-bypass"
+tests = ["tdr2axi_reset_test_mode_test"]
+model = ["CFG-TEST-MODE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_trst_op_in_flight"
+feature = "F-RESET-trst-independent"
+tests = ["tdr2axi_trst_test"]
+model = ["RST-TRST"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_w_alone"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-BUS"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_w_wait"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_traffic_test"]
+model = ["RST-ARST-BUS"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_access_64bit"
+feature = "F-SBA-data-lanes"
+tests = ["tdr2axi_sba_single_test", "tdr2axi_sba_stress_test"]
+model = ["CFG-AXI-DATA-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_addr_above_32"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_sba_address_width_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_addr_msb"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_sba_address_width_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_block_read"
+feature = "F-SBA-block-read"
+tests = ["tdr2axi_sba_block_test", "tdr2axi_tdr_pipelined_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_block_write"
+feature = "F-SBA-block-write"
+tests = ["tdr2axi_sba_block_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_block_write_error_mid"
+feature = "F-SBA-bus-error"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_blocked_by_sberror"
+feature = "F-SBA-bus-error"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_blocked_read_on_addr"
+feature = "F-SBA-bus-error"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_blocked_read_on_data"
+feature = "F-SBA-bus-error"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_read_error_autoinc_addr"
+feature = "F-SBA-no-increment-after-error"
+tests = ["tdr2axi_sba_error_address_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_read_error_autoinc_data"
+feature = "F-SBA-bus-error"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_read_on_sbaddress0"
+feature = "F-SBA-single-read"
+tests = ["tdr2axi_smoke_test", "tdr2axi_sba_single_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbaddress0_no_read"
+feature = "F-SBA-single-read"
+tests = ["tdr2axi_sba_single_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbaddress_read_while_busy"
+feature = "F-SBA-busy-status"
+tests = ["tdr2axi_sba_busy_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbbusy_held"
+feature = "F-SBA-busy-status"
+tests = ["tdr2axi_sba_busy_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbbusy_read_after_response"
+feature = "F-SBA-busy-status"
+tests = ["tdr2axi_sba_busy_test"]
+model = ["CFG-CLK-RATIO"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbbusyerror_set"
+feature = "F-SBA-busy-status"
+tests = ["tdr2axi_sba_busy_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbcs_active"
+feature = "F-SBA-sbcs-fields"
+tests = ["tdr2axi_smoke_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbcs_write_while_busy"
+feature = "F-SBA-busy-status"
+tests = ["tdr2axi_sba_busy_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbdata0_read_no_readondata"
+feature = "F-SBA-block-read"
+tests = ["tdr2axi_sba_block_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbdata1_no_bus"
+feature = "F-SBA-data-lanes"
+tests = ["tdr2axi_sba_single_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sberror_align"
+feature = "F-SBA-access-errors"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sberror_bus_read"
+feature = "F-SBA-bus-error"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sberror_bus_write"
+feature = "F-SBA-bus-error"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sberror_size"
+feature = "F-SBA-access-errors"
+tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_write_error_autoinc"
+feature = "F-SBA-no-increment-after-error"
+tests = ["tdr2axi_sba_error_address_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_write_on_sbdata0"
+feature = "F-SBA-single-write"
+tests = ["tdr2axi_smoke_test", "tdr2axi_sba_single_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_busy_on_capture"
+feature = "F-TDR-sticky-busy"
+tests = ["tdr2axi_tdr_busy_capture_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_busy_on_dm_answer"
+feature = "F-TDR-sticky-busy"
+tests = ["tdr2axi_sba_busy_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_busy_on_nop_update"
+feature = "F-TDR-sticky-busy"
+tests = ["tdr2axi_tdr_busy_update_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_busy_on_update"
+feature = "F-TDR-sticky-busy"
+tests = ["tdr2axi_tdr_busy_update_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_capture_after_nop"
+feature = "F-TDR-capture-image"
+tests = ["tdr2axi_tdr_ops_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_capture_at_bound"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_tdr_result_latency_test"]
+model = ["T-TDR2AXI-resp-to-tdr"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_capture_at_bound_ss4"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_tdr_result_latency_test"]
+model = ["T-TDR2AXI-resp-to-tdr-ss4", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_capture_next_op"
+feature = "F-TDR-capture-image"
+tests = ["tdr2axi_tdr_pipelined_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_capture_read_data"
+feature = "F-TDR-capture-image"
+tests = ["tdr2axi_tdr_ops_test", "tdr2axi_tdr_pipelined_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_capture_write_data"
+feature = "F-TDR-capture-image"
+tests = ["tdr2axi_tdr_ops_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_clk_stopped_op_pending"
+feature = "F-TDR-sticky-busy"
+tests = ["tdr2axi_tdr_busy_update_test", "tdr2axi_tdr_busy_capture_test"]
+model = ["CLK-BUS"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_nop_in_idle"
+feature = "F-TDR-op-decode"
+tests = ["tdr2axi_tdr_ops_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_op3_clears_busy"
+feature = "F-TDR-sticky-busy"
+tests = ["tdr2axi_tdr_busy_update_test", "tdr2axi_tdr_busy_capture_test", "tdr2axi_sba_busy_test", "tdr2axi_tdr_busy_recovery_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_op3_in_idle"
+feature = "F-TDR-op-decode"
+tests = ["tdr2axi_tdr_ops_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_ratio_clk_much_faster"
+feature = "F-TDR-any-clock-ratio"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["CFG-CLK-RATIO", "CLK-BUS", "CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_ratio_clk_slightly_faster"
+feature = "F-TDR-any-clock-ratio"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["CFG-CLK-RATIO", "CLK-BUS", "CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_ratio_near_one"
+feature = "F-TDR-any-clock-ratio"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["CFG-CLK-RATIO", "CLK-BUS", "CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_ratio_tck_faster"
+feature = "F-TDR-any-clock-ratio"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["CFG-CLK-RATIO", "CLK-BUS", "CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_ratio_tck_much_faster"
+feature = "F-TDR-any-clock-ratio"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["CFG-CLK-RATIO", "CLK-BUS", "CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_ratio_tck_slightly_faster"
+feature = "F-TDR-any-clock-ratio"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["CFG-CLK-RATIO", "CLK-BUS", "CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_read_in_idle"
+feature = "F-TDR-op-decode"
+tests = ["tdr2axi_tdr_ops_test", "tdr2axi_smoke_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_read_resent_twice"
+feature = "F-TDR-busy-recovery"
+tests = ["tdr2axi_tdr_busy_recovery_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_resend_completes"
+feature = "F-TDR-busy-recovery"
+tests = ["tdr2axi_tdr_busy_recovery_test", "tdr2axi_sba_stress_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss3_1to2"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss3-1to2", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss3_1to20"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss3-1to20", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss3_20to1"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss3-20to1", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss3_20to19"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss3-20to19", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss3_20to21"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss3-20to21", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss4_1to2"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss4-1to2", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss4_1to20"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss4-1to20", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss4_20to1"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss4-20to1", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss4_20to19"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss4-20to19", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_round_trip_ss4_20to21"
+feature = "F-TDR-result-latency"
+tests = ["tdr2axi_clock_ratio_test"]
+model = ["T-TDR2AXI-round-trip-ss4-20to21", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_scan_via_pause"
+feature = "F-TDR-strobes"
+tests = ["tdr2axi_tdr_strobes_test"]
+model = ["CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_tck_stop_bus_pending"
+feature = "F-TDR-tck-stop-hold"
+tests = ["tdr2axi_tdr_tck_stop_test"]
+model = ["CLK-TCK"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_tck_stop_result_pending"
+feature = "F-TDR-tck-stop-hold"
+tests = ["tdr2axi_tdr_tck_stop_test"]
+model = ["CLK-TCK", "T-TDR2AXI-resp-to-tdr"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_tck_stop_result_pending_ss4"
+feature = "F-TDR-tck-stop-hold"
+tests = ["tdr2axi_tdr_tck_stop_test"]
+model = ["CLK-TCK", "T-TDR2AXI-resp-to-tdr-ss4", "CFG-SYNC-STAGES"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_update_two_edges"
+feature = "F-TDR-strobes"
+tests = ["tdr2axi_tdr_strobes_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_update_while_sticky"
+feature = "F-TDR-sticky-busy"
+tests = ["tdr2axi_tdr_busy_update_test", "tdr2axi_tdr_busy_capture_test", "tdr2axi_sba_busy_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_tdr_write_in_idle"
+feature = "F-TDR-op-decode"
+tests = ["tdr2axi_tdr_ops_test", "tdr2axi_smoke_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "dm_reg_cg.cx_addr_op"
+feature = "F-DM-register-map"
+group = "dm_reg_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "rst_cfg_cg.cp_sync_stages"
+feature = "F-RESET-sync-release"
+model = ["CFG-SYNC-STAGES"]
+group = "rst_cfg_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "sba_block_cg.cx_len_readondata"
+feature = "F-SBA-block-read"
+group = "sba_block_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "sba_busy_cg.cp_cause"
+feature = "F-SBA-busy-status"
+group = "sba_busy_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "sba_cfg_cg.cp_addr_width"
+feature = "F-SBA-address-width"
+model = ["CFG-AXI-ADDR-WIDTH"]
+group = "sba_cfg_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "sba_cfg_cg.cp_data_width"
+feature = "F-SBA-data-lanes"
+model = ["CFG-AXI-DATA-WIDTH"]
+group = "sba_cfg_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "sba_err_cg.cx_resp_dir"
+feature = "F-SBA-bus-error"
+group = "sba_err_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "tdr_latency_cg.cp_edges"
+feature = "F-TDR-result-latency"
+model = ["CFG-SYNC-STAGES"]
+group = "tdr_latency_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "tdr_op_cg.cx_op_status"
+feature = "F-TDR-op-decode"
+group = "tdr_op_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "tdr_ratio_cg.cp_ratio"
+feature = "F-TDR-any-clock-ratio"
+model = ["CFG-CLK-RATIO"]
+group = "tdr_ratio_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "tdr_ratio_cg.cx_ratio_sync"
+feature = "F-TDR-any-clock-ratio"
+model = ["CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+group = "tdr_ratio_cg"
+module = "cov/sv/tdr2axi_fcov.sv"
