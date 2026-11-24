@@ -1,0 +1,1278 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[check]]
+id = "CHK-AXI-AXI4-SIZE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0059"]
+feature = "F-AXI-axi4-size"
+compare = "in-order"
+intent = "On AXI4, each AR and AW carries AxSIZE equal to the access's sbaccess and its address, and a write's WSTRB marks only the accessed bytes"
+applies = { USE_AXI_LITE = ["0"] }
+atom_hashes = { S-TDR2AXI-0059 = "24988ecd1470" }
+
+[[check]]
+id = "CHK-AXI-AXI4-SIZE-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0059"]
+feature = "F-AXI-axi4-size"
+intent = "On AXI4, while ARVALID or AWVALID is high, AxSIZE equals sbcs.sbaccess of the access, whatever AXI_DATA_WIDTH is"
+applies = { USE_AXI_LITE = ["0"] }
+atom_hashes = { S-TDR2AXI-0059 = "24988ecd1470" }
+
+[[check]]
+id = "CHK-AXI-HANDSHAKE-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0001", "S-TDR2AXI-0013", "S-TDR2AXI-0034", "S-TDR2AXI-0035"]
+feature = "F-AXI-manager-protocol"
+intent = "On o_axi_req, AR, AW and W VALID stay high until READY, every request field holds while VALID is high and READY low, R and B complete only with RREADY and BREADY, and no VALID is high in reset, in the AXI4 or AXI4-Lite form USE_AXI_LITE selects"
+atom_hashes = { S-TDR2AXI-0001 = "71535400dccd", S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[check]]
+id = "CHK-AXI-LITE-FULL-WIDTH"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0013", "S-TDR2AXI-0015", "X-AXI4_LITE-full-width"]
+feature = "F-AXI-lite-full-width"
+compare = "in-order"
+intent = "On AXI4-Lite, a narrow write is one full-width beat whose WSTRB marks its bytes, and a narrow read takes its bytes from the addressed lanes of the whole word returned"
+applies = { USE_AXI_LITE = ["1"] }
+atom_hashes = { S-TDR2AXI-0013 = "63ae7c91436e", S-TDR2AXI-0015 = "3abbe99ca471" }
+
+[[check]]
+id = "CHK-AXI-NO-COMB-PATH"
+kind = "checker"
+atoms = ["S-TDR2AXI-0034", "S-TDR2AXI-0035", "X-AXI4-no-comb-path", "X-AXI4_LITE-no-comb-path"]
+feature = "F-AXI-no-comb-path"
+intent = "With i_axi_rsp changing between i_clk edges, o_axi_req changes only at i_clk rising edges"
+atom_hashes = { S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[check]]
+id = "CHK-AXI-NO-COMB-PATH-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0034", "S-TDR2AXI-0035", "X-AXI4-no-comb-path", "X-AXI4_LITE-no-comb-path"]
+feature = "F-AXI-no-comb-path"
+intent = "In a model where i_axi_rsp may change on any global tick, o_axi_req is stable on every tick that is not an i_clk rising edge"
+atom_hashes = { S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[check]]
+id = "CHK-AXI-ONE-OUTSTANDING"
+kind = "checker"
+atoms = ["S-TDR2AXI-0012", "S-TDR2AXI-0058"]
+feature = "F-AXI-one-outstanding"
+intent = "At most one AR or AW is accepted without its R or B, the next request follows the previous response, and each transaction is one beat: AxLEN 0, WLAST on the W beat, AxBURST legal for one beat"
+atom_hashes = { S-TDR2AXI-0012 = "aa0b80647438", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[check]]
+id = "CHK-AXI-ONE-OUTSTANDING-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0012", "S-TDR2AXI-0058"]
+feature = "F-AXI-one-outstanding"
+intent = "No AR or AW handshake while a read or write response is owed, AxLEN 0 and WLAST high on every W beat"
+atom_hashes = { S-TDR2AXI-0012 = "aa0b80647438", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[check]]
+id = "CHK-AXI-REQ-ATTRS"
+kind = "checker"
+atoms = ["S-TDR2AXI-0016", "S-TDR2AXI-0017", "S-TDR2AXI-0058", "X-AXI4-prot-encoding", "X-AXI4_LITE-prot-encoding", "X-AXI4-id-user-values"]
+feature = "F-AXI-request-attributes"
+intent = "Every AR and AW carries AxPROT = AXI_PROT and, on AXI4, AxCACHE = AXI_CACHE, AxID 0 and AxUSER 0, and every W carries WUSER 0, against the build's parameter values"
+atom_hashes = { S-TDR2AXI-0016 = "18fce41befde", S-TDR2AXI-0017 = "8462fa5a51c6", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[check]]
+id = "CHK-AXI-REQ-ATTRS-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0016", "S-TDR2AXI-0017", "S-TDR2AXI-0058", "X-AXI4-prot-encoding", "X-AXI4_LITE-prot-encoding", "X-AXI4-id-user-values"]
+feature = "F-AXI-request-attributes"
+intent = "While ARVALID or AWVALID is high, AxPROT equals AXI_PROT, AxCACHE equals AXI_CACHE on AXI4, and AxID, AxUSER and WUSER are 0"
+atom_hashes = { S-TDR2AXI-0016 = "18fce41befde", S-TDR2AXI-0017 = "8462fa5a51c6", S-TDR2AXI-0058 = "b5989e954e15" }
+
+[[check]]
+id = "CHK-AXISUB-BOUNDARY-4K"
+kind = "vip"
+atoms = ["X-AXI4-boundary-4k"]
+intent = "No burst crosses a 4KB address boundary"
+applies = { USE_AXI_LITE = ["0"] }
+
+[[check]]
+id = "CHK-AXISUB-BURST-LENGTH"
+kind = "vip"
+atoms = ["X-AXI4-burst-length"]
+intent = "AxLEN is legal for AxBURST: INCR 1 to 256 beats, FIXED 1 to 16, WRAP 2, 4, 8 or 16 from an aligned start"
+applies = { USE_AXI_LITE = ["0"] }
+
+[[check]]
+id = "CHK-AXISUB-CACHE-LEGAL"
+kind = "vip"
+atoms = ["X-AXI4-cache-legal"]
+intent = "AxCACHE is one of the memory-type encodings, never a reserved value"
+applies = { USE_AXI_LITE = ["0"] }
+
+[[check]]
+id = "CHK-AXISUB-ID-ORDER"
+kind = "vip"
+atoms = ["X-AXI4-id-order"]
+intent = "Each response carries its request's ID, and responses to one ID return in issue order"
+applies = { USE_AXI_LITE = ["0"] }
+
+[[check]]
+id = "CHK-AXISUB-LAST-BEAT"
+kind = "vip"
+atoms = ["X-AXI4-last-beat"]
+intent = "WLAST is high on the final W beat of each write"
+applies = { USE_AXI_LITE = ["0"] }
+
+[[check]]
+id = "CHK-AXISUB-PAYLOAD-STABLE"
+kind = "vip"
+atoms = ["X-AXI4-payload-stable", "X-AXI4_LITE-payload-stable"]
+intent = "Every request field of AR, AW and W holds from VALID until the handshake"
+
+[[check]]
+id = "CHK-AXISUB-READ-RESP-ORDER"
+kind = "vip"
+atoms = ["X-AXI4-read-data-after-address", "X-AXI4_LITE-read-data-after-address"]
+intent = "RVALID rises only after the AR handshake of the read it answers"
+
+[[check]]
+id = "CHK-AXISUB-RESET-VALID-LOW"
+kind = "vip"
+atoms = ["X-AXI4-reset-valid-low", "X-AXI4_LITE-reset-valid-low"]
+intent = "No VALID is high in reset or before the first i_clk rising edge after release"
+
+[[check]]
+id = "CHK-AXISUB-SIZE-WIDTH"
+kind = "vip"
+atoms = ["X-AXI4-size-width"]
+intent = "AxSIZE never exceeds the data bus width"
+applies = { USE_AXI_LITE = ["0"] }
+
+[[check]]
+id = "CHK-AXISUB-STROBE-LANES"
+kind = "vip"
+atoms = ["X-AXI4-strobe-lanes", "X-AXI4_LITE-strobe-lanes"]
+intent = "WSTRB is high only on lanes the address and size select"
+
+[[check]]
+id = "CHK-AXISUB-VALID-HELD"
+kind = "vip"
+atoms = ["X-AXI4-valid-held", "X-AXI4_LITE-valid-held"]
+intent = "ARVALID, AWVALID and WVALID stay high from assertion until the READY handshake"
+
+[[check]]
+id = "CHK-AXISUB-VALID-INDEPENDENT"
+kind = "vip"
+atoms = ["X-AXI4-valid-independent", "X-AXI4_LITE-valid-independent"]
+intent = "With READY held low until VALID rises, every VALID still rises: no VALID waits for READY"
+
+[[check]]
+id = "CHK-AXISUB-WRITE-RESP-ORDER"
+kind = "vip"
+atoms = ["X-AXI4-write-response-after-data", "X-AXI4_LITE-write-response-after-data"]
+intent = "BVALID rises only after the AW handshake and the last W handshake of that write"
+
+[[check]]
+id = "CHK-CFG-BENDER-TARGET"
+kind = "checker"
+atoms = ["S-TDR2AXI-0004"]
+feature = "F-CFG-bender-target"
+intent = "The Bender script for target tdr2axi lists the src/tdr2axi sources, and the bench builds tdr2axi from that list alone"
+atom_hashes = { S-TDR2AXI-0004 = "8126c7f9c0c4" }
+
+[[check]]
+id = "CHK-CFG-ILLEGAL-PARAMS"
+kind = "checker"
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0015", "S-TDR2AXI-0018", "S-TDR2AXI-0019", "S-TDR2AXI-0020", "S-TDR2AXI-0021", "S-TDR2AXI-0024"]
+feature = "F-CFG-param-checks"
+intent = "A build with AXI_DATA_WIDTH other than 32 or 64, AXI_ADDR_WIDTH below the byte offset or above 64, SYNC_STAGES below 3, AXI struct data widths other than AXI_DATA_WIDTH, or the default logic struct types stops before simulation, and each legal boundary build starts"
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0019 = "068760d94671", S-TDR2AXI-0020 = "039ce450baa2", S-TDR2AXI-0021 = "8b0b7649cf7d", S-TDR2AXI-0024 = "db9e725ac4d1" }
+
+[[check]]
+id = "CHK-DM-CMDERR"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0010", "X-RISCV_DEBUG-cmderr"]
+feature = "F-DM-abstract-cmd-unsupported"
+compare = "state"
+intent = "Every write of command sets abstractcs.cmderr = 2 and starts no bus access, and writing ones to cmderr clears it"
+atom_hashes = { S-TDR2AXI-0010 = "c74a68987a63" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-ALONE"
+kind = "checker"
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064"]
+feature = "F-DM-dmactive-clear"
+intent = "dmactive cleared and set again with no other reset, no system-bus access in flight and none started while it is 0 issues no AR or AW, leaves the subordinate memory unchanged and the bridge status 0, and each capture holds the result of the operation it follows: dmcontrol reads dmactive = 0 while cleared, then 1, and sbcs reads its reset value after the set"
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-CLEAR"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive"]
+feature = "F-DM-dmactive-clear"
+compare = "state"
+intent = "While dmactive = 0, sbaddress0, sbaddress1, sbdata0, sbdata1 and abstractcs read their reset values whatever was written before, with sbcs not compared; after dmactive = 1, sbcs reads its reset value and accesses work"
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-INFLIGHT"
+kind = "checker"
+atoms = ["S-TDR2AXI-0056"]
+feature = "F-DM-dmactive-inflight"
+intent = "An access stalled on AR, AW or W when dmactive drops keeps its address, size, data and strobes until its handshake, and completes once"
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-INFLIGHT-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0056"]
+feature = "F-DM-dmactive-inflight"
+intent = "With DMI writes of dmcontrol free, every o_axi_req request field holds while its VALID is high and READY low"
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-NO-BUS"
+kind = "checker"
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive"]
+feature = "F-DM-dmactive-no-bus-access"
+intent = "While dmactive = 0, writes of sbdata0, sbaddress0 and sbcs raise no ARVALID or AWVALID"
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-NO-BUS-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive"]
+feature = "F-DM-dmactive-no-bus-access"
+intent = "No ARVALID or AWVALID rises while dmactive is 0"
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+
+[[check]]
+id = "CHK-DM-HART-UNAVAIL"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0009", "X-RISCV_DEBUG-hart-unavail"]
+feature = "F-DM-hart-unavailable"
+compare = "state"
+intent = "dmstatus.allunavail and anyunavail read 1, also after writes of haltreq, resumereq and hartsel"
+atom_hashes = { S-TDR2AXI-0009 = "0ee41daad228" }
+
+[[check]]
+id = "CHK-DM-NDMRESET"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0011", "X-RISCV_DEBUG-ndmreset"]
+feature = "F-DM-ndmreset-unconnected"
+compare = "state"
+intent = "Setting and clearing dmcontrol.ndmreset leaves the SBA registers, subordinate memory and the bridge status unchanged and starts no bus access"
+atom_hashes = { S-TDR2AXI-0011 = "1bba5bd02983" }
+
+[[check]]
+id = "CHK-DM-OP3-KEEPS-DM"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0056"]
+feature = "F-DM-dmactive-clear"
+compare = "state"
+intent = "Op 3 clears the bridge status and leaves every DM register value unchanged"
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b" }
+
+[[check]]
+id = "CHK-DM-REGISTER-MAP"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0062", "X-RISCV_DEBUG-dm-addresses"]
+feature = "F-DM-register-map"
+compare = "state"
+intent = "dmcontrol, sbcs, sbaddress0, sbaddress1, sbdata0 and sbdata1 answer at 0x10, 0x38, 0x39, 0x3A, 0x3C and 0x3D, and dmstatus, abstractcs and command at 0x11, 0x16 and 0x17: a distinct value written to each address changes only its own register"
+atom_hashes = { S-TDR2AXI-0062 = "be8f54303e36" }
+
+[[check]]
+id = "CHK-DM-VERSION"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0002", "X-RISCV_DEBUG-dm-version", "X-RISCV_DEBUG-authenticated", "X-RISCV_DEBUG-authbusy"]
+feature = "F-DM-version"
+compare = "state"
+intent = "dmstatus.version reads 2 and sbcs.sbversion reads 1, and dmstatus.authenticated reads 1 and authbusy reads 0 on this DM, which implements no authentication"
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3" }
+
+[[check]]
+id = "CHK-ENV-FABRIC-RESET"
+kind = "env"
+atoms = ["S-TDR2AXI-0057"]
+intent = "The subordinate drops every pending response and lowers its readys with each i_arst_n, so no transaction survives on one side"
+atom_hashes = { S-TDR2AXI-0057 = "b7b90795c926" }
+
+[[check]]
+id = "CHK-ENV-READONDATA-IDLE"
+kind = "env"
+atoms = ["S-TDR2AXI-0047"]
+intent = "Before an sbdata0 read with sbreadondata set at a side-effecting location, the host's Run-Test/Idle count covers the full round trip, N = SYNC_STAGES + 3 + floor((SYNC_STAGES + 3) x T_clk / T_tck) TCK edges, of which T-TDR2AXI-resp-to-tdr is the response leg, and the subordinate flags a second read of such a location"
+atom_hashes = { S-TDR2AXI-0047 = "412a5819f37c" }
+
+[[check]]
+id = "CHK-ENV-SBA-BLOCK-READ-STEPS"
+kind = "env"
+atoms = ["S-TDR2AXI-0080", "S-TDR2AXI-0082"]
+intent = "The host's block read writes sbcs with sbreadonaddr, sbreadondata and sbautoincrement, then the address, and clears sbreadondata before reading the last element"
+atom_hashes = { S-TDR2AXI-0080 = "6cd3d128b835", S-TDR2AXI-0082 = "5fde616b3875" }
+
+[[check]]
+id = "CHK-ENV-SBA-POLL"
+kind = "env"
+atoms = ["S-TDR2AXI-0072", "S-TDR2AXI-0078"]
+intent = "After each access the host reads sbcs until sbbusy = 0 and checks sberror and sbbusyerror before the next access or the data read"
+atom_hashes = { S-TDR2AXI-0072 = "7f5f4b982a78", S-TDR2AXI-0078 = "7f5f4b982a78" }
+
+[[check]]
+id = "CHK-ENV-SBA-READ-STEPS"
+kind = "env"
+atoms = ["S-TDR2AXI-0074", "S-TDR2AXI-0075"]
+intent = "The host's single read writes sbcs with sbaccess and sbreadonaddr, then sbaddress1 when needed, then sbaddress0"
+atom_hashes = { S-TDR2AXI-0074 = "eb113e4e991c", S-TDR2AXI-0075 = "d8fe99ab1e82" }
+
+[[check]]
+id = "CHK-ENV-SBA-WRITE-STEPS"
+kind = "env"
+atoms = ["S-TDR2AXI-0066", "S-TDR2AXI-0067", "S-TDR2AXI-0068", "S-TDR2AXI-0069", "S-TDR2AXI-0070"]
+intent = "The host's single write writes sbcs with sbaccess, then sbaddress1 when AXI_ADDR_WIDTH > 32, then sbaddress0, then sbdata1 for a 64-bit access, then sbdata0"
+atom_hashes = { S-TDR2AXI-0066 = "5e085b9311c6", S-TDR2AXI-0067 = "7da09cf58456", S-TDR2AXI-0068 = "0f54be0d0cc0", S-TDR2AXI-0069 = "159af99619a2", S-TDR2AXI-0070 = "8b8980356e02" }
+
+[[check]]
+id = "CHK-ENV-TDR-UPDATE-STABLE"
+kind = "env"
+atoms = ["S-TDR2AXI-0050"]
+intent = "i_dmi_tdr holds a known value from before until after each TCK rising edge with i_dmi_tdr_update high; an assume in the bridge's formal job"
+atom_hashes = { S-TDR2AXI-0050 = "6a7087d817ff" }
+
+[[check]]
+id = "CHK-PORT-BUS-LIST"
+kind = "checker"
+atoms = ["S-TDR2AXI-0025", "S-TDR2AXI-0026", "S-TDR2AXI-0027", "S-TDR2AXI-0028", "S-TDR2AXI-0034", "S-TDR2AXI-0035"]
+feature = "F-PORT-bus-and-reset"
+intent = "The elaborated port list has inputs i_clk, i_arst_n, i_test_mode and i_arst_scan_n, output o_axi_req of type axi_req_t and input i_axi_rsp of type axi_rsp_t"
+atom_hashes = { S-TDR2AXI-0025 = "f9c0b3f52cb9", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0027 = "0c229dcac2ea", S-TDR2AXI-0028 = "2ce7ed98a2b9", S-TDR2AXI-0034 = "91256593195c", S-TDR2AXI-0035 = "76db3e8aaeed" }
+
+[[check]]
+id = "CHK-PORT-TDR-LIST"
+kind = "checker"
+atoms = ["S-TDR2AXI-0008", "S-TDR2AXI-0029", "S-TDR2AXI-0030", "S-TDR2AXI-0031", "S-TDR2AXI-0032", "S-TDR2AXI-0033"]
+feature = "F-PORT-tdr-interface"
+intent = "The elaborated port list has inputs i_tck, i_dmi_tdr[40:0], i_dmi_tdr_capture and i_dmi_tdr_update and output o_dmi_tdr[40:0], and no TAP, shift-register or dtmcs port"
+atom_hashes = { S-TDR2AXI-0008 = "ea832aea7efd", S-TDR2AXI-0029 = "25fa2b2bc2ad", S-TDR2AXI-0030 = "490293f7a458", S-TDR2AXI-0031 = "7f8d78a5c5e3", S-TDR2AXI-0032 = "1cc1296534ac", S-TDR2AXI-0033 = "6444e92de325" }
+
+[[check]]
+id = "CHK-RESET-ASYNC-ANY-TIME"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0026", "S-TDR2AXI-0051", "S-TDR2AXI-0052"]
+feature = "F-RESET-async-any-time"
+compare = "state"
+intent = "After i_arst_n at a random phase of both clocks with an operation at any stage, the capture reads address 0, data 0 and status 0, the DM registers read their reset values, and the next operations complete with the predicted results, a busy before the bridge is ready being recovered with op 3"
+atom_hashes = { S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0051 = "56b178b0aa12", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[check]]
+id = "CHK-RESET-CDC-CLEAR-1TO2"
+kind = "checker"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-cdc-clear-1to2"
+intent = "At i_clk:TCK = 1:2, after each i_arst_n release the four isolate requests of u_cdc_req and u_cdc_resp are all low within the maximum of T-TDR2AXI-cdc-clear-1to2, counted in TCK rising edges from the later of the two synchronized releases, and an operation whose Update-DR follows that maximum crosses without busy"
+applies = { ratio = ["1:2"] }
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-CDC-CLEAR-1TO20"
+kind = "checker"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-cdc-clear-1to20"
+intent = "At i_clk:TCK = 1:20, after each i_arst_n release the four isolate requests of u_cdc_req and u_cdc_resp are all low within the maximum of T-TDR2AXI-cdc-clear-1to20, counted in TCK rising edges from the later of the two synchronized releases, and an operation whose Update-DR follows that maximum crosses without busy"
+applies = { ratio = ["1:20"] }
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-CDC-CLEAR-20TO1"
+kind = "checker"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-cdc-clear-20to1"
+intent = "At i_clk:TCK = 20:1, after each i_arst_n release the four isolate requests of u_cdc_req and u_cdc_resp are all low within the maximum of T-TDR2AXI-cdc-clear-20to1, counted in TCK rising edges from the later of the two synchronized releases, and an operation whose Update-DR follows that maximum crosses without busy"
+applies = { ratio = ["20:1"] }
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-CDC-CLEAR-20TO19"
+kind = "checker"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-cdc-clear-20to19"
+intent = "At i_clk:TCK = 20:19, after each i_arst_n release the four isolate requests of u_cdc_req and u_cdc_resp are all low within the maximum of T-TDR2AXI-cdc-clear-20to19, counted in TCK rising edges from the later of the two synchronized releases, and an operation whose Update-DR follows that maximum crosses without busy"
+applies = { ratio = ["20:19"] }
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-CDC-CLEAR-20TO21"
+kind = "checker"
+atoms = ["S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-cdc-clear-20to21"
+intent = "At i_clk:TCK = 20:21, after each i_arst_n release the four isolate requests of u_cdc_req and u_cdc_resp are all low within the maximum of T-TDR2AXI-cdc-clear-20to21, counted in TCK rising edges from the later of the two synchronized releases, and an operation whose Update-DR follows that maximum crosses without busy"
+applies = { ratio = ["20:21"] }
+atom_hashes = { S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-NO-STALE-AXI"
+kind = "checker"
+atoms = ["S-TDR2AXI-0026", "S-TDR2AXI-0051"]
+feature = "F-RESET-async-any-time"
+intent = "No AXI request of an operation cut off by i_arst_n reaches o_axi_req after release, and no response from before the reset is taken"
+atom_hashes = { S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0051 = "56b178b0aa12" }
+
+[[check]]
+id = "CHK-RESET-SYNC-RELEASE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0026", "S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-tck-reset-release"
+compare = "in-order"
+intent = "At SYNC_STAGES = 3, i_arst_n falling resets both sides in the same step; after it rises the TCK side releases SYNC_STAGES to SYNC_STAGES + 1 TCK rising edges later and the i_clk side as many i_clk edges later, counting only edges that arrive"
+applies = { SYNC_STAGES = ["3"] }
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-SYNC-RELEASE-SS4"
+kind = "checker"
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0026", "S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-tck-reset-release-ss4"
+intent = "At SYNC_STAGES = 4, i_arst_n falling resets both sides in the same step; after it rises the TCK side releases within the bounds of T-TDR2AXI-tck-reset-release-ss4 and the i_clk side as many i_clk edges later, counting only edges that arrive"
+applies = { SYNC_STAGES = ["4"] }
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-SYNC-RELEASE-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0026", "S-TDR2AXI-0052", "S-TDR2AXI-0053"]
+feature = "F-RESET-sync-release"
+timing = "T-TDR2AXI-tck-reset-release"
+intent = "Both internal resets fall in the step i_arst_n falls; each rises SYNC_STAGES to SYNC_STAGES + 1 rising edges of its own clock after i_arst_n rises"
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0052 = "a2c835cc4ea4", S-TDR2AXI-0053 = "d81fd3f0d3cd" }
+
+[[check]]
+id = "CHK-RESET-TEST-MODE"
+kind = "checker"
+atoms = ["S-TDR2AXI-0027", "S-TDR2AXI-0028", "S-TDR2AXI-0052"]
+feature = "F-RESET-test-mode-bypass"
+intent = "With i_test_mode = 1, i_arst_scan_n alone resets both sides and releases them with no synchronizer delay, and i_arst_n has no effect"
+atom_hashes = { S-TDR2AXI-0027 = "0c229dcac2ea", S-TDR2AXI-0028 = "2ce7ed98a2b9", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[check]]
+id = "CHK-RESET-TEST-MODE-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0027", "S-TDR2AXI-0028", "S-TDR2AXI-0052"]
+feature = "F-RESET-test-mode-bypass"
+intent = "While i_test_mode is 1 both internal resets equal i_arst_scan_n"
+atom_hashes = { S-TDR2AXI-0027 = "0c229dcac2ea", S-TDR2AXI-0028 = "2ce7ed98a2b9", S-TDR2AXI-0052 = "a2c835cc4ea4" }
+
+[[check]]
+id = "CHK-RESET-TRST-INDEPENDENT"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0054", "S-TDR2AXI-0055", "X-IEEE1149_1-trst"]
+feature = "F-RESET-trst-independent"
+compare = "state"
+intent = "A TAP reset asserted and released with TCK stopped, with an operation in flight, leaves tdr2axi untouched: the operation completes on the bus, the sticky status holds until op 3, and the next capture shows the result"
+atom_hashes = { S-TDR2AXI-0054 = "527763ed1ef2", S-TDR2AXI-0055 = "c43a965a03de" }
+
+[[check]]
+id = "CHK-SBA-ADDRESS-WIDTH"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0022", "X-RISCV_DEBUG-sbaddress-regs"]
+feature = "F-SBA-address-width"
+compare = "in-order"
+intent = "Each address bit below AXI_ADDR_WIDTH, written through sbaddress0 and above bit 31 through sbaddress1, reaches the same AxADDR bit at either data width, and both registers read back what was written"
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0022 = "eee9256a3469" }
+
+[[check]]
+id = "CHK-SBA-BLOCK-READ"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0081", "X-RISCV_DEBUG-sbdata0-read", "X-RISCV_DEBUG-sbautoincrement"]
+feature = "F-SBA-block-read"
+compare = "in-order"
+intent = "Each sbdata0 read returns one element, and with sbreadondata set starts the next read at the address sbautoincrement advanced"
+atom_hashes = { S-TDR2AXI-0081 = "0421360e73cf" }
+
+[[check]]
+id = "CHK-SBA-BLOCK-WRITE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0079", "X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbautoincrement"]
+feature = "F-SBA-block-write"
+compare = "in-order"
+intent = "With sbautoincrement set, each sbdata0 write gives one bus write at the current address, sbaddress advances by the access size, and sbaddress0 and sbaddress1 read back the advanced address"
+atom_hashes = { S-TDR2AXI-0079 = "e0443d029994" }
+
+[[check]]
+id = "CHK-SBA-BUS-ERROR"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0061", "X-AXI4-response-codes", "X-AXI4_LITE-response-codes", "X-RISCV_DEBUG-sberror"]
+feature = "F-SBA-bus-error"
+compare = "state"
+intent = "An SLVERR or DECERR response to a read or a write sets sberror = 2 after exactly one transaction"
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2" }
+
+[[check]]
+id = "CHK-SBA-DATA-LANES"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0015", "S-TDR2AXI-0077", "X-RISCV_DEBUG-sbdata-lanes"]
+feature = "F-SBA-data-lanes"
+compare = "in-order"
+intent = "The access size selects the sbdata bits compared, a 64-bit access spans sbdata1:sbdata0, and bits above a narrow read are not compared"
+atom_hashes = { S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0077 = "db7a0e27f747" }
+
+[[check]]
+id = "CHK-SBA-ERROR-BLOCKS"
+kind = "checker"
+atoms = ["S-TDR2AXI-0061", "X-RISCV_DEBUG-sberror"]
+feature = "F-SBA-bus-error"
+intent = "Once sberror is nonzero, after an error on a single access or on any element of a block, no further bus access starts: not the write an sbdata0 write requests, not the read an sbaddress0 write with sbreadonaddr requests, and not the next read an sbdata0 read with sbreadondata would start; writing ones to sberror clears it so accesses resume"
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2" }
+
+[[check]]
+id = "CHK-SBA-MISALIGNED"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0060", "X-RISCV_DEBUG-sberror"]
+feature = "F-SBA-access-errors"
+compare = "state"
+intent = "An access not naturally aligned to its size sets sberror = 3 and issues no bus transaction"
+atom_hashes = { S-TDR2AXI-0060 = "2ff85d8b5e3d" }
+
+[[check]]
+id = "CHK-SBA-NO-INC-AFTER-ERROR"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0061", "S-TDR2AXI-0076", "S-TDR2AXI-0079", "X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbaddress0-read"]
+feature = "F-SBA-no-increment-after-error"
+compare = "state"
+intent = "With sbautoincrement set, after SLVERR or DECERR on a read started by an sbaddress0 write or on a write started by an sbdata0 write, sbaddress reads the failing address; a read started by an sbdata0 read is outside this check"
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2", S-TDR2AXI-0076 = "6459cabdca3b", S-TDR2AXI-0079 = "e0443d029994" }
+
+[[check]]
+id = "CHK-SBA-NO-READ-ON-ADDR"
+kind = "checker"
+atoms = ["S-TDR2AXI-0076", "X-RISCV_DEBUG-sbaddress0-read"]
+feature = "F-SBA-single-read"
+intent = "With sbreadonaddr clear, writing sbaddress0 issues no AR or AW"
+atom_hashes = { S-TDR2AXI-0076 = "6459cabdca3b" }
+
+[[check]]
+id = "CHK-SBA-OVERSIZE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0060", "X-RISCV_DEBUG-sberror"]
+feature = "F-SBA-access-errors"
+compare = "state"
+intent = "An access wider than AXI_DATA_WIDTH sets sberror = 4 and issues no bus transaction"
+atom_hashes = { S-TDR2AXI-0060 = "2ff85d8b5e3d" }
+
+[[check]]
+id = "CHK-SBA-READ-NO-READONDATA"
+kind = "checker"
+atoms = ["S-TDR2AXI-0081", "X-RISCV_DEBUG-sbdata0-read"]
+feature = "F-SBA-block-read"
+intent = "With sbreadondata clear, an sbdata0 read issues no AR and leaves sbaddress unchanged"
+atom_hashes = { S-TDR2AXI-0081 = "0421360e73cf" }
+
+[[check]]
+id = "CHK-SBA-SBBUSY"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0002", "X-RISCV_DEBUG-sbbusy"]
+feature = "F-SBA-busy-status"
+compare = "state"
+intent = "DV reading where the debug specification leaves the time sbbusy falls open and a debugger only polls until it reads 0: every sbcs read the DM takes from the write that starts an access until that access's bus response reads sbbusy = 1, and after the bus response at most one sbcs read may read sbbusy = 1, every later read reading 0 until the next access starts"
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3" }
+
+[[check]]
+id = "CHK-SBA-SBBUSYERROR"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0002", "S-TDR2AXI-0043", "X-RISCV_DEBUG-sbbusyerror"]
+feature = "F-SBA-busy-status"
+compare = "state"
+intent = "While sbbusy is set, a write of sbaddress0, sbaddress1, sbdata0 or sbdata1, or a read of sbdata0 or sbdata1, sets sbbusyerror, is answered DMI busy and starts no bus access, and a colliding write leaves sbaddress and sbdata as the stalled access leaves them; a read of sbaddress0 or sbaddress1 returns the address and does not set sbbusyerror"
+atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3", S-TDR2AXI-0043 = "8e6844992030" }
+
+[[check]]
+id = "CHK-SBA-SBCS-FIELDS"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0015", "S-TDR2AXI-0023", "X-RISCV_DEBUG-sbcs-fields"]
+feature = "F-SBA-sbcs-fields"
+compare = "state"
+intent = "With dmactive = 1, sbcs reads sbversion 1, sbasize = AXI_ADDR_WIDTH, sbaccess8, 16 and 32 set, sbaccess64 set only for 64-bit data, sbaccess128 clear, and sbaccess 2 after reset"
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0023 = "0c4dd0b88aa6" }
+
+[[check]]
+id = "CHK-SBA-SBDATA1-NO-BUS"
+kind = "checker"
+atoms = ["S-TDR2AXI-0077", "X-RISCV_DEBUG-sbdata-lanes"]
+feature = "F-SBA-data-lanes"
+intent = "A read or write of sbdata1 issues no AR or AW"
+atom_hashes = { S-TDR2AXI-0077 = "db7a0e27f747" }
+
+[[check]]
+id = "CHK-SBA-SINGLE-READ"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0001", "S-TDR2AXI-0076", "X-RISCV_DEBUG-sbaddress0-read"]
+feature = "F-SBA-single-read"
+compare = "in-order"
+intent = "With sbreadonaddr set, writing sbaddress0 starts exactly one bus read at sbaddress and the sbaccess size, and the read bytes reach sbdata"
+atom_hashes = { S-TDR2AXI-0001 = "71535400dccd", S-TDR2AXI-0076 = "6459cabdca3b" }
+
+[[check]]
+id = "CHK-SBA-SINGLE-WRITE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0001", "S-TDR2AXI-0071", "X-RISCV_DEBUG-sbdata0-write"]
+feature = "F-SBA-single-write"
+compare = "in-order"
+intent = "Writing sbdata0 starts exactly one bus write of sbdata to sbaddress at the sbaccess size, its bytes on the addressed lanes"
+atom_hashes = { S-TDR2AXI-0001 = "71535400dccd", S-TDR2AXI-0071 = "1a5ad1125a58" }
+
+[[check]]
+id = "CHK-SBA-WRITE-MEMORY"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0001", "S-TDR2AXI-0071"]
+feature = "F-SBA-single-write"
+compare = "memory"
+intent = "Subordinate memory after each write equals the model's image, so only the addressed bytes change"
+atom_hashes = { S-TDR2AXI-0001 = "71535400dccd", S-TDR2AXI-0071 = "1a5ad1125a58" }
+
+[[check]]
+id = "CHK-TDR-BUSY-CAPTURE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0007", "S-TDR2AXI-0042", "S-TDR2AXI-0043", "X-RISCV_DEBUG-dmi-status"]
+feature = "F-TDR-sticky-busy"
+compare = "state"
+intent = "A capture while a read is pending reads busy on that same capture edge, and the status stays busy"
+atom_hashes = { S-TDR2AXI-0007 = "f67ee0461541", S-TDR2AXI-0042 = "0094b86c5492", S-TDR2AXI-0043 = "8e6844992030" }
+
+[[check]]
+id = "CHK-TDR-BUSY-DM"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0007", "S-TDR2AXI-0042", "S-TDR2AXI-0043", "X-RISCV_DEBUG-dmi-status"]
+feature = "F-TDR-sticky-busy"
+compare = "state"
+intent = "A busy answer from the DM makes the status busy, with read data 0xB051B051 in the capture"
+atom_hashes = { S-TDR2AXI-0007 = "f67ee0461541", S-TDR2AXI-0042 = "0094b86c5492", S-TDR2AXI-0043 = "8e6844992030" }
+
+[[check]]
+id = "CHK-TDR-BUSY-RECOVERY"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0045", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-busy-recovery"
+compare = "in-order"
+intent = "After a busy status, op 3 and a resend with more Run-Test/Idle cycles complete the operation with the predicted result, and a resent write reaches the bus once"
+atom_hashes = { S-TDR2AXI-0045 = "48f39cd80854" }
+
+[[check]]
+id = "CHK-TDR-BUSY-UPDATE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0007", "S-TDR2AXI-0042", "S-TDR2AXI-0043", "X-RISCV_DEBUG-dmi-status"]
+feature = "F-TDR-sticky-busy"
+compare = "state"
+intent = "An update of any op, NOP included, while an operation is pending makes the status busy: the next capture and every capture after it read 3"
+atom_hashes = { S-TDR2AXI-0007 = "f67ee0461541", S-TDR2AXI-0042 = "0094b86c5492", S-TDR2AXI-0043 = "8e6844992030" }
+
+[[check]]
+id = "CHK-TDR-CAPTURE-EDGE"
+kind = "checker"
+atoms = ["S-TDR2AXI-0008", "S-TDR2AXI-0031"]
+feature = "F-TDR-strobes"
+intent = "At each TCK rising edge with i_dmi_tdr_capture high, o_dmi_tdr holds no X or Z and equals the predicted image, whatever TAP path the scan takes"
+atom_hashes = { S-TDR2AXI-0008 = "ea832aea7efd", S-TDR2AXI-0031 = "7f8d78a5c5e3" }
+
+[[check]]
+id = "CHK-TDR-CAPTURE-IMAGE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0033", "S-TDR2AXI-0037", "S-TDR2AXI-0038", "X-RISCV_DEBUG-dmi-update-capture", "X-RISCV_DEBUG-nop-capture"]
+feature = "F-TDR-capture-image"
+compare = "in-order"
+intent = "At each capture edge o_dmi_tdr[40:34] and [33:2] equal the address and data of the last operation accepted in IDLE with a clear status: a read's result, a write's write data, a NOP's or op 3's own fields"
+atom_hashes = { S-TDR2AXI-0033 = "6444e92de325", S-TDR2AXI-0037 = "4a5e9aa31a94", S-TDR2AXI-0038 = "5186a81562e9" }
+
+[[check]]
+id = "CHK-TDR-DM-RESP-CODES-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0039", "S-TDR2AXI-0042", "X-RISCV_DEBUG-dmi-status"]
+feature = "F-TDR-sticky-busy"
+intent = "The Debug Module answers every DMI request with success or busy, never the failed or reserved code, so no failed status can reach o_dmi_tdr"
+atom_hashes = { S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0042 = "0094b86c5492" }
+
+[[check]]
+id = "CHK-TDR-NEVER-FAILED"
+kind = "checker"
+atoms = ["S-TDR2AXI-0039", "S-TDR2AXI-0042"]
+feature = "F-TDR-sticky-busy"
+intent = "The status at every capture edge is 0 or 3, never 1 or 2"
+atom_hashes = { S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0042 = "0094b86c5492" }
+
+[[check]]
+id = "CHK-TDR-OP-DECODE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0030", "S-TDR2AXI-0036", "S-TDR2AXI-0039", "S-TDR2AXI-0063", "X-RISCV_DEBUG-dmi-format", "X-RISCV_DEBUG-dmi-op"]
+feature = "F-TDR-op-decode"
+compare = "in-order"
+intent = "Each update edge in IDLE with a clear status sends one DMI request with i_dmi_tdr[40:34] as address and [33:2] as data, a read for op 1 and a write for op 2, and op 0 sends none"
+atom_hashes = { S-TDR2AXI-0030 = "490293f7a458", S-TDR2AXI-0036 = "df8c48cc7bfb", S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0063 = "77901a52f302" }
+
+[[check]]
+id = "CHK-TDR-OP-DECODE-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0030", "S-TDR2AXI-0036", "S-TDR2AXI-0039", "S-TDR2AXI-0041", "X-RISCV_DEBUG-dmi-format", "X-RISCV_DEBUG-dmi-op"]
+feature = "F-TDR-op-decode"
+intent = "In the bridge, an update edge in IDLE with the status clear offers a request carrying the address, data and op of i_dmi_tdr for op 1 and op 2; op 0 and op 3 never offer one"
+atom_hashes = { S-TDR2AXI-0030 = "490293f7a458", S-TDR2AXI-0036 = "df8c48cc7bfb", S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0041 = "52eaa0ab8644" }
+
+[[check]]
+id = "CHK-TDR-OP3-CLEAR"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0039", "S-TDR2AXI-0041", "X-RISCV_DEBUG-dmi-op"]
+feature = "F-TDR-op-decode"
+compare = "state"
+intent = "An update with op 3 sends no DMI request and clears the sticky status, so the next capture reads status 0"
+atom_hashes = { S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0041 = "52eaa0ab8644" }
+
+[[check]]
+id = "CHK-TDR-PIPELINED-READ"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0038", "S-TDR2AXI-0063", "X-RISCV_DEBUG-dmi-update-capture"]
+feature = "F-TDR-capture-image"
+compare = "in-order"
+intent = "A read returns its data in the capture of the next scan, whether that scan carries a NOP or the next operation"
+atom_hashes = { S-TDR2AXI-0038 = "5186a81562e9", S-TDR2AXI-0063 = "77901a52f302" }
+
+[[check]]
+id = "CHK-TDR-RATIO-INVARIANT"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0048"]
+feature = "F-TDR-any-clock-ratio"
+compare = "in-order"
+intent = "The same seeded DMI and SBA sequence gives the same o_dmi_tdr results and the same AXI transactions at every clock ratio of the sweep"
+atom_hashes = { S-TDR2AXI-0048 = "719d2a15043e" }
+
+[[check]]
+id = "CHK-TDR-RESEND-READ"
+kind = "checker"
+atoms = ["S-TDR2AXI-0046"]
+feature = "F-TDR-busy-recovery"
+intent = "A resent read reaches the bus once or twice at its address, never more, and the data the debugger receives is the last read's"
+atom_hashes = { S-TDR2AXI-0046 = "be798e55895e" }
+
+[[check]]
+id = "CHK-TDR-RESULT-LATENCY"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-resp-to-tdr"
+compare = "in-order"
+intent = "At SYNC_STAGES = 3, o_dmi_tdr holds the DM's response, with the bridge back in IDLE, SYNC_STAGES + 2 to SYNC_STAGES + 3 TCK rising edges after the DM's response handshake, and a capture of a read before that window reads busy"
+applies = { SYNC_STAGES = ["3"] }
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-RESULT-LATENCY-SS4"
+kind = "checker"
+atoms = ["S-TDR2AXI-0018", "S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-resp-to-tdr-ss4"
+intent = "At SYNC_STAGES = 4, o_dmi_tdr holds the DM's response, with the bridge back in IDLE, within the bounds of T-TDR2AXI-resp-to-tdr-ss4 counted in TCK rising edges after the DM's response handshake, and a capture of a read before that window reads busy"
+applies = { SYNC_STAGES = ["4"] }
+atom_hashes = { S-TDR2AXI-0018 = "d0a75c21b626", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS3-1TO2"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss3-1to2"
+intent = "At SYNC_STAGES = 3 and i_clk:TCK = 1:2, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss3-1to2, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["3"], ratio = ["1:2"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS3-1TO20"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss3-1to20"
+intent = "At SYNC_STAGES = 3 and i_clk:TCK = 1:20, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss3-1to20, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["3"], ratio = ["1:20"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS3-20TO1"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss3-20to1"
+intent = "At SYNC_STAGES = 3 and i_clk:TCK = 20:1, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss3-20to1, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["3"], ratio = ["20:1"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS3-20TO19"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss3-20to19"
+intent = "At SYNC_STAGES = 3 and i_clk:TCK = 20:19, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss3-20to19, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["3"], ratio = ["20:19"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS3-20TO21"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss3-20to21"
+intent = "At SYNC_STAGES = 3 and i_clk:TCK = 20:21, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss3-20to21, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["3"], ratio = ["20:21"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS4-1TO2"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss4-1to2"
+intent = "At SYNC_STAGES = 4 and i_clk:TCK = 1:2, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss4-1to2, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["4"], ratio = ["1:2"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS4-1TO20"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss4-1to20"
+intent = "At SYNC_STAGES = 4 and i_clk:TCK = 1:20, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss4-1to20, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["4"], ratio = ["1:20"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS4-20TO1"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss4-20to1"
+intent = "At SYNC_STAGES = 4 and i_clk:TCK = 20:1, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss4-20to1, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["4"], ratio = ["20:1"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS4-20TO19"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss4-20to19"
+intent = "At SYNC_STAGES = 4 and i_clk:TCK = 20:19, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss4-20to19, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["4"], ratio = ["20:19"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-ROUND-TRIP-SS4-20TO21"
+kind = "checker"
+atoms = ["S-TDR2AXI-0049", "X-RISCV_DEBUG-busy-retry"]
+feature = "F-TDR-result-latency"
+timing = "T-TDR2AXI-round-trip-ss4-20to21"
+intent = "At SYNC_STAGES = 4 and i_clk:TCK = 20:21, each operation's round trip, counted in TCK rising edges from the Update-DR that starts it with the bridge in IDLE and the sticky status clear to the bridge back in IDLE with o_dmi_tdr holding the DM's response, lies within the bounds of T-TDR2AXI-round-trip-ss4-20to21, and a Capture-DR after its maximum never reads busy"
+applies = { SYNC_STAGES = ["4"], ratio = ["20:21"] }
+atom_hashes = { S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-STATUS-SVA"
+kind = "assertion"
+atoms = ["S-TDR2AXI-0007", "S-TDR2AXI-0039", "S-TDR2AXI-0041", "S-TDR2AXI-0042", "S-TDR2AXI-0043", "S-TDR2AXI-0045", "X-RISCV_DEBUG-dmi-status"]
+feature = "F-TDR-sticky-busy"
+intent = "The status turns busy when an update arrives while an operation is pending, when a capture arrives while a read's result is pending, or when the Debug Module answers busy; it stays busy until an update with op 3, and a capture reads status 0 only when the held status is clear and the capture itself raises no busy"
+atom_hashes = { S-TDR2AXI-0007 = "f67ee0461541", S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0041 = "52eaa0ab8644", S-TDR2AXI-0042 = "0094b86c5492", S-TDR2AXI-0043 = "8e6844992030", S-TDR2AXI-0045 = "48f39cd80854" }
+
+[[check]]
+id = "CHK-TDR-STICKY-IGNORE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0039", "S-TDR2AXI-0041", "S-TDR2AXI-0045", "S-TDR2AXI-0056", "X-RISCV_DEBUG-dmi-status"]
+feature = "F-TDR-sticky-busy"
+compare = "state"
+intent = "While the status is busy, updates send no DMI request and start no bus access until op 3 clears it"
+atom_hashes = { S-TDR2AXI-0039 = "66c5a0946bca", S-TDR2AXI-0041 = "52eaa0ab8644", S-TDR2AXI-0045 = "48f39cd80854", S-TDR2AXI-0056 = "1dc45f92f42b" }
+
+[[check]]
+id = "CHK-TDR-TCK-STOP-HOLD"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0029", "S-TDR2AXI-0049", "X-IEEE1149_1-tck-static"]
+feature = "F-TDR-tck-stop-hold"
+timing = "T-TDR2AXI-resp-to-tdr"
+compare = "state"
+intent = "At SYNC_STAGES = 3, with TCK stopped, o_dmi_tdr and the bridge's state, status, address and data hold while i_clk runs and the bus access completes; the result reaches o_dmi_tdr only as TCK edges resume, within the bounds of T-TDR2AXI-resp-to-tdr counted in TCK edges"
+applies = { SYNC_STAGES = ["3"] }
+atom_hashes = { S-TDR2AXI-0029 = "25fa2b2bc2ad", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-TCK-STOP-HOLD-SS4"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0029", "S-TDR2AXI-0049", "X-IEEE1149_1-tck-static"]
+feature = "F-TDR-tck-stop-hold"
+timing = "T-TDR2AXI-resp-to-tdr-ss4"
+compare = "state"
+intent = "At SYNC_STAGES = 4, with TCK stopped, o_dmi_tdr and the bridge's state, status, address and data hold while i_clk runs and the bus access completes; the result reaches o_dmi_tdr only as TCK edges resume, within the bounds of T-TDR2AXI-resp-to-tdr-ss4 counted in TCK edges"
+applies = { SYNC_STAGES = ["4"] }
+atom_hashes = { S-TDR2AXI-0029 = "25fa2b2bc2ad", S-TDR2AXI-0049 = "a21af701e756" }
+
+[[check]]
+id = "CHK-TDR-UPDATE-EDGE"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0008", "S-TDR2AXI-0032"]
+feature = "F-TDR-strobes"
+compare = "in-order"
+intent = "Each TCK rising edge with i_dmi_tdr_update high is one update of the parallel value: a strobe held for two edges is two updates, and the second reads busy at the next capture while the first is pending"
+atom_hashes = { S-TDR2AXI-0008 = "ea832aea7efd", S-TDR2AXI-0032 = "1cc1296534ac" }
+
+[[check]]
+id = "CHK-TDRHOST-CAPTURE-DR"
+kind = "vip"
+atoms = ["X-IEEE1149_1-capture-dr"]
+intent = "The capture strobe is high for exactly the one TCK rising edge that ends Capture-DR of this TDR"
+
+[[check]]
+id = "CHK-TDRHOST-UPDATE-DR"
+kind = "vip"
+atoms = ["X-IEEE1149_1-update-dr"]
+intent = "The update-stage value changes only on the falling TCK edge in Update-DR, and the update strobe covers the next rising edge"
+
+[[guard]]
+id = "CHK-AXISUB-DRAIN"
+intent = "At the end of a test the subordinate holds no outstanding or unchecked transaction"
+
+[[guard]]
+id = "CHK-NONVAC"
+intent = "A test that compared nothing fails"
+
+[[item]]
+test = "tdr2axi_axi_attr_formal"
+features = ["F-AXI-request-attributes", "F-AXI-axi4-size"]
+checks = ["CHK-AXI-REQ-ATTRS-SVA", "CHK-AXI-AXI4-SIZE-SVA"]
+seeds = 1
+realizations = ["formal"]
+model = ["CLK-BUS", "RST-ARST-BUS", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-PROT", "CFG-AXI-CACHE"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_axi_attributes_test"
+features = ["F-AXI-request-attributes"]
+checks = ["CHK-AXI-REQ-ATTRS", "CHK-AXI-REQ-ATTRS-SVA", "CHK-AXISUB-CACHE-LEGAL", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CFG-AXI-PROT", "CFG-AXI-CACHE", "CFG-USE-AXI-LITE"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_axi_comb_path_formal"
+features = ["F-AXI-no-comb-path"]
+checks = ["CHK-AXI-NO-COMB-PATH-SVA"]
+seeds = 1
+realizations = ["formal"]
+model = ["CLK-BUS", "CFG-USE-AXI-LITE"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_axi_mgr_formal"
+features = ["F-AXI-manager-protocol", "F-AXI-one-outstanding"]
+checks = ["CHK-AXI-HANDSHAKE-SVA", "CHK-AXI-ONE-OUTSTANDING-SVA"]
+seeds = 1
+realizations = ["formal"]
+model = ["CLK-BUS", "RST-ARST-BUS", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_axi_protocol_test"
+features = ["F-AXI-manager-protocol", "F-AXI-one-outstanding", "F-AXI-no-comb-path"]
+checks = ["CHK-AXI-HANDSHAKE-SVA", "CHK-AXI-ONE-OUTSTANDING", "CHK-AXI-ONE-OUTSTANDING-SVA", "CHK-AXI-NO-COMB-PATH", "CHK-AXISUB-VALID-HELD", "CHK-AXISUB-PAYLOAD-STABLE", "CHK-AXISUB-VALID-INDEPENDENT", "CHK-AXISUB-WRITE-RESP-ORDER", "CHK-AXISUB-READ-RESP-ORDER", "CHK-AXISUB-LAST-BEAT", "CHK-AXISUB-BURST-LENGTH", "CHK-AXISUB-BOUNDARY-4K", "CHK-AXISUB-ID-ORDER", "CHK-AXISUB-CACHE-LEGAL", "CHK-AXISUB-SIZE-WIDTH", "CHK-AXISUB-STROBE-LANES", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CLK-BUS", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_bridge_formal"
+features = ["F-TDR-op-decode", "F-TDR-sticky-busy"]
+checks = ["CHK-TDR-OP-DECODE-SVA", "CHK-TDR-STATUS-SVA", "CHK-ENV-TDR-UPDATE-STABLE"]
+seeds = 1
+realizations = ["formal"]
+model = ["CLK-TCK", "RST-ARST-TCK"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_clock_ratio_test"
+features = ["F-TDR-any-clock-ratio", "F-TDR-result-latency"]
+checks = ["CHK-TDR-RATIO-INVARIANT", "CHK-TDR-ROUND-TRIP-SS3-20TO1", "CHK-TDR-ROUND-TRIP-SS3-20TO19", "CHK-TDR-ROUND-TRIP-SS3-20TO21", "CHK-TDR-ROUND-TRIP-SS3-1TO2", "CHK-TDR-ROUND-TRIP-SS3-1TO20", "CHK-TDR-ROUND-TRIP-SS4-20TO1", "CHK-TDR-ROUND-TRIP-SS4-20TO19", "CHK-TDR-ROUND-TRIP-SS4-20TO21", "CHK-TDR-ROUND-TRIP-SS4-1TO2", "CHK-TDR-ROUND-TRIP-SS4-1TO20", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CLK-BUS", "CLK-TCK", "CDC-REQ", "CDC-RESP", "CFG-CLK-RATIO", "CFG-SYNC-STAGES", "T-TDR2AXI-round-trip-ss3-20to1", "T-TDR2AXI-round-trip-ss3-20to19", "T-TDR2AXI-round-trip-ss3-20to21", "T-TDR2AXI-round-trip-ss3-1to2", "T-TDR2AXI-round-trip-ss3-1to20", "T-TDR2AXI-round-trip-ss4-20to1", "T-TDR2AXI-round-trip-ss4-20to19", "T-TDR2AXI-round-trip-ss4-20to21", "T-TDR2AXI-round-trip-ss4-1to2", "T-TDR2AXI-round-trip-ss4-1to20"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dm_registers_test"
+features = ["F-DM-register-map", "F-DM-hart-unavailable", "F-DM-abstract-cmd-unsupported", "F-DM-ndmreset-unconnected"]
+checks = ["CHK-DM-REGISTER-MAP", "CHK-DM-HART-UNAVAIL", "CHK-DM-CMDERR", "CHK-DM-NDMRESET", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dm_resp_formal"
+features = ["F-TDR-sticky-busy"]
+checks = ["CHK-TDR-DM-RESP-CODES-SVA"]
+seeds = 1
+realizations = ["formal"]
+model = ["CLK-BUS", "RST-ARST-BUS", "CFG-USE-AXI-LITE"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dmactive_clear_test"
+features = ["F-DM-dmactive-clear"]
+checks = ["CHK-DM-DMACTIVE-CLEAR", "CHK-DM-OP3-KEEPS-DM", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["RST-DMACTIVE", "CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dmactive_inflight_formal"
+features = ["F-DM-dmactive-inflight"]
+checks = ["CHK-DM-DMACTIVE-INFLIGHT-SVA"]
+seeds = 1
+realizations = ["formal"]
+model = ["CLK-BUS", "RST-ARST-BUS", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dmactive_inflight_test"
+features = ["F-DM-dmactive-inflight"]
+checks = ["CHK-DM-DMACTIVE-INFLIGHT", "CHK-AXISUB-PAYLOAD-STABLE", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["RST-DMACTIVE", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dmactive_no_bus_formal"
+features = ["F-DM-dmactive-no-bus-access"]
+checks = ["CHK-DM-DMACTIVE-NO-BUS-SVA"]
+seeds = 1
+realizations = ["formal"]
+model = ["CLK-BUS", "RST-ARST-BUS", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dmactive_no_bus_test"
+features = ["F-DM-dmactive-no-bus-access"]
+checks = ["CHK-DM-DMACTIVE-NO-BUS", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["RST-DMACTIVE", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_dmactive_reset_test"
+features = ["F-DM-dmactive-clear"]
+checks = ["CHK-DM-DMACTIVE-CLEAR", "CHK-DM-DMACTIVE-ALONE", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["RST-DMACTIVE", "CLK-BUS", "CFG-USE-AXI-LITE", "CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_param_checks_test"
+features = ["F-CFG-param-checks"]
+checks = ["CHK-CFG-ILLEGAL-PARAMS"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH", "CFG-SYNC-STAGES", "CFG-USE-AXI-LITE"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_reset_release_test"
+features = ["F-RESET-sync-release"]
+checks = ["CHK-RESET-SYNC-RELEASE", "CHK-RESET-SYNC-RELEASE-SS4", "CHK-RESET-CDC-CLEAR-20TO1", "CHK-RESET-CDC-CLEAR-20TO19", "CHK-RESET-CDC-CLEAR-20TO21", "CHK-RESET-CDC-CLEAR-1TO2", "CHK-RESET-CDC-CLEAR-1TO20", "CHK-AXISUB-RESET-VALID-LOW", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK", "T-TDR2AXI-tck-reset-release", "T-TDR2AXI-tck-reset-release-ss4", "T-TDR2AXI-cdc-clear-20to1", "T-TDR2AXI-cdc-clear-20to19", "T-TDR2AXI-cdc-clear-20to21", "T-TDR2AXI-cdc-clear-1to2", "T-TDR2AXI-cdc-clear-1to20", "RDC-ARST", "CFG-SYNC-STAGES", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_reset_sync_formal"
+features = ["F-RESET-sync-release", "F-RESET-test-mode-bypass"]
+checks = ["CHK-RESET-SYNC-RELEASE-SVA", "CHK-RESET-TEST-MODE-SVA"]
+seeds = 1
+realizations = ["formal"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK", "RST-SCAN", "T-TDR2AXI-tck-reset-release", "CFG-SYNC-STAGES"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_reset_test_mode_test"
+features = ["F-RESET-test-mode-bypass"]
+checks = ["CHK-RESET-TEST-MODE", "CHK-NONVAC"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["RST-SCAN", "CFG-TEST-MODE"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_reset_traffic_test"
+features = ["F-RESET-async-any-time"]
+checks = ["CHK-RESET-ASYNC-ANY-TIME", "CHK-RESET-NO-STALE-AXI", "CHK-AXISUB-RESET-VALID-LOW", "CHK-ENV-FABRIC-RESET", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK", "RDC-ARST", "CDC-REQ", "CDC-RESP", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_sba_address_width_test"
+features = ["F-SBA-address-width"]
+checks = ["CHK-SBA-ADDRESS-WIDTH", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_sba_block_test"
+features = ["F-SBA-block-write", "F-SBA-block-read"]
+checks = ["CHK-SBA-BLOCK-WRITE", "CHK-SBA-BLOCK-READ", "CHK-SBA-READ-NO-READONDATA", "CHK-ENV-SBA-BLOCK-READ-STEPS", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_sba_busy_test"
+features = ["F-TDR-sticky-busy", "F-SBA-busy-status"]
+checks = ["CHK-TDR-BUSY-DM", "CHK-TDR-STICKY-IGNORE", "CHK-SBA-SBBUSY", "CHK-SBA-SBBUSYERROR", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CFG-USE-AXI-LITE", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_sba_error_address_test"
+features = ["F-SBA-no-increment-after-error"]
+checks = ["CHK-SBA-NO-INC-AFTER-ERROR", "CHK-NONVAC"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CFG-USE-AXI-LITE", "CFG-AXI-ADDR-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_sba_errors_test"
+features = ["F-SBA-access-errors", "F-SBA-bus-error"]
+checks = ["CHK-SBA-MISALIGNED", "CHK-SBA-OVERSIZE", "CHK-SBA-BUS-ERROR", "CHK-SBA-ERROR-BLOCKS", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_sba_single_test"
+features = ["F-SBA-single-write", "F-SBA-single-read", "F-SBA-data-lanes", "F-AXI-axi4-size", "F-AXI-lite-full-width"]
+checks = ["CHK-SBA-SINGLE-WRITE", "CHK-SBA-WRITE-MEMORY", "CHK-SBA-SINGLE-READ", "CHK-SBA-NO-READ-ON-ADDR", "CHK-SBA-DATA-LANES", "CHK-SBA-SBDATA1-NO-BUS", "CHK-AXI-AXI4-SIZE", "CHK-AXI-LITE-FULL-WIDTH", "CHK-ENV-SBA-WRITE-STEPS", "CHK-ENV-SBA-READ-STEPS", "CHK-ENV-SBA-POLL", "CHK-AXISUB-SIZE-WIDTH", "CHK-AXISUB-STROBE-LANES", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_sba_stress_test"
+features = ["F-SBA-single-write", "F-SBA-single-read", "F-SBA-data-lanes", "F-SBA-block-write", "F-SBA-block-read", "F-SBA-access-errors", "F-SBA-bus-error", "F-AXI-axi4-size", "F-AXI-lite-full-width", "F-TDR-busy-recovery"]
+checks = ["CHK-SBA-SINGLE-WRITE", "CHK-SBA-WRITE-MEMORY", "CHK-SBA-SINGLE-READ", "CHK-SBA-DATA-LANES", "CHK-SBA-BLOCK-WRITE", "CHK-SBA-BLOCK-READ", "CHK-SBA-MISALIGNED", "CHK-SBA-OVERSIZE", "CHK-SBA-BUS-ERROR", "CHK-SBA-ERROR-BLOCKS", "CHK-AXI-AXI4-SIZE", "CHK-AXI-LITE-FULL-WIDTH", "CHK-TDR-BUSY-RECOVERY", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_smoke_test"
+features = ["F-PORT-tdr-interface", "F-PORT-bus-and-reset", "F-CFG-bender-target", "F-DM-version", "F-SBA-sbcs-fields", "F-SBA-single-write", "F-SBA-single-read"]
+checks = ["CHK-PORT-TDR-LIST", "CHK-PORT-BUS-LIST", "CHK-CFG-BENDER-TARGET", "CHK-DM-VERSION", "CHK-SBA-SBCS-FIELDS", "CHK-SBA-SINGLE-WRITE", "CHK-SBA-SINGLE-READ", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CLK-BUS", "CLK-TCK", "RST-ARST-BUS", "RST-ARST-TCK", "CFG-USE-AXI-LITE", "CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_busy_capture_test"
+features = ["F-TDR-sticky-busy"]
+checks = ["CHK-TDR-BUSY-CAPTURE", "CHK-TDR-STICKY-IGNORE", "CHK-TDR-NEVER-FAILED", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CLK-BUS", "CLK-TCK", "T-TDR2AXI-resp-to-tdr", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_busy_recovery_test"
+features = ["F-TDR-busy-recovery"]
+checks = ["CHK-TDR-BUSY-RECOVERY", "CHK-TDR-RESEND-READ", "CHK-ENV-READONDATA-IDLE", "CHK-NONVAC"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["T-TDR2AXI-resp-to-tdr", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_busy_update_test"
+features = ["F-TDR-sticky-busy"]
+checks = ["CHK-TDR-BUSY-UPDATE", "CHK-TDR-STICKY-IGNORE", "CHK-TDR-NEVER-FAILED", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CLK-BUS", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_ops_test"
+features = ["F-TDR-op-decode", "F-TDR-capture-image"]
+checks = ["CHK-TDR-OP-DECODE", "CHK-TDR-OP3-CLEAR", "CHK-TDR-CAPTURE-IMAGE", "CHK-ENV-TDR-UPDATE-STABLE", "CHK-TDRHOST-CAPTURE-DR", "CHK-TDRHOST-UPDATE-DR", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CLK-TCK", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_pipelined_test"
+features = ["F-TDR-capture-image", "F-SBA-block-read"]
+checks = ["CHK-TDR-PIPELINED-READ", "CHK-TDR-CAPTURE-IMAGE", "CHK-SBA-BLOCK-READ", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CLK-TCK", "T-TDR2AXI-resp-to-tdr", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_result_latency_test"
+features = ["F-TDR-result-latency"]
+checks = ["CHK-TDR-RESULT-LATENCY", "CHK-TDR-RESULT-LATENCY-SS4", "CHK-NONVAC"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["T-TDR2AXI-resp-to-tdr", "T-TDR2AXI-resp-to-tdr-ss4", "CDC-RESP", "CFG-SYNC-STAGES", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_strobes_test"
+features = ["F-TDR-strobes"]
+checks = ["CHK-TDR-UPDATE-EDGE", "CHK-TDR-CAPTURE-EDGE", "CHK-TDRHOST-CAPTURE-DR", "CHK-TDRHOST-UPDATE-DR", "CHK-ENV-TDR-UPDATE-STABLE", "CHK-NONVAC"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CLK-TCK", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_tdr_tck_stop_test"
+features = ["F-TDR-tck-stop-hold"]
+checks = ["CHK-TDR-TCK-STOP-HOLD", "CHK-TDR-TCK-STOP-HOLD-SS4", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["CLK-TCK", "CDC-RESP", "T-TDR2AXI-resp-to-tdr", "T-TDR2AXI-resp-to-tdr-ss4", "CFG-SYNC-STAGES", "CFG-CLK-RATIO"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_trst_test"
+features = ["F-RESET-trst-independent"]
+checks = ["CHK-RESET-TRST-INDEPENDENT", "CHK-NONVAC"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["RST-TRST", "CLK-TCK"]
+vehicle = "ports"

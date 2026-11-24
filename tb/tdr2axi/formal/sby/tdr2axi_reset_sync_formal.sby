@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 Tenstorrent USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# tdr2axi_reset_sync_formal: CHK-RESET-SYNC-RELEASE-SVA (func tasks, i_test_mode = 0) and
+# CHK-RESET-TEST-MODE-SVA (test task). tdr2axi_fv_reset_top in a multiclock model: i_clk
+# and TCK are independent free clocks, either of which may stop, and i_arst_n, i_test_mode
+# and i_arst_scan_n are free at every step. dmi_tdr_bridge, dm_csrs and dm_sba are cut at
+# their ports. SYNC_STAGES = 3 and 4; the test-mode bypass has no depth to vary.
+# Run from formal/ with make, which builds build/sources.f with bender.
+
+[tasks]
+prove_func_ss3 prove func_ss3
+prove_func_ss4 prove func_ss4
+prove_test_ss3 prove test_ss3
+cover_func_ss3 cover func_ss3
+cover_func_ss4 cover func_ss4
+cover_test_ss3 cover test_ss3
+
+# Cover depth: a reset step, then SYNC_STAGES + 1 rising edges of each clock at two steps
+# per edge, interleaved: 1 + 2 * 2 * 5 = 21 steps at SYNC_STAGES = 4, run to 30.
+[options]
+prove: mode prove
+prove: timeout 3600
+cover: mode cover
+cover: depth 30
+multiclock on
+
+[engines]
+prove: abc --keep-going pdr
+cover: smtbmc yices
+
+[script]
+func_ss3: read_slang -D FORMAL --top tdr2axi_fv_reset_top -G SYNC_STAGES=3 -G FUNC_MODE=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_reset_top.sv tdr2axi_reset_sva.sv
+func_ss4: read_slang -D FORMAL --top tdr2axi_fv_reset_top -G SYNC_STAGES=4 -G FUNC_MODE=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_reset_top.sv tdr2axi_reset_sva.sv
+test_ss3: read_slang -D FORMAL --top tdr2axi_fv_reset_top -G SYNC_STAGES=3 -G FUNC_MODE=0 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_reset_top.sv tdr2axi_reset_sva.sv
+# The outputs of the three cut modules become free inputs
+cutpoint -blackbox
+prep -flatten -top tdr2axi_fv_reset_top
+
+[files]
+sources.f ../build/sources.f
+../tdr2axi_fv_reset_top.sv
+../../sva/tdr2axi_reset_sva.sv

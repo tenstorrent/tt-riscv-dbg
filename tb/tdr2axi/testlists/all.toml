@@ -1,0 +1,281 @@
+# SPDX-FileCopyrightText: 2026 Tenstorrent USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# tdr2axi tests. reseed is the number of seeds a full run takes; the build comes from the
+# Makefile CONFIG, and a test with no target runs on every build whose address space holds
+# its regions.
+
+[[tests]]
+name = "tdr2axi_bringup_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_dm_registers_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_sba_single_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_sba_block_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_sba_errors_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_sba_busy_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_tdr_busy_update_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_tdr_pipelined_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_tdr_busy_recovery_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_reset_traffic_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_smoke_test"
+reseed = 20
+bringup_targets = ["axi4_a2_d32_cachef_sync4", "axil_a2_d32_prot5", "axi4_a3_d32_cachef", "axil_a3_d64_prot5_sync4"]
+
+[[tests]]
+name = "tdr2axi_axi_attributes_test"
+reseed = 20
+bringup_targets = ["axi4_a2_d32_cachef_sync4", "axil_a2_d32_prot5", "axi4_a3_d32_cachef", "axil_a3_d64_prot5_sync4"]
+
+[[tests]]
+name = "tdr2axi_axi_protocol_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_sba_address_width_test"
+reseed = 5
+bringup_targets = ["axi4_a2_d32_cachef_sync4", "axil_a2_d32_prot5", "axi4_a3_d32_cachef", "axil_a3_d64_prot5_sync4"]
+
+[[tests]]
+name = "tdr2axi_sba_error_address_test"
+reseed = 5
+expect_fail = true
+expect_fail_match = 'CHK-SBA-NO-INC-AFTER-ERROR FAIL: sbaddress advanced after a failed access: 0x[0-9a-f]+, one access past the failing address 0x[0-9a-f]+, after '
+expect_fail_allow = [
+  'CHK-SBA-NO-INC-AFTER-ERROR FAIL: DM answer to READ 0x39 data 0x00000000: response 0 data 0x[0-9a-f]{8}, predicted 0x[0-9a-f]+ on mask 0xffffffff',
+  'CHK-TDR-CAPTURE-EDGE FAIL: o_dmi_tdr 0x[0-9a-f]+ at capture, predicted TdrCaptureExpect\(addr=57, data=TdrField\(allowed=\([0-9]+,\), mask=4294967295\), status=<TdrStatus\.SUCCESS: 0>',
+]
+
+[[tests]]
+name = "tdr2axi_sba_stress_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_tdr_ops_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_tdr_strobes_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_tdr_busy_capture_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_tdr_result_latency_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_tdr_tck_stop_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_clock_ratio_test"
+reseed = 5
+ratio = "all"
+
+[[tests]]
+name = "tdr2axi_reset_release_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_reset_test_mode_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_trst_test"
+reseed = 5
+
+[[tests]]
+name = "tdr2axi_param_checks_test"
+reseed = 5
+build_check = "CHK-CFG-ILLEGAL-PARAMS"
+build_cases = [
+  { target = "axi4_a64_d32", param = "AXI_DATA_WIDTH", values = [16, 48, 128, 256], message = 'AXI_DATA_WIDTH must be 32 or 64\.' },
+  # On VCS any of the three width checks may stop the run first, since the order of time-0
+  # initial blocks across instances is the simulator's.
+  { target = "axil_a32_d32", param = "AXI_ADDR_WIDTH", values = [1], message = 'AXI_ADDR_WIDTH must be 2\.\.64 for 32-bit data, 3\.\.64 for 64-bit data\.', message_vcs = '(AXI_ADDR_WIDTH must be 2\.\.64 for 32-bit data, 3\.\.64 for 64-bit data|SbaAddrWidth must cover the BusWidth byte offset and be at most 64|SbaAddrWidth must be between 1 and 64)\.' },
+  { target = "axi4_a64_d64", param = "AXI_ADDR_WIDTH", values = [1, 2], message = 'AXI_ADDR_WIDTH must be 2\.\.64 for 32-bit data, 3\.\.64 for 64-bit data\.', message_vcs = '(AXI_ADDR_WIDTH must be 2\.\.64 for 32-bit data, 3\.\.64 for 64-bit data|SbaAddrWidth must cover the BusWidth byte offset and be at most 64|SbaAddrWidth must be between 1 and 64)\.' },
+  { target = "axil_a64_d64", param = "AXI_ADDR_WIDTH", values = [65, 72, 128], message = 'AXI_ADDR_WIDTH must be 2\.\.64 for 32-bit data, 3\.\.64 for 64-bit data\.', message_vcs = '(AXI_ADDR_WIDTH must be 2\.\.64 for 32-bit data, 3\.\.64 for 64-bit data|SbaAddrWidth must cover the BusWidth byte offset and be at most 64|SbaAddrWidth must be between 1 and 64)\.' },
+  { target = "axi4_a64_d64", param = "SYNC_STAGES", values = [0, 1, 2], message = 'requires at least 3 synchronizer stages' },
+  { target = "axi4_a64_d64", param = "AXI_REQ_DATA_WIDTH", values = [32, 128], message = 'axi_req_t data width must be AXI_DATA_WIDTH\.' },
+  { target = "axil_a32_d32", param = "AXI_REQ_DATA_WIDTH", values = [16, 64], message = 'axi_req_t data width must be AXI_DATA_WIDTH\.' },
+  { target = "axi4_a64_d32", param = "AXI_RSP_DATA_WIDTH", values = [16, 64], message = 'axi_rsp_t data width must be AXI_DATA_WIDTH\.' },
+  { target = "axil_a64_d64", param = "AXI_RSP_DATA_WIDTH", values = [32, 128], message = 'axi_rsp_t data width must be AXI_DATA_WIDTH\.' },
+  # The default logic types stop the build at elaboration, before the time-0 checks run;
+  # the patterns are each simulator's error on the .w and .r member selects of the $bits
+  # checks, which VCS reports after the axi dependency's own errors.
+  { target = "axi4_a64_d64", param = "AXI_DEFAULT_TYPES", values = [1], message = "tdr2axi\\.sv:[0-9:]+ Member selection of non-struct/union object 'METHODCALL '[wr]''", message_vcs = "token '[wr]'\\.  Originating module 'tdr2axi'\\." },
+  { target = "axi4_a2_d32_cachef_sync4", legal = true },
+  { target = "axil_a3_d64_prot5_sync4", legal = true },
+  { target = "axi4_a64_d64", legal = true },
+]
+
+[[tests]]
+name = "tdr2axi_dmactive_clear_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_dmactive_reset_test"
+reseed = 20
+
+[[tests]]
+name = "tdr2axi_dmactive_no_bus_test"
+reseed = 20
+expect_fail = true
+expect_fail_match = 'CHK-DM-DMACTIVE-NO-BUS FAIL: sbdata0 write of 0x[0-9a-f]{8} while dmactive = 0 raised AWVALID'
+
+[[tests]]
+name = "tdr2axi_dmactive_inflight_test"
+reseed = 20
+expect_fail = true
+expect_fail_match = 'CHK-DM-DMACTIVE-INFLIGHT FAIL: (AR|AW|W) payload changed after the dmactive fall, before READY, at [0-9.]+ ns: .* -> (addr 0x0 size [02]|data 0x0 strb 0xf)\b'
+expect_fail_match_vcs = '(mem_addr_i|mem_wdata_i|mem_be_i) has to be stable if request is not granted'
+expect_fail_allow = [
+  'CHK-AXISUB-PAYLOAD-STABLE FAIL: A[RW] changed before READY: AxiAddr\(.*\) -> AxiAddr\(addr=0, size=[02],',
+  'CHK-AXISUB-PAYLOAD-STABLE FAIL: W changed before READY: AxiW\(.*\) -> AxiW\(data=0, strb=15,',
+  'CHK-AXI-HANDSHAKE-SVA FAIL: (AR|AW|W) payload changed while (AR|AW|W)VALID waited for (AR|AW|W)READY',
+]
+
+[[groups]]
+name = "smoke"
+tests = [
+  "tdr2axi_bringup_test",
+  "tdr2axi_smoke_test",
+  "tdr2axi_dm_registers_test",
+  "tdr2axi_sba_single_test",
+]
+
+[[groups]]
+name = "nightly"
+tests = [
+  "tdr2axi_bringup_test",
+  "tdr2axi_dm_registers_test",
+  "tdr2axi_sba_single_test",
+  "tdr2axi_sba_block_test",
+  "tdr2axi_sba_errors_test",
+  "tdr2axi_sba_busy_test",
+  "tdr2axi_tdr_busy_update_test",
+  "tdr2axi_tdr_pipelined_test",
+  "tdr2axi_tdr_busy_recovery_test",
+  "tdr2axi_reset_traffic_test",
+  "tdr2axi_smoke_test",
+  "tdr2axi_axi_attributes_test",
+  "tdr2axi_axi_protocol_test",
+  "tdr2axi_sba_address_width_test",
+  "tdr2axi_sba_error_address_test",
+  "tdr2axi_sba_stress_test",
+  "tdr2axi_tdr_ops_test",
+  "tdr2axi_tdr_strobes_test",
+  "tdr2axi_tdr_busy_capture_test",
+  "tdr2axi_tdr_result_latency_test",
+  "tdr2axi_tdr_tck_stop_test",
+  "tdr2axi_clock_ratio_test",
+  "tdr2axi_reset_release_test",
+  "tdr2axi_reset_test_mode_test",
+  "tdr2axi_trst_test",
+  "tdr2axi_param_checks_test",
+  "tdr2axi_dmactive_clear_test",
+  "tdr2axi_dmactive_reset_test",
+  "tdr2axi_dmactive_no_bus_test",
+  "tdr2axi_dmactive_inflight_test",
+]
+
+[[groups]]
+name = "signoff"
+tests = [
+  "tdr2axi_bringup_test",
+  "tdr2axi_dm_registers_test",
+  "tdr2axi_sba_single_test",
+  "tdr2axi_sba_block_test",
+  "tdr2axi_sba_errors_test",
+  "tdr2axi_sba_busy_test",
+  "tdr2axi_tdr_busy_update_test",
+  "tdr2axi_tdr_pipelined_test",
+  "tdr2axi_tdr_busy_recovery_test",
+  "tdr2axi_reset_traffic_test",
+  "tdr2axi_smoke_test",
+  "tdr2axi_axi_attributes_test",
+  "tdr2axi_axi_protocol_test",
+  "tdr2axi_sba_address_width_test",
+  "tdr2axi_sba_error_address_test",
+  "tdr2axi_sba_stress_test",
+  "tdr2axi_tdr_ops_test",
+  "tdr2axi_tdr_strobes_test",
+  "tdr2axi_tdr_busy_capture_test",
+  "tdr2axi_tdr_result_latency_test",
+  "tdr2axi_tdr_tck_stop_test",
+  "tdr2axi_clock_ratio_test",
+  "tdr2axi_reset_release_test",
+  "tdr2axi_reset_test_mode_test",
+  "tdr2axi_trst_test",
+  "tdr2axi_param_checks_test",
+  "tdr2axi_dmactive_clear_test",
+  "tdr2axi_dmactive_reset_test",
+  "tdr2axi_dmactive_no_bus_test",
+  "tdr2axi_dmactive_inflight_test",
+]
+
+[[groups]]
+name = "all"
+tests = [
+  "tdr2axi_bringup_test",
+  "tdr2axi_dm_registers_test",
+  "tdr2axi_sba_single_test",
+  "tdr2axi_sba_block_test",
+  "tdr2axi_sba_errors_test",
+  "tdr2axi_sba_busy_test",
+  "tdr2axi_tdr_busy_update_test",
+  "tdr2axi_tdr_pipelined_test",
+  "tdr2axi_tdr_busy_recovery_test",
+  "tdr2axi_reset_traffic_test",
+  "tdr2axi_smoke_test",
+  "tdr2axi_axi_attributes_test",
+  "tdr2axi_axi_protocol_test",
+  "tdr2axi_sba_address_width_test",
+  "tdr2axi_sba_error_address_test",
+  "tdr2axi_sba_stress_test",
+  "tdr2axi_tdr_ops_test",
+  "tdr2axi_tdr_strobes_test",
+  "tdr2axi_tdr_busy_capture_test",
+  "tdr2axi_tdr_result_latency_test",
+  "tdr2axi_tdr_tck_stop_test",
+  "tdr2axi_clock_ratio_test",
+  "tdr2axi_reset_release_test",
+  "tdr2axi_reset_test_mode_test",
+  "tdr2axi_trst_test",
+  "tdr2axi_param_checks_test",
+  "tdr2axi_dmactive_clear_test",
+  "tdr2axi_dmactive_reset_test",
+  "tdr2axi_dmactive_no_bus_test",
+  "tdr2axi_dmactive_inflight_test",
+]

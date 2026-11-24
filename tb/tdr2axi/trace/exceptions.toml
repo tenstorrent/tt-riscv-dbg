@@ -1,0 +1,936 @@
+schema_version = 1
+dut = "tdr2axi"
+
+[[exception]]
+id = "EXC-CFG-F-A2-D32-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A2-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A2-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A2-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A2-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A2-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A2-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D32-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a48_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a48_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A3-D64-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, SYNC_STAGES=4); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a48_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64, SYNC_STAGES=4); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a48_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A32-D64-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_ADDR_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D64-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_PROT=3'b101). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A48-D64-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a64_d32 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, USE_AXI_LITE=0). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, SYNC_STAGES=4, USE_AXI_LITE=0). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d32 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a64_d32 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a64_d64 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, USE_AXI_LITE=0). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4, USE_AXI_LITE=0); axi4_a64_d64 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=0). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D64-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=0); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-F-A64-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=0"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=0); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=0); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A2-D32-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b010); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A2-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=1); axil_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A2-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d32 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A2-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, USE_AXI_LITE=1); axil_a32_d32 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A2-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, SYNC_STAGES=4); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A2-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32); axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A2-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=2,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_ADDR_WIDTH=2, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4); axil_a2_d32_prot5 (AXI_ADDR_WIDTH=2, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32, AXI_PROT=3'b010); axil_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d32 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010); axil_a32_d32 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=32); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D64-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_PROT=3'b010); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, AXI_PROT=3'b010); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A3-D64-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=3,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_ADDR_WIDTH=3, AXI_CACHE=4'b1111); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_ADDR_WIDTH=3, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=32, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D64-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D64-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axil_a32_d32 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b0000, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A32-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=32,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d32 (AXI_ADDR_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=32, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D32-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_PROT=3'b010); axil_a32_d32 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d32 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b010); axil_a32_d32 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3); axi4_a48_d64 (AXI_ADDR_WIDTH=48, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P2-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64, AXI_PROT=3'b010); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, SYNC_STAGES=3); axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64, SYNC_STAGES=3); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_PROT=3'b101, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A48-D64-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=48,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a48_d64 (AXI_ADDR_WIDTH=48, AXI_DATA_WIDTH=64); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_ADDR_WIDTH=48, AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D32-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, SYNC_STAGES=4); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d32 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D32-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, USE_AXI_LITE=1); axil_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D32-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D32-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_PROT=3'b101); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a64_d32 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D32-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d32 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=32, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D32-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, SYNC_STAGES=3); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_PROT=3'b101); axil_a2_d32_prot5 (AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D32-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=32,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a48_d32_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=32, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d32 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=32, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D64-P2-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, SYNC_STAGES=4); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D64-P2-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=3); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, USE_AXI_LITE=1); axil_a64_d64 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D64-P2-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b010,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a2_d32_cachef_sync4 (AXI_CACHE=4'b1111, AXI_PROT=3'b010, SYNC_STAGES=4); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b010, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D64-P5-C0-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b101); axil_a2_d32_prot5 (AXI_CACHE=4'b0000, AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a64_d64 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D64-P5-C0-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b0000,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a3_d64_prot5_sync4 (AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b0000, AXI_DATA_WIDTH=64, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D64-P5-CF-S3"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=3,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a3_d32_cachef (AXI_CACHE=4'b1111, SYNC_STAGES=3); axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101); axil_a2_d32_prot5 (AXI_PROT=3'b101, SYNC_STAGES=3, USE_AXI_LITE=1); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, USE_AXI_LITE=1); axil_a64_d64 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, SYNC_STAGES=3, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-CFG-L-A64-D64-P5-CF-S4"
+kind = "untargeted-config"
+target = "CFG-AXI-ADDR-WIDTH=64,CFG-AXI-CACHE=4'b1111,CFG-AXI-DATA-WIDTH=64,CFG-AXI-PROT=3'b101,CFG-SYNC-STAGES=4,CFG-USE-AXI-LITE=1"
+reason = "No target builds this combination, while every value and every legal pair of values of the build dimensions has one. Each value and each pair of values here is built by one of these targets, listed with the values it shares with this combination: axi4_a64_d64_prot5_cachef_sync4 (AXI_ADDR_WIDTH=64, AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4); axil_a32_d64_prot5_cachef_sync4 (AXI_CACHE=4'b1111, AXI_DATA_WIDTH=64, AXI_PROT=3'b101, SYNC_STAGES=4, USE_AXI_LITE=1); axil_a64_d64 (AXI_ADDR_WIDTH=64, AXI_DATA_WIDTH=64, USE_AXI_LITE=1). No product configuration is known that instantiates this combination."
+approved = true
+
+[[exception]]
+id = "EXC-XFAIL-DMACTIVE-INFLIGHT"
+kind = "expected-fail"
+target = "tdr2axi_dmactive_inflight_test"
+reason = "dm_sba never reads dmactive_i (src/dm_sba.sv:26) and dm_csrs clears sbcs, sbaddress and sbdata while dmactive = 0 (src/dm_csrs.sv:688, :710-712), so an access stalled on AR, AW or W when dmactive falls changes its payload to the cleared values before READY. Verilator pin: CHK-DM-DMACTIVE-INFLIGHT FAIL, logged before the release, naming a change to addr 0x0 size 2 (AXI4) or size 0 (AXI-Lite), or to data 0x0 strb 0xf; allowed beside it, never alone: AxiSub's CHK-AXISUB-PAYLOAD-STABLE FAIL to the same cleared payload and the bench SVA's CHK-AXI-HANDSHAKE-SVA payload line. VCS pin: axi_lite_from_mem's $fatal that mem_addr_i, mem_wdata_i or mem_be_i has to be stable if request is not granted, with cocotb's shutdown records after it."
+issue = "dm_sba keeps an access in flight after dmactive falls, and its payload changes before READY"
+approved = true
+
+[[exception]]
+id = "EXC-XFAIL-DMACTIVE-NO-BUS"
+kind = "expected-fail"
+target = "tdr2axi_dmactive_no_bus_test"
+reason = "dm_sba never reads dmactive_i (src/dm_sba.sv:26), so an sbdata0 write while dmactive = 0 starts a write at the cleared address 0 (src/dm_sba.sv:127, src/dm_csrs.sv:542-551). Pin: CHK-DM-DMACTIVE-NO-BUS FAIL on the sbdata0 write raising AWVALID."
+issue = "dm_sba starts a bus write on an sbdata0 write while dmactive = 0"
+approved = true
+
+[[exception]]
+id = "EXC-XFAIL-SBA-NO-INC-AFTER-ERROR"
+kind = "expected-fail"
+target = "tdr2axi_sba_error_address_test"
+reason = "dm_sba sets the address increment from sbautoincrement whether or not the bus returned an error (src/dm_sba.sv:149, :166) and dm_csrs copies it back (src/dm_csrs.sv:325), so after SLVERR or DECERR sbaddress has moved past the failing word, against RISC-V Debug 0.13.2 3.12.19 and 3.12.23. Pin: CHK-SBA-NO-INC-AFTER-ERROR FAIL; allowed beside it, never alone: CHK-TDR-CAPTURE-EDGE FAIL on the capture of the sbaddress0 read that shows the moved address."
+issue = "sbaddress advances past a word whose access returns SLVERR or DECERR"
+approved = true

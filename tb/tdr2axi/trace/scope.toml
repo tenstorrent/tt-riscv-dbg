@@ -1,0 +1,3 @@
+schema_version = 1
+dut = "tdr2axi"
+level = "ip"

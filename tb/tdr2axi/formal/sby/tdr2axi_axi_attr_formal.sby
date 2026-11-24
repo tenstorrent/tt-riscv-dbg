@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 Tenstorrent USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# tdr2axi_axi_attr_formal: CHK-AXI-REQ-ATTRS-SVA and CHK-AXI-AXI4-SIZE-SVA. tdr2axi_fv_top
+# with dmi_tdr_bridge, dm_csrs and dm_sba cut at their ports, so the memory port and
+# sbaccess are free; the AXI adapter and the AxPROT, AxCACHE and AxSIZE assignments of
+# tdr2axi.sv are as built. The job keeps only the attribute and size assertions of
+# tdr2axi_axi_mgr_sva; tdr2axi_axi_mgr_formal checks the rest with dm_sba as built.
+# AXI_ADDR_WIDTH = 16 with AXI_DATA_WIDTH = 32 and 64, USE_AXI_LITE = 0 and 1, and each
+# of AXI_PROT and AXI_CACHE at its default and at 3'b101 and 4'b1111.
+# Run from formal/ with make, which builds build/sources.f with bender.
+
+[tasks]
+prove_a4_d32_p2_c0 prove a4_d32_p2_c0
+prove_a4_d32_p5_c15 prove a4_d32_p5_c15
+prove_a4_d64_p2_c0 prove a4_d64_p2_c0
+prove_a4_d64_p5_c15 prove a4_d64_p5_c15
+prove_al_d32_p2 prove al_d32_p2
+prove_al_d32_p5 prove al_d32_p5
+prove_al_d64_p2 prove al_d64_p2
+prove_al_d64_p5 prove al_d64_p5
+cover_a4_d32_p2_c0 cover a4_d32_p2_c0
+cover_a4_d32_p5_c15 cover a4_d32_p5_c15
+cover_a4_d64_p2_c0 cover a4_d64_p2_c0
+cover_a4_d64_p5_c15 cover a4_d64_p5_c15
+cover_al_d32_p2 cover al_d32_p2
+cover_al_d32_p5 cover al_d32_p5
+cover_al_d64_p2 cover al_d64_p2
+cover_al_d64_p5 cover al_d64_p5
+
+# Cover depth: SYNC_STAGES + 1 reset cycles, a held request, its handshake and response,
+# then a second request: 4 + 3 + 3 = 10 cycles, run to 20.
+[options]
+prove: mode prove
+prove: timeout 3600
+cover: mode cover
+cover: depth 20
+multiclock off
+
+[engines]
+prove: abc --keep-going pdr
+cover: smtbmc yices
+
+[script]
+a4_d32_p2_c0: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=0 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=32 -G AXI_PROT=2 -G AXI_CACHE=0 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+a4_d32_p5_c15: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=0 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=32 -G AXI_PROT=5 -G AXI_CACHE=15 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+a4_d64_p2_c0: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=0 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=64 -G AXI_PROT=2 -G AXI_CACHE=0 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+a4_d64_p5_c15: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=0 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=64 -G AXI_PROT=5 -G AXI_CACHE=15 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+al_d32_p2: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=1 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=32 -G AXI_PROT=2 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+al_d32_p5: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=1 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=32 -G AXI_PROT=5 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+al_d64_p2: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=1 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=64 -G AXI_PROT=2 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+al_d64_p5: read_slang -D FORMAL --top tdr2axi_fv_top -G USE_AXI_LITE=1 -G AXI_ADDR_WIDTH=16 -G AXI_DATA_WIDTH=64 -G AXI_PROT=5 -G AXI_MGR_SVA=1 --blackboxed-module dmi_tdr_bridge --blackboxed-module dm_csrs --blackboxed-module dm_sba -f sources.f tdr2axi_fv_top.sv tdr2axi_axi_mgr_sva.sv tdr2axi_axi_resp_sva.sv tdr2axi_axi_resp_sva_bind.sv
+# The outputs of the three cut modules become free inputs
+cutpoint -blackbox
+prep -flatten -top tdr2axi_fv_top
+chformal -assert -remove c:*_valid_held c:*_payload_stable c:*_no_valid_in_reset c:*_owed c:*_one_outstanding c:*_single_beat c:*_w_last
+
+[files]
+sources.f ../build/sources.f
+../tdr2axi_fv_top.sv
+../../sva/tdr2axi_axi_mgr_sva.sv
+../../sva/tdr2axi_axi_resp_sva.sv
+../../sva/tdr2axi_axi_resp_sva_bind.sv
