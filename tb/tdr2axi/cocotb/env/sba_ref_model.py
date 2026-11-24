@@ -427,7 +427,8 @@ class SbaRefModel:
     model.
 
     Readings: RISC-V Debug 0.13.2 throughout, except that an sbdata0 read without
-    sbreadondata leaves sbaddress unchanged, as Debug 1.0 reads it. A write of sbaddress0,
+    sbreadondata leaves sbaddress unchanged, and the read an sbdata0 read starts increments
+    sbaddress only when it succeeds, as Debug 1.0 reads both. A write of sbaddress0,
     sbaddress1, sbdata0 or sbdata1, or a read of sbdata0 or sbdata1, while sbbusy or
     sbbusyerror is set collides (0.13.2 3.12.19, 3.12.20, 3.12.23, 3.12.24): the DM
     answers DMI busy, sets sbbusyerror and does nothing else. A read of sbaddress0 or
@@ -869,7 +870,7 @@ class SbaRefModel:
             raise SbaStimulusError(
                 "access both misaligned and wider than the bus: S-TDR2AXI-0060 gives two codes"
             )
-        steps = not (misaligned or oversize) or trigger is _Trigger.SBDATA0_READ
+        steps = not (misaligned or oversize)
         autoinc = self._sbcs_rw & SBCS_SBAUTOINCREMENT
         if autoinc and steps and self._sbaddress + nbytes > self.cfg.addr_mask:
             raise SbaStimulusError(
@@ -910,7 +911,7 @@ class SbaRefModel:
             self._sbdata_known = width
         if error:
             self._sberror = error
-        steps = not error or access.trigger is _Trigger.SBDATA0_READ
+        steps = not error
         if self._sbcs_rw & SBCS_SBAUTOINCREMENT and steps:
             self._sbaddress += 1 << access.size
         self._phase = SbaPhase.RESPONDED

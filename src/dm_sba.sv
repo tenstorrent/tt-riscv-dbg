@@ -105,10 +105,6 @@ module dm_sba #(
   assign sbaddress_o = sbaddress_i + addr_incr;
 
 
-  // The read was started by a read of sbdata0 (sbreadondata). Debug spec 0.13.2
-  // increments sbaddress after such a read whether or not it succeeded; every other
-  // access increments only when it succeeded.
-  logic read_on_data_d, read_on_data_q;
   logic bus_err;
   assign bus_err = master_r_err_i | master_r_other_err_i;
 
@@ -123,7 +119,6 @@ module dm_sba #(
     sberror_valid_o = 1'b0;
 
     addr_incr_en    = 1'b0;
-    read_on_data_d  = read_on_data_q;
 
     state_d = state_q;
 
@@ -133,8 +128,7 @@ module dm_sba #(
         if (dmactive_i) begin
           // debugger requested a read
           if (sbaddress_write_valid_i && sbreadonaddr_i) begin
-            state_d        = dm::Read;
-            read_on_data_d = 1'b0;
+            state_d = dm::Read;
           end
           // debugger requested a write
           if (sbdata_write_valid_i) begin
@@ -142,8 +136,7 @@ module dm_sba #(
           end
           // perform another read
           if (sbdata_read_valid_i && sbreadondata_i) begin
-            state_d        = dm::Read;
-            read_on_data_d = 1'b1;
+            state_d = dm::Read;
           end
         end
       end
@@ -164,9 +157,8 @@ module dm_sba #(
       dm::WaitRead: begin
         if (sbdata_valid_o) begin
           state_d = dm::Idle;
-          // auto-increment address: after a successful read, or after any read started
-          // by a read of sbdata0
-          addr_incr_en = sbautoincrement_i & (read_on_data_q | ~bus_err);
+          // auto-increment address after a successful read
+          addr_incr_en = sbautoincrement_i & ~bus_err;
           // check whether an "other" error has been encountered.
           if (master_r_other_err_i) begin
             sberror_valid_o = 1'b1;
@@ -219,11 +211,9 @@ module dm_sba #(
 
   always_ff @(posedge clk_i or negedge rst_ni) begin : p_regs
     if (!rst_ni) begin
-      state_q        <= dm::Idle;
-      read_on_data_q <= 1'b0;
+      state_q <= dm::Idle;
     end else begin
-      state_q        <= state_d;
-      read_on_data_q <= read_on_data_d;
+      state_q <= state_d;
     end
   end
 

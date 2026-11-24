@@ -590,14 +590,14 @@ class NoIncrementAfterErrorTest(unittest.TestCase):
         complete(model, error=True)
         self.assertTrue(self._address(model).matches(0x504))
 
-    def test_sbdata0_read_error_still_increments(self) -> None:
-        """0.13.2 puts no success condition on the increment after an sbdata0 read."""
+    def test_sbdata0_read_error(self) -> None:
+        """The Debug 1.0 reading of X-RISCV_DEBUG-sbdata0-read: no increment after an error."""
         model = enabled()
         model.predict_dmi_write(sba.SBCS, sbcs_write(2, readondata=True, autoinc=True))
         model.predict_dmi_write(sba.SBADDRESS0, 0x600)
         model.predict_dmi_read(sba.SBDATA0)
         complete(model, error=True)
-        self.assertTrue(self._address(model).matches(0x604))
+        self.assertTrue(self._address(model).matches(0x600))
 
 
 class BusyTest(unittest.TestCase):
