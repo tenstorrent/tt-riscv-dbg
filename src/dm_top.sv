@@ -187,6 +187,7 @@ module dm_top #(
     .master_we_o,
     .master_wdata_o,
     .master_be_o,
+    .master_size_o           (                       ),
     .master_gnt_i,
     .master_r_valid_i,
     .master_r_err_i,
