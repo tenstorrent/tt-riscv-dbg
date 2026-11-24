@@ -8,7 +8,7 @@
 //     41-bit DMI TDR -> dmi_tdr_bridge -> dm_csrs -> dm_sba -> mem port
 //       USE_AXI_LITE = 1: axi_lite_from_mem            -> AXI4-Lite manager
 //       USE_AXI_LITE = 0: axi_from_mem (+ lite_to_axi) -> AXI4 manager (single beat,
-//                                                         AxSIZE = sbcs.sbaccess)
+//                                                         AxSIZE = SBA access size)
 //
 //   Only the SBA registers are useful: there is no hart behind this DM, so hart 0
 //   reports unavailable and every abstract command fails with "not supported".
@@ -201,6 +201,7 @@ module tdr2axi #(
   logic                        mem_we;
   logic [  AXI_DATA_WIDTH-1:0] mem_wdata;
   logic [AXI_DATA_WIDTH/8-1:0] mem_be;
+  logic [                 2:0] mem_size;
   logic                        mem_gnt;
   logic                        mem_rsp_valid;
   logic [  AXI_DATA_WIDTH-1:0] mem_rsp_rdata;
@@ -219,6 +220,7 @@ module tdr2axi #(
       .master_we_o            (mem_we),
       .master_wdata_o         (mem_wdata),
       .master_be_o            (mem_be),
+      .master_size_o          (mem_size),
       .master_gnt_i           (mem_gnt),
       .master_r_valid_i       (mem_rsp_valid),
       .master_r_err_i         (mem_rsp_error),
@@ -299,11 +301,13 @@ module tdr2axi #(
 
     // AxSIZE follows the SBA access size instead of the full bus width, so a narrow
     // read does not fetch the whole bus word. dm_sba only issues naturally aligned
-    // accesses (else sberror = 3) and sbaccess <= 3 (else sberror = 4).
+    // accesses (else sberror = 3) and sbaccess <= 3 (else sberror = 4). mem_size is
+    // the size of the access in flight, held with the rest of the request, not the
+    // live sbcs.sbaccess (dmactive = 0 resets sbcs under an ungranted request).
     always_comb begin
       o_axi_req         = axi_req;
-      o_axi_req.aw.size = axi_pkg::size_t'(sbaccess);
-      o_axi_req.ar.size = axi_pkg::size_t'(sbaccess);
+      o_axi_req.aw.size = axi_pkg::size_t'(mem_size);
+      o_axi_req.ar.size = axi_pkg::size_t'(mem_size);
     end
   end
 

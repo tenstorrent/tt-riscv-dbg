@@ -328,10 +328,25 @@ module tdr2axi_axi_mgr_sva #(
       $error("CHK-AXI-REQ-ATTRS-SVA FAIL: WUSER %0d", w_user);
     end
 
-    // CHK-AXI-AXI4-SIZE-SVA
+    // CHK-AXI-AXI4-SIZE-SVA: AxSIZE is sbcs.sbaccess when the request rises. While the
+    // request waits for READY, dmactive = 0 may reset sbcs under it; the size then holds
+    // (CHK-AXI-HANDSHAKE-SVA), so only the first cycle of each request is compared.
+    logic ar_waited_q;
+    logic aw_waited_q;
+
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+      if (!rst_ni) begin
+        ar_waited_q <= 1'b0;
+        aw_waited_q <= 1'b0;
+      end else begin
+        ar_waited_q <= ar_valid && !ar_ready;
+        aw_waited_q <= aw_valid && !aw_ready;
+      end
+    end
+
     a_ar_size :
     assert property (@(posedge clk_i) disable iff (!rst_ni || !en_i)
-        !ar_valid || (ar_size == sbaccess_i))
+        !ar_valid || ar_waited_q || (ar_size == sbaccess_i))
     else begin
       fail_axi4_size++;
       $error("CHK-AXI-AXI4-SIZE-SVA FAIL: ARSIZE %0d, sbaccess %0d", ar_size, sbaccess_i);
@@ -339,7 +354,7 @@ module tdr2axi_axi_mgr_sva #(
 
     a_aw_size :
     assert property (@(posedge clk_i) disable iff (!rst_ni || !en_i)
-        !aw_valid || (aw_size == sbaccess_i))
+        !aw_valid || aw_waited_q || (aw_size == sbaccess_i))
     else begin
       fail_axi4_size++;
       $error("CHK-AXI-AXI4-SIZE-SVA FAIL: AWSIZE %0d, sbaccess %0d", aw_size, sbaccess_i);

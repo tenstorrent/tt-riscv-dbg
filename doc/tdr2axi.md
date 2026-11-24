@@ -120,15 +120,25 @@ side-effecting reads with `sbreadondata` unless enough Run-Test/Idle cycles are 
   clears the bridge with op 3 and the DM with `dmcontrol.dmactive` = 0.
 * If `i_arst_n` is a system reset, it must also reset the fabric `tdr2axi` accesses,
   so that an outstanding AXI transaction never survives on one side only.
+* While `dmcontrol.dmactive` = 0 no bus access starts. An access already in flight
+  when `dmactive` falls completes on the bus with the address, size, data and strobes
+  it started with, and its result (read data, `sberror`, address increment) is
+  dropped, so the DM still comes out of reset with its reset values. If `dmactive` is
+  set again first, `sbcs.sbbusy` reads 1 until that access completes. AXI cannot abort
+  a transaction, so an access the fabric never answers is cleared only by `i_arst_n`.
 
 ## AXI transactions
 
 * One transaction at a time, single beat, ID 0, user 0, `AxPROT` = `AXI_PROT`,
   `AxCACHE` = `AXI_CACHE`.
-* AXI4: `AxSIZE` follows `sbcs.sbaccess`, so a narrow read does not fetch the whole bus
+* AXI4: `AxSIZE` is the `sbcs.sbaccess` the access started with, so a narrow read does not fetch the whole bus
   word. `dm_sba` only issues naturally aligned accesses (`sberror` = 3 otherwise) and
   accesses up to the data width (`sberror` = 4 otherwise).
-* `SLVERR` and `DECERR` responses set `sbcs.sberror` = 2.
+* `SLVERR` and `DECERR` responses set `sbcs.sberror` = 2. With `sbautoincrement` = 1,
+  `sbaddress` advances only after a successful access, so after an error it holds the
+  failing address (RISC-V Debug 0.13.2, `sbaddress0` and `sbdata0` writes). A read
+  started by a read of `sbdata0` advances it whatever the response, as 0.13.2
+  specifies.
 
 ## Programming examples
 
