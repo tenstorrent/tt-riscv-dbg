@@ -138,9 +138,8 @@ side-effecting reads with `sbreadondata` unless enough Run-Test/Idle cycles are 
   accesses up to the data width (`sberror` = 4 otherwise).
 * `SLVERR` and `DECERR` responses set `sbcs.sberror` = 2. With `sbautoincrement` = 1,
   `sbaddress` advances only after a successful access, so after an error it holds the
-  failing address (RISC-V Debug 0.13.2, `sbaddress0` and `sbdata0` writes). A read
-  started by a read of `sbdata0` advances it whatever the response, as 0.13.2
-  specifies.
+  failing address. That includes a read started by a read of `sbdata0`: RISC-V Debug
+  0.13.2 words that increment without a success condition, and Debug 1.0 adds it.
 
 ## Programming examples
 
