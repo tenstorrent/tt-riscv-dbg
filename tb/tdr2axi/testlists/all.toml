@@ -67,12 +67,6 @@ bringup_targets = ["axi4_a2_d32_cachef_sync4", "axil_a2_d32_prot5", "axi4_a3_d32
 [[tests]]
 name = "tdr2axi_sba_error_address_test"
 reseed = 5
-expect_fail = true
-expect_fail_match = 'CHK-SBA-NO-INC-AFTER-ERROR FAIL: sbaddress advanced after a failed access: 0x[0-9a-f]+, one access past the failing address 0x[0-9a-f]+, after '
-expect_fail_allow = [
-  'CHK-SBA-NO-INC-AFTER-ERROR FAIL: DM answer to READ 0x39 data 0x00000000: response 0 data 0x[0-9a-f]{8}, predicted 0x[0-9a-f]+ on mask 0xffffffff',
-  'CHK-TDR-CAPTURE-EDGE FAIL: o_dmi_tdr 0x[0-9a-f]+ at capture, predicted TdrCaptureExpect\(addr=57, data=TdrField\(allowed=\([0-9]+,\), mask=4294967295\), status=<TdrStatus\.SUCCESS: 0>',
-]
 
 [[tests]]
 name = "tdr2axi_sba_stress_test"
@@ -151,20 +145,10 @@ reseed = 20
 [[tests]]
 name = "tdr2axi_dmactive_no_bus_test"
 reseed = 20
-expect_fail = true
-expect_fail_match = 'CHK-DM-DMACTIVE-NO-BUS FAIL: sbdata0 write of 0x[0-9a-f]{8} while dmactive = 0 raised AWVALID'
 
 [[tests]]
 name = "tdr2axi_dmactive_inflight_test"
 reseed = 20
-expect_fail = true
-expect_fail_match = 'CHK-DM-DMACTIVE-INFLIGHT FAIL: (AR|AW|W) payload changed after the dmactive fall, before READY, at [0-9.]+ ns: .* -> (addr 0x0 size [02]|data 0x0 strb 0xf)\b'
-expect_fail_match_vcs = '(mem_addr_i|mem_wdata_i|mem_be_i) has to be stable if request is not granted'
-expect_fail_allow = [
-  'CHK-AXISUB-PAYLOAD-STABLE FAIL: A[RW] changed before READY: AxiAddr\(.*\) -> AxiAddr\(addr=0, size=[02],',
-  'CHK-AXISUB-PAYLOAD-STABLE FAIL: W changed before READY: AxiW\(.*\) -> AxiW\(data=0, strb=15,',
-  'CHK-AXI-HANDSHAKE-SVA FAIL: (AR|AW|W) payload changed while (AR|AW|W)VALID waited for (AR|AW|W)READY',
-]
 
 [[groups]]
 name = "smoke"
