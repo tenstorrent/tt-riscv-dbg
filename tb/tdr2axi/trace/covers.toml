@@ -237,9 +237,21 @@ model = ["CFG-AXI-PROT"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
+id = "c_dm_command_ones"
+feature = "F-DM-abstract-cmd-unsupported"
+tests = ["tdr2axi_dm_write_ones_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
 id = "c_dm_command_write"
 feature = "F-DM-abstract-cmd-unsupported"
-tests = ["tdr2axi_dm_registers_test"]
+tests = ["tdr2axi_dm_registers_test", "tdr2axi_dm_write_ones_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_command_zero_after_ones"
+feature = "F-DM-abstract-cmd-unsupported"
+tests = ["tdr2axi_dm_write_ones_test"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
@@ -261,9 +273,56 @@ tests = ["tdr2axi_dmactive_inflight_test"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
+id = "c_dm_dmactive_fall_b_wait"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_fall_cmderr"
+feature = "F-DM-dmactive-clear"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_fall_r_wait"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_fall_sbbusyerror"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
 id = "c_dm_dmactive_fall_w_wait"
 feature = "F-DM-dmactive-inflight"
 tests = ["tdr2axi_dmactive_inflight_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_rise_b_wait"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_rise_inflight"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_dmactive_rise_r_wait"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
@@ -287,13 +346,41 @@ module = "cov/sv/tdr2axi_fcov.sv"
 [[cover]]
 id = "c_dm_op3_dm_written"
 feature = "F-DM-dmactive-clear"
-tests = ["tdr2axi_dmactive_clear_test"]
+tests = ["tdr2axi_dmactive_clear_test", "tdr2axi_sba_busy_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_op3_while_held"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_response_while_inactive"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_sba_access_held"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
 id = "c_dm_sbaddress0_write_inactive"
 feature = "F-DM-dmactive-no-bus-access"
 tests = ["tdr2axi_dmactive_no_bus_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_dm_sbcs_read_held"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-DMACTIVE"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
@@ -385,6 +472,13 @@ model = ["T-TDR2AXI-cdc-clear-20to21", "RDC-ARST", "CFG-CLK-RATIO"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
+id = "c_rst_cdc_dst_wait_ack"
+feature = "F-RESET-async-any-time"
+tests = ["tdr2axi_reset_during_clear_test"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK", "RDC-ARST"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
 id = "c_rst_cdc_req_inflight"
 feature = "F-RESET-async-any-time"
 tests = ["tdr2axi_reset_traffic_test"]
@@ -396,6 +490,13 @@ id = "c_rst_dmactive_alone"
 feature = "F-DM-dmactive-clear"
 tests = ["tdr2axi_dmactive_reset_test"]
 model = ["RST-DMACTIVE"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_rst_dmactive_held"
+feature = "F-DM-dmactive-inflight"
+tests = ["tdr2axi_dmactive_inflight_test"]
+model = ["RST-ARST-BUS", "RST-DMACTIVE"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
@@ -582,8 +683,8 @@ module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
 id = "c_sba_read_error_autoinc_data"
-feature = "F-SBA-bus-error"
-tests = ["tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
+feature = "F-SBA-no-increment-after-error"
+tests = ["tdr2axi_sba_error_address_test", "tdr2axi_sba_errors_test", "tdr2axi_sba_stress_test"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
@@ -596,6 +697,13 @@ module = "cov/sv/tdr2axi_fcov.sv"
 id = "c_sba_sbaddress0_no_read"
 feature = "F-SBA-single-read"
 tests = ["tdr2axi_sba_single_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbaddress1_write_absent"
+feature = "F-SBA-address-width"
+tests = ["tdr2axi_dm_write_ones_test"]
+model = ["CFG-AXI-ADDR-WIDTH"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
@@ -627,6 +735,12 @@ module = "cov/sv/tdr2axi_fcov.sv"
 id = "c_sba_sbcs_active"
 feature = "F-SBA-sbcs-fields"
 tests = ["tdr2axi_smoke_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "c_sba_sbcs_write_busy_same_size"
+feature = "F-SBA-busy-status"
+tests = ["tdr2axi_sba_busy_test"]
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]
@@ -944,6 +1058,13 @@ module = "cov/sv/tdr2axi_fcov.sv"
 id = "c_tdr_write_in_idle"
 feature = "F-TDR-op-decode"
 tests = ["tdr2axi_tdr_ops_test", "tdr2axi_smoke_test"]
+module = "cov/sv/tdr2axi_fcov.sv"
+
+[[cover]]
+id = "dm_hold_cg.cx_resp_dmactive"
+feature = "F-DM-dmactive-inflight"
+model = ["RST-DMACTIVE"]
+group = "dm_hold_cg"
 module = "cov/sv/tdr2axi_fcov.sv"
 
 [[cover]]

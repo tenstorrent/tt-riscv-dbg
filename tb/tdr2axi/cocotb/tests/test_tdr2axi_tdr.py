@@ -130,12 +130,15 @@ async def tdr2axi_tdr_busy_update_test(dut: SimHandleBase) -> None:
 
     One round per op of ``REFUSED_OPS``, in a seeded order, each with its own memory range.
     A round stops i_clk for a seeded number of periods, scans write A, then the refused
-    update and up to ``BUSY_SCANS_MAX`` more seeded updates of op 0, 1 or 2, holds i_clk
+    update and one to ``BUSY_SCANS_MAX`` more seeded updates of op 0, 1 or 2, so every
+    round scans an update under the sticky busy while write A is pending, holds i_clk
     stopped for a seeded number of periods and restarts it. It then polls with NOPs, scans
     an update of each op 0, 1 and 2 under the sticky busy, and clears it with op 3. A
     capture while a write is pending is not an error; the refusal shows at the next capture.
     The scoreboard grades each capture's status (CHK-TDR-BUSY-UPDATE, CHK-TDR-STICKY-IGNORE),
-    the one write that reaches the bus and the memory against the models.
+    the one write that reaches the bus and the memory against the models. Each round logs
+    the op, address and data of every update it scans while write A is pending and under
+    the sticky busy.
     """
     tb = await Tdr2axiTb.setup(dut, "tdr2axi_tdr_busy_update_test")
     await tb.dmi_write(SBCS, sbcs_value(WORD, autoinc=True))
@@ -157,16 +160,17 @@ async def _busy_update_round(tb: Tdr2axiTb, what: str, refused: DmiOp, base: int
     write_a = rng.getrandbits(32)
     busy_words = [
         _busy_word(rng, op)
-        for op in (refused, *rng.choices(REFUSED_OPS, k=rng.randint(0, BUSY_SCANS_MAX)))
+        for op in (refused, *rng.choices(REFUSED_OPS, k=rng.randint(1, BUSY_SCANS_MAX)))
     ]
     tb.log.info(
         "%s: i_clk stopped %d periods before write A 0x%08x and %d after %d updates while "
-        "it is pending",
+        "it is pending: %s",
         what,
         stop,
         write_a,
         hold,
         len(busy_words),
+        ", ".join(_word_text(word) for word in busy_words),
     )
     tb.mem_fill(base, 2 * tb.nbytes)
     await tb.sba_set_addr(base)
@@ -182,7 +186,9 @@ async def _busy_update_round(tb: Tdr2axiTb, what: str, refused: DmiOp, base: int
     for _ in range(STICKY_POLLS):
         await tb.scan(tdr_word(DmiOp.NOP, 0, 0))
     # With write A complete and nothing pending, the sticky busy ignores every op but 3
-    await tb.scan_sticky(_sticky_words(rng), f"{what}: sticky busy")
+    sticky = _sticky_words(rng)
+    tb.log.info("%s: under the sticky busy: %s", what, ", ".join(_word_text(w) for w in sticky))
+    await tb.scan_sticky(sticky, f"{what}: sticky busy")
     await tb.dmi_clear()
     await tb.sba_idle()
     tb.clear_monitor()
@@ -193,6 +199,12 @@ async def _busy_update_round(tb: Tdr2axiTb, what: str, refused: DmiOp, base: int
 def _busy_word(rng: random.Random, op: DmiOp) -> int:
     """An update of op ``op`` to sbaddress0, sbdata0 or sbcs with seeded data."""
     return tdr_word(op, rng.choice((SBADDRESS0, SBDATA0, SBCS)), rng.getrandbits(32))
+
+
+def _word_text(word: int) -> str:
+    """An update word's op, address and data, for a log line to replay it from."""
+    op = DmiOp(word & 3).name
+    return f"{op} 0x{word >> TDR_ADDR_LSB:02x} 0x{(word >> TDR_DATA_LSB) & WORD_MASK:08x}"
 
 
 @cocotb.test(timeout_time=TIMEOUT_MS, timeout_unit="ms")

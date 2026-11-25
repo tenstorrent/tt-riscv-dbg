@@ -17,12 +17,13 @@ the R or B handshake at a known edge. It times each sweep stall from the polling
 Capture-DR edge, logs where the response handshake and the DM's sbcs read fell, and is
 inconclusive when no stall puts the read on the edge after the handshake.
 
-``tdr2axi_sba_error_address_test`` checks RISC-V External Debug Support 0.13.2 sections
-3.12.19 and 3.12.23: sbaddress advances after a read an sbaddress0 write started or a
-write an sbdata0 write started only when that access succeeded, so after SLVERR or DECERR
-sbaddress reads the failing address. A read an sbdata0 read started has no such condition
-and is not made here. Its FAIL line names an advance by the access size apart from any other
-wrong address, and the run logs its scenario order and one line per scenario.
+``tdr2axi_sba_error_address_test`` checks that with sbautoincrement set sbaddress advances
+only after a successful access, so after SLVERR or DECERR it reads the failing address: a
+read an sbaddress0 write started or a write an sbdata0 write started (RISC-V External Debug
+Support 0.13.2 sections 3.12.19 and 3.12.23), and a read an sbdata0 read started, which
+0.13.2 3.12.23 words with no success condition and Debug 1.0 and doc/tdr2axi.md condition
+on success. Its FAIL line names an advance by the access size apart from any other wrong
+address, and the run logs its scenario order and one line per scenario.
 
 ``tdr2axi_sba_stress_test`` makes one operation of each kind and TDR2AXI_SBA_STRESS_OPS
 more, 24 unless set, drawn from the seed; its block reads draw per element whether
@@ -74,6 +75,8 @@ WORD = 2
 SIZE_MAX = 4
 # Largest value of the 3-bit sbaccess field; 5 to 7 name no size
 SBACCESS_MAX = 7
+# sbreadonaddr, sbaccess, sbautoincrement and sbreadondata: the read-write fields of sbcs
+SBCS_RW_FIELDS = sbcs_value(SBACCESS_MAX, readonaddr=True, readondata=True, autoinc=True)
 # The block error cases' range, above the single accesses' and aligned to the widest size
 ERROR_BLOCK_OFFSET = 0x100
 ERROR_BLOCK_BYTES = 2 * BLOCK_LEN * 8
@@ -103,10 +106,12 @@ REGISTER_NAMES = {
 # Simulated-time bounds at the slowest i_clk the clock ratios name, 20 times slower than TCK
 SINGLE_TIMEOUT_MS = 2 * TIMEOUT_MS
 ERRORS_TIMEOUT_MS = 2 * TIMEOUT_MS
-BUSY_TIMEOUT_MS = 2 * TIMEOUT_MS
+BUSY_TIMEOUT_MS = 4 * TIMEOUT_MS
 
 BUSY_OFFSET = 0x4000
 BUSY_WORDS = 16
+# Most i_clk cycles a stall of its own waits between starting its access and the colliding one
+COLLISION_WAIT_MAX = 32
 # d - SYNC_STAGES of the stalled accesses of the response sweep, a read and a write at each
 SWEEP_STEPS = range(-1, 4)
 # i_clk rising edges from the one at which the subordinate first sees its stall ended to the
@@ -125,8 +130,9 @@ ERROR_ADDRESS_ROUNDS = 3
 ERROR_ADDRESS_OFFSET = 0xA000
 ERROR_ADDRESS_SPAN = 0x200
 ERROR_BLOCK_MAX = 6
-# Simulated-time bound of the six scenarios at the slowest i_clk the knobs draw
-ERROR_ADDRESS_TIMEOUT_MS = 20 * TIMEOUT_MS
+# Simulated-time bound of the 3 * ERROR_ADDRESS_ROUNDS scenarios at the slowest i_clk the
+# knobs draw
+ERROR_ADDRESS_TIMEOUT_MS = 30 * TIMEOUT_MS
 
 STRESS_OFFSET = 0xC000
 STRESS_SPAN = 0x400
@@ -424,24 +430,34 @@ async def tdr2axi_sba_busy_test(dut: SimHandleBase) -> None:
     """An SBA access stalled on the bus, on the seed's subordinate timing: DM busy, sticky
     TDR busy that ignores updates until op 3, and sbbusyerror. While the read is held, the
     DM answers busy to a write of sbaddress0, sbaddress1, sbdata0 and sbdata1 and an sbdata1
-    read, answers sbaddress reads, and answers busy to an sbcs write that would change every
-    field, which the sbcs and sbaddress reads after it show unchanged. Then a write held the
-    same way sets sbbusyerror, and once it completes the DM answers busy to those writes and
-    the sbdata1 read with sbbusyerror alone set, and an sbcs write with bit 22 clear leaves
-    sbbusyerror set. The scoreboard grades each busy answer (CHK-SBA-SBBUSYERROR) and the
-    captures from it to op 3 (CHK-TDR-BUSY-DM). Then the response sweep, on fixed timing:
-    stalled reads and writes, each polled with one sbcs read whose stall ends so the R or B
+    read, answers sbaddress reads, and answers busy to two sbcs writes that would change
+    every flag, the first at the held read's sbaccess and the second at another, which the
+    sbcs read after each and the sbaddress reads after the second show unchanged. Then a
+    write held the same way sets sbbusyerror. Once it completes, with sbbusyerror alone
+    set, an sbcs write with bit 22 clear and sbreadonaddr and sbreadondata set is taken and
+    leaves sbbusyerror set, and the DM answers busy to each of those writes and the sbdata0
+    and sbdata1 reads, none of which starts a bus access. Then each of those writes, the
+    sbdata0 and sbdata1 reads and the sbaddress reads gets a stall of its own from
+    sbbusyerror clear, in a seeded order: each colliding access on its own sets
+    sbbusyerror, the sbaddress reads leave it clear, and each stalled access completes
+    once. The scoreboard grades each busy answer (CHK-SBA-SBBUSYERROR), the captures from
+    it to op 3 (CHK-TDR-BUSY-DM), and the capture after each op 3 and the DM reads up to the
+    next write (CHK-DM-OP3-KEEPS-DM). Then the response sweep, on fixed timing: stalled
+    reads and writes, each polled with one sbcs read whose stall ends so the R or B
     handshake falls d i_clk edges after the read is handed to the CDC, d from
     SYNC_STAGES - 1 to SYNC_STAGES + 3. The DM takes the read SYNC_STAGES + 2 edges after
-    the hand-over, so the read and the write at d = SYNC_STAGES + 1 put it on the edge after
-    the handshake. The scoreboard grades the sbbusy of every sbcs read (CHK-SBA-SBBUSY): 1
-    for a read taken before the response, 0 or 1 for the first read after it. Each stalled
-    access is graded as a single read or write."""
+    the hand-over, so the read and the write at d = SYNC_STAGES + 1 put it on the edge
+    after the handshake.
+    The scoreboard grades the sbbusy of every sbcs read (CHK-SBA-SBBUSY): 1 for a read
+    taken before the response, 0 or 1 for the first read after it. Each stalled access is
+    graded as a single read or write."""
     tb = await Tdr2axiTb.setup(dut, "tdr2axi_sba_busy_test")
     base = tb.region + BUSY_OFFSET
+    last = base + (BUSY_WORDS - 1) * tb.nbytes
     tb.mem_fill(base, BUSY_WORDS * tb.nbytes)
     await _sticky_stall(tb, base)
-    await _sbbusyerror_alone(tb, base, base + (BUSY_WORDS - 1) * tb.nbytes)
+    await _sbbusyerror_alone(tb, base, last)
+    await _collision_stalls(tb, base, last)
     _use_sweep_timing(tb)
     await _response_sweep(tb, base + tb.nbytes)
     tb.finish()
@@ -557,9 +573,15 @@ async def _sticky_stall(tb: Tdr2axiTb, base: int) -> None:
     sbcs read straight after op 3, ahead of every other collision, shows the sbbusyerror the
     sbdata0 read set. With the read held and sbbusyerror set, the DM answers busy to each
     access of ``_collisions`` in a seeded order, answers the sbaddress reads after them, and
-    answers busy to the sbcs write of ``_sbcs_write_in_flight``; the sbcs and sbaddress reads
-    after it hold every field they held before."""
+    answers busy to two sbcs writes of ``_sbcs_write_in_flight``, the first at the held
+    read's sbaccess and the second at a seeded other one; the sbcs read after each and the
+    sbaddress reads after the second hold every field they held before. The write at the
+    held sbaccess comes first: a DM that takes it changes no byte enable of the held
+    request, so its grade logs before a DM that takes the second write changes them and,
+    on a simulator that compiles them, the AXI adapter's request-stability assertions end
+    the run."""
     held = sbcs_value(WORD, readonaddr=True)
+    held_size = (held >> SBCS_SBACCESS_LSB) & SBACCESS_MAX
     tb.clear_monitor()
     tb.sub.stall = True
     await tb.dmi_write(SBCS, held)
@@ -578,8 +600,11 @@ async def _sticky_stall(tb: Tdr2axiTb, base: int) -> None:
     await _expect_sbbusyerror(tb, "the sbdata0 read during the stall")
     await _busy_answers(tb, _collisions(tb, base), "the read held on AR")
     await _read_sbaddress(tb)
-    await _sbcs_write_in_flight(tb, held)
-    await _expect_sbbusyerror(tb, "the access during the stall")
+    await _sbcs_write_in_flight(tb, held, held_size)
+    await _expect_sbbusyerror(tb, "the busy sbcs write of the held sbaccess", held=held)
+    other_size = tb.rng.choice([s for s in range(tb.max_size + 1) if s != held_size])
+    await _sbcs_write_in_flight(tb, held, other_size)
+    await _expect_sbbusyerror(tb, "the busy sbcs write of another sbaccess", held=held)
     await _read_sbaddress(tb)
     tb.sub.stall = False
     await tb.sba_idle(0, exp_busyerr=True)
@@ -595,13 +620,23 @@ async def _sticky_stall(tb: Tdr2axiTb, base: int) -> None:
     tb.expect_no_bus(SBBUSYERROR, "stalled read")
 
 
-async def _expect_sbbusyerror(tb: Tdr2axiTb, what: str) -> None:
-    """An sbcs read, which sets no field, with sbbusyerror = 1 (CHK-SBA-SBBUSYERROR); the
-    scoreboard compares the whole value with the SBA model."""
+async def _expect_sbbusyerror(
+    tb: Tdr2axiTb, what: str, *, expected: int = 1, held: int | None = None
+) -> None:
+    """An sbcs read, which sets no field, with sbbusyerror = ``expected`` and, with
+    ``held``, the read-write fields ``held`` sets (CHK-SBA-SBBUSYERROR); the scoreboard
+    compares the whole value with the SBA model."""
     value = await tb.dmi_read(SBCS)
     tb.checker.expect_equal(
-        SBBUSYERROR, (value >> SBCS_SBBUSYERROR) & 1, 1, f"sbbusyerror after {what}"
+        SBBUSYERROR, (value >> SBCS_SBBUSYERROR) & 1, expected, f"sbbusyerror after {what}"
     )
+    if held is not None:
+        tb.checker.expect_equal(
+            SBBUSYERROR,
+            value & SBCS_RW_FIELDS,
+            held & SBCS_RW_FIELDS,
+            f"sbreadonaddr, sbaccess, sbautoincrement and sbreadondata after {what}",
+        )
 
 
 def _collisions(tb: Tdr2axiTb, base: int) -> list[tuple[DmiOp, int, int]]:
@@ -622,16 +657,13 @@ def _collisions(tb: Tdr2axiTb, base: int) -> list[tuple[DmiOp, int, int]]:
     ]
 
 
-async def _sbcs_write_in_flight(tb: Tdr2axiTb, held: int) -> None:
-    """An sbcs write with the read held on AR and sbbusyerror set, after every collision so
-    none sets sbbusyerror again. It sets bit 22 and complements every rw field of ``held``,
-    the sbcs value the DM holds: each flag inverted and a seeded sbaccess other than held's,
-    so the sbcs read straight after it shows any field the DM changed. The scoreboard takes
-    the sbcs fields from every sbcs write it sees, answered busy or not, so no access may
-    start before the next sbcs write."""
+async def _sbcs_write_in_flight(tb: Tdr2axiTb, held: int, size: int) -> None:
+    """An sbcs write of sbaccess ``size`` with the read held on AR and sbbusyerror set, after
+    every collision so none sets sbbusyerror again. It sets bit 22 and inverts every flag of
+    ``held``, the sbcs value the DM holds, so the sbcs read straight after it shows any
+    field the DM changed. The scoreboard takes the sbcs fields from every sbcs write it
+    sees, answered busy or not, so no access may start before the next sbcs write."""
     flags = sbcs_value(0, readonaddr=True, readondata=True, autoinc=True)
-    held_size = (held >> SBCS_SBACCESS_LSB) & SBACCESS_MAX
-    size = tb.rng.choice([s for s in range(tb.max_size + 1) if s != held_size])
     value = (~held & flags) | sbcs_value(size) | SBCS_CLEAR_ERRORS
     await _busy_answers(tb, [(DmiOp.WRITE, SBCS, value)], "the read held on AR")
 
@@ -653,11 +685,14 @@ async def _busy_answers(tb: Tdr2axiTb, accesses: list[tuple[DmiOp, int, int]], w
 
 async def _sbbusyerror_alone(tb: Tdr2axiTb, base: int, addr: int) -> None:
     """A write at ``addr`` held on AW and W and a second sbdata0 write the DM answers busy,
-    which sets sbbusyerror. Once the write completes, with only sbbusyerror set, the DM
-    answers busy to each access of ``_collisions`` and the subordinate holds READY low over
-    them, so a request one starts waits on its channel with VALID high when it is checked.
-    An sbcs write with bit 22 clear and a seeded sbaccess is taken and leaves sbbusyerror
-    set; writing 1 to bit 22 clears it."""
+    which sets sbbusyerror. Once the write completes, with only sbbusyerror set, an sbcs
+    write with bit 22 clear, a seeded sbaccess, and sbreadonaddr and sbreadondata set is
+    taken and leaves sbbusyerror set. Then, in a seeded order, the DM answers busy to each
+    access of ``_collisions`` and an sbdata0 read, and each starts no bus access, where a
+    DM that ignored sbbusyerror would start one on the sbaddress0 write, the sbdata0 write
+    and the sbdata0 read. The subordinate holds READY low over them, so a request one
+    starts waits on its channel with VALID high when that access is checked; writing 1 to
+    bit 22 then clears sbbusyerror."""
     data = tb.rand_data(WORD)
     what = f"write @0x{addr:x} held on AW and W"
     tb.clear_monitor()
@@ -670,21 +705,103 @@ async def _sbbusyerror_alone(tb: Tdr2axiTb, base: int, addr: int) -> None:
     await tb.sba_idle(0, exp_busyerr=True)
     tb.expect_write(addr, WORD, data, check_id=SINGLE_WRITE)
     tb.ref_write(addr, WORD, data)
-    mark = tb.bus_mark()
+    size = tb.rng.randint(0, tb.max_size)
+    flags = sbcs_value(size, readonaddr=True, readondata=True)
+    tb.log.info(
+        "sbcs write 0x%08x, sbaccess %d with sbreadonaddr and sbreadondata, bit 22 clear",
+        flags,
+        size,
+    )
+    await tb.dmi_write(SBCS, flags)
+    await tb.sba_idle(0, exp_busyerr=True)
+    await _expect_sbbusyerror(tb, "the sbcs write with bit 22 clear", held=flags)
+    accesses = [*_collisions(tb, base), (DmiOp.READ, SBDATA0, 0)]
+    tb.rng.shuffle(accesses)
+    first = tb.bus_mark()
     tb.sub.stall = True
     try:
-        await _busy_answers(tb, _collisions(tb, base), "sbbusyerror alone is set")
-        tb.expect_no_request(
-            mark, SBBUSYERROR, "accesses with sbbusyerror alone set, READY held low"
-        )
+        for access in accesses:
+            op, reg, _ = access
+            mark = tb.bus_mark()
+            await _busy_answers(tb, [access], "sbbusyerror alone is set")
+            tb.expect_no_request(
+                mark,
+                SBBUSYERROR,
+                f"{REGISTER_NAMES[reg]} {op.name.lower()} with sbbusyerror alone set, "
+                f"sbcs 0x{flags:08x}, READY held low",
+            )
     finally:
         tb.sub.stall = False
-    size = tb.rng.randint(0, tb.max_size)
-    tb.log.info("sbcs write of sbaccess %d with bit 22 clear: sbbusyerror holds", size)
-    await tb.dmi_write(SBCS, sbcs_value(size))
     await tb.sba_idle(0, exp_busyerr=True)
+    tb.expect_no_bus_since(
+        first, SBBUSYERROR, "accesses with sbbusyerror alone set, polled to idle"
+    )
     await _clear_sberror(tb, WORD)
     tb.expect_no_bus(SINGLE_WRITE, f"{what}: one transaction")
+
+
+async def _collision_stalls(tb: Tdr2axiTb, base: int, last: int) -> None:
+    """Each access of ``_collisions``, an sbdata0 read and the sbaddress reads in a stall of
+    its own, in a seeded order, each from sbbusyerror and sbbusy clear, so each colliding
+    access shows on its own that it sets sbbusyerror and the sbaddress reads show that
+    they leave it clear. Each stall holds a seeded read at ``base`` or write at ``last``."""
+    stalls = [*_collisions(tb, base), (DmiOp.READ, SBDATA0, 0), (DmiOp.READ, SBADDRESS0, 0)]
+    tb.rng.shuffle(stalls)
+    tb.log.info(
+        "stalls of their own: %s",
+        ", ".join(f"{REGISTER_NAMES[addr]} {op.name.lower()}" for op, addr, _ in stalls),
+    )
+    for access in stalls:
+        await _collision_stall(tb, access, read_addr=base, write_addr=last)
+
+
+async def _collision_stall(
+    tb: Tdr2axiTb, access: tuple[DmiOp, int, int], *, read_addr: int, write_addr: int
+) -> None:
+    """A seeded read or write held on the bus for a seeded number of i_clk cycles, then
+    ``access``: a colliding access, answered busy, after which sbcs reads sbbusyerror = 1,
+    or the sbaddress reads, after which it reads 0. After a colliding access, the sbaddress
+    reads grade sbaddress. Then op 3 for a busy answer, the release, a poll to sbbusy = 0
+    and a write clearing sbbusyerror; the stalled access completes once."""
+    op, addr, _ = access
+    name = f"{REGISTER_NAMES[addr]} {op.name.lower()}"
+    collides = not (op is DmiOp.READ and addr == SBADDRESS0)
+    write = bool(tb.rng.getrandbits(1))
+    wait = tb.rng.randint(1, COLLISION_WAIT_MAX)
+    held = write_addr if write else read_addr
+    data = tb.rand_data(WORD) if write else 0
+    what = f"{'write' if write else 'read'} @0x{held:x} held on {'AW and W' if write else 'AR'}"
+    tb.log.info("%s for %d i_clk cycles, then the %s", what, wait, name)
+    tb.clear_monitor()
+    tb.sub.stall = True
+    if write:
+        await tb.dmi_write(SBCS, sbcs_value(WORD))
+        await tb.sba_set_addr(held)
+        await tb.dmi_write(SBDATA0, data)  # starts the write, which the stall holds
+    else:
+        await tb.dmi_write(SBCS, sbcs_value(WORD, readonaddr=True))
+        await tb.sba_set_addr(held)  # starts the read, which the stall holds
+    await tb.clk_cycles(wait)
+    if collides:
+        await _busy_answers(tb, [access], f"the {what}")
+        await _expect_sbbusyerror(tb, f"the {name} during the {what}")
+        await _read_sbaddress(tb)
+    else:
+        await _read_sbaddress(tb)
+        await _expect_sbbusyerror(tb, f"the sbaddress reads during the {what}", expected=0)
+    tb.sub.stall = False
+    await tb.sba_idle(0, exp_busyerr=collides)
+    await tb.dmi_write(SBCS, sbcs_value(WORD) | SBCS_CLEAR_ERRORS)
+    await tb.sba_idle()
+    if write:
+        tb.expect_write(held, WORD, data, check_id=SINGLE_WRITE)
+        tb.ref_write(held, WORD, data)
+    else:
+        tb.expect_read(held, WORD, check_id=SINGLE_READ)
+        tb.checker.expect_equal(
+            SINGLE_READ, await tb.dmi_read(SBDATA0), tb.ref_read(held, WORD), f"data of the {what}"
+        )
+    tb.expect_no_bus(SINGLE_WRITE if write else SINGLE_READ, f"{what}: one transaction")
 
 
 async def _response_sweep(tb: Tdr2axiTb, base: int) -> None:
@@ -888,21 +1005,27 @@ async def _address_access(tb: Tdr2axiTb, addr: int, programmed: _Programmed) -> 
 # --- Address after a failed access -----------------------------------------------------
 @cocotb.test(timeout_time=ERROR_ADDRESS_TIMEOUT_MS, timeout_unit="ms")
 async def tdr2axi_sba_error_address_test(dut: SimHandleBase) -> None:
-    """With sbautoincrement set, reads an sbaddress0 write starts and block writes whose
-    seeded element fails, each answered SLVERR or DECERR at a seeded size: after the error
-    sbaddress reads the failing address (0.13.2 3.12.19, 3.12.23). One block write fails
-    after a successful element, so a run that reaches it also sees sbaddress advance; the
-    first wrong address stops the test."""
+    """With sbautoincrement set, reads an sbaddress0 write starts, block writes whose seeded
+    element fails, and block reads with sbreadondata whose seeded element after the first,
+    a read the sbdata0 read before it starts, fails, each answered SLVERR or DECERR at a
+    seeded size: the failing access is on the bus, and after the error sbaddress reads the
+    failing address (0.13.2 3.12.19, 3.12.23, and Debug 1.0 for the sbdata0 read). One
+    block write and every block read fail after a successful element, so a run that
+    reaches one also sees sbaddress advance; the first wrong address stops the test."""
     tb = await Tdr2axiTb.setup(dut, "tdr2axi_sba_error_address_test")
     base, span = tb.address_range(ERROR_ADDRESS_OFFSET, ERROR_ADDRESS_SPAN)
     tb.mem_fill(base, span)
-    scenarios = [("read", _failed_read)] * ERROR_ADDRESS_ROUNDS + [
-        (
-            "block write failing after a success" if i == 0 else "block write",
-            functools.partial(_failed_block_write, after_success=i == 0),
-        )
-        for i in range(ERROR_ADDRESS_ROUNDS)
-    ]
+    scenarios = (
+        [("read", _failed_read)] * ERROR_ADDRESS_ROUNDS
+        + [
+            (
+                "block write failing after a success" if i == 0 else "block write",
+                functools.partial(_failed_block_write, after_success=i == 0),
+            )
+            for i in range(ERROR_ADDRESS_ROUNDS)
+        ]
+        + [("block read", _failed_block_read)] * ERROR_ADDRESS_ROUNDS
+    )
     tb.rng.shuffle(scenarios)
     tb.log.info("scenario order: %s", ", ".join(name for name, _ in scenarios))
     for _, scenario in scenarios:
@@ -926,7 +1049,8 @@ async def _expect_failing_address(tb: Tdr2axiTb, addr: int, size: int, what: str
 
 
 async def _failed_read(tb: Tdr2axiTb, base: int, span: int) -> None:
-    """A read an sbaddress0 write starts with sbautoincrement set, answered with an error."""
+    """A read an sbaddress0 write starts with sbautoincrement set, answered with an error;
+    its AR is checked before sbaddress, both under CHK-SBA-NO-INC-AFTER-ERROR."""
     size = tb.rng.choice([s for s in range(tb.max_size + 1) if span >> s >= 2])
     step = 1 << size
     addr = base + tb.rng.randrange(0, span - 2 * step + 1, step)
@@ -938,7 +1062,7 @@ async def _failed_read(tb: Tdr2axiTb, base: int, span: int) -> None:
     await tb.dmi_write(SBCS, sbcs_value(size, readonaddr=True, autoinc=True))
     await tb.sba_set_addr(addr)
     await tb.sba_idle(SBERROR_BUS)
-    tb.clear_monitor()
+    tb.expect_read(addr, size, check_id=NO_INC_AFTER_ERROR)
     tb.sub.set_read_response(addr, RESP_OKAY)
     await _expect_failing_address(tb, addr, size, what)
     await _clear_sberror(tb, size)
@@ -948,9 +1072,11 @@ async def _failed_block_write(
     tb: Tdr2axiTb, base: int, span: int, *, after_success: bool = False
 ) -> None:
     """A block write with sbautoincrement set whose seeded element is answered with an
-    error; each element is polled to sbbusy = 0, and the block stops at the error. With
-    ``after_success`` the failing element is not the first, so sbaddress has advanced
-    before the error."""
+    error; each element is polled to sbbusy = 0 and its AW and W checked under
+    CHK-SBA-BLOCK-WRITE, the failing one's presence and AWADDR under
+    CHK-SBA-NO-INC-AFTER-ERROR, and the block stops at the error. With
+    ``after_success`` the failing element is not the first, so sbaddress has advanced before
+    the error."""
     size = tb.rng.choice([s for s in range(tb.max_size + 1) if span >> s >= 3])
     step = 1 << size
     count = tb.rng.randint(2, min(ERROR_BLOCK_MAX, (span >> size) - 1))
@@ -979,13 +1105,54 @@ async def _failed_block_write(
         failed = i == fail_at
         await tb.sba_write_data(size, data)
         await tb.sba_idle(SBERROR_BUS if failed else 0)
-        if failed:
-            tb.skip_write()
-        else:
-            tb.expect_write(start + i * step, size, data, check_id=BLOCK_WRITE)
+        addr_check_id = NO_INC_AFTER_ERROR if failed else None
+        tb.expect_write(
+            start + i * step, size, data, check_id=BLOCK_WRITE, addr_check_id=addr_check_id
+        )
         # The subordinate stores the data of a write it answers with an error
         tb.ref_write(start + i * step, size, data)
     tb.sub.set_write_response(fail_addr, RESP_OKAY)
+    await _expect_failing_address(tb, fail_addr, size, what)
+    await _clear_sberror(tb, size)
+
+
+async def _failed_block_read(tb: Tdr2axiTb, base: int, span: int) -> None:
+    """A block read with sbreadonaddr, sbreadondata and sbautoincrement set whose seeded
+    element after the first is answered with an error. The sbaddress0 write starts the
+    first element and the sbdata0 read of each element starts the next, so the failing
+    read is one an sbdata0 read starts. Each element is polled to sbbusy = 0 and its AR
+    checked, the failing one's under CHK-SBA-NO-INC-AFTER-ERROR, and the block stops at the
+    error; the scoreboard grades the data read."""
+    size = tb.rng.choice([s for s in range(tb.max_size + 1) if span >> s >= 3])
+    step = 1 << size
+    count = tb.rng.randint(2, min(ERROR_BLOCK_MAX, (span >> size) - 1))
+    fail_at = tb.rng.randrange(1, count)
+    start = base + tb.rng.randrange(0, span - (count + 1) * step + 1, step)
+    fail_addr = start + fail_at * step
+    resp = tb.rng.choice(ERROR_RESPONSES)
+    what = (
+        f"after element {fail_at} of a size {size} block read from 0x{start:x}, started by an "
+        f"sbdata0 read, answered {RESPONSE_NAMES[resp]}"
+    )
+    tb.log.info(
+        "block read size %d @0x%x, element %d @0x%x started by an sbdata0 read answered %s",
+        size,
+        start,
+        fail_at,
+        fail_addr,
+        RESPONSE_NAMES[resp],
+    )
+    tb.sub.set_read_response(fail_addr, resp)
+    tb.clear_monitor()
+    await tb.dmi_write(SBCS, sbcs_value(size, readonaddr=True, readondata=True, autoinc=True))
+    await tb.sba_set_addr(start)
+    for i in range(fail_at):
+        await tb.sba_idle()
+        tb.expect_read(start + i * step, size, check_id=BLOCK_READ)
+        await tb.sba_read_data(size)
+    await tb.sba_idle(SBERROR_BUS)
+    tb.expect_read(fail_addr, size, check_id=NO_INC_AFTER_ERROR)
+    tb.sub.set_read_response(fail_addr, RESP_OKAY)
     await _expect_failing_address(tb, fail_addr, size, what)
     await _clear_sberror(tb, size)
 

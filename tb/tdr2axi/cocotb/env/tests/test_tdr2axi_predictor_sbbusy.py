@@ -13,6 +13,11 @@ A DMI handshake the predictor did not predict, such as one an update ignored und
 sticky busy sends (CHK-TDR-STICKY-IGNORE), raises ``PredictorSyncError`` only at the next
 i_clk edge, after the scoreboard has filed it under its check.
 
+An access held across a dmactive = 0 write (S-TDR2AXI-0090) retires after the request the
+DM takes at the first edge where sbbusy reads 0, or at the next edge; an answer the model
+leaves open takes the DM's response code; and a dmactive = 1 write at the edge of the held
+access's response raises ``SbaStimulusError`` (S-TDR2AXI-0091).
+
 The predictor imports cocotb, so these tests run in the bench's Python environment and
 are skipped where cocotb is missing; no simulator runs.
 """
@@ -66,6 +71,9 @@ SIGNALS = (
     "b_valid",
     "b_ready",
     "b_resp",
+    "dmi_resp_valid",
+    "dmi_resp_ready",
+    "dmi_resp_resp",
 )
 CLEAR_PENDING = SIGNALS[2:6]
 ADDR = 0x1000
@@ -161,9 +169,10 @@ class _Feed:
         self.clk()
         d.sig("dmi_req_valid").set(0)
 
-    def dmi(self, op: int, addr: int, data: int = 0) -> Any:
-        """One DMI operation: its update edge, the DM's handshake, and the answer's return
-        to the bridge; returns the answer the predictor published."""
+    def dmi(self, op: int, addr: int, data: int = 0, *, resp: int | None = None) -> Any:
+        """One DMI operation: its update edge, the DM's handshake, the DM's response with
+        code ``resp`` unless None, and the answer's return to the bridge; returns the answer
+        the predictor published."""
         d = self.dut
         self.tck((addr << 34) | (data << 2) | op)
         for name, value in (("dmi_req_op", op), ("dmi_req_addr", addr), ("dmi_req_data", data)):
@@ -172,6 +181,12 @@ class _Feed:
         d.sig("dmi_req_ready").set(1)
         self.clk()
         d.sig("dmi_req_valid").set(0)
+        if resp is not None:
+            d.sig("dmi_resp_resp").set(resp)
+            d.sig("dmi_resp_valid").set(1)
+            d.sig("dmi_resp_ready").set(1)
+            self.clk()
+            d.sig("dmi_resp_valid").set(0)
         d.sig("bridge_state").set(1)
         self.tck()
         d.sig("bridge_state").set(0)
@@ -257,6 +272,77 @@ class Tdr2axiPredictorSbbusyWindow(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_COCOTB, "the predictor imports cocotb")
+class Tdr2axiPredictorHold(unittest.TestCase):
+    """An access held across a dmactive = 0 write: CHK-DM-DMACTIVE-INFLIGHT-HOLD and
+    CHK-DM-DMACTIVE-REARM (S-TDR2AXI-0090, S-TDR2AXI-0091)."""
+
+    def held(self) -> _Feed:
+        feed = _Feed()
+        feed.start_read()
+        feed.dmi(WRITE, feed.sba.DMCONTROL, 0)
+        return feed
+
+    def test_open_answer_takes_the_dm_response(self) -> None:
+        """A hold-time sbdata0 write reaches the TDR model as busy or success, as the DM
+        answered it."""
+        tdr = importlib.import_module("env.tdr_status_model")
+        for resp, status in ((3, tdr.TdrStatus.BUSY), (0, tdr.TdrStatus.SUCCESS)):
+            with self.subTest(resp=resp):
+                feed = self.held()
+                answer = feed.dmi(WRITE, feed.sba.SBDATA0, WDATA, resp=resp)
+                self.assertTrue(answer.open_status)
+                self.assertIs(feed.predictor.tdr.status, status)
+
+    def test_open_answer_needs_the_dm_response(self) -> None:
+        pred = importlib.import_module("env.tdr2axi_predictor")
+        feed = self.held()
+        with self.assertRaisesRegex(pred.PredictorSyncError, "open DM answer"):
+            feed.dmi(READ, feed.sba.SBDATA0)
+
+    def test_request_at_the_fall_edge_sees_either(self) -> None:
+        """The request at the first edge sbbusy reads 0 may see the held or the reset
+        address; the next one sees the reset value."""
+        feed = self.held()
+        feed.bus_response("r")
+        self.assertEqual(set(feed.dmi(READ, feed.sba.SBADDRESS0).data.allowed), {ADDR, 0})
+        self.assertEqual(feed.dmi(READ, feed.sba.SBADDRESS0).data.allowed, (0,))
+        self.assertEqual(feed.sbcs_window(), {0})
+
+    def test_retired_at_the_next_edge(self) -> None:
+        feed = self.held()
+        feed.bus_response("r")
+        feed.clk()
+        self.assertIs(feed.predictor.sba.phase, feed.sba.SbaPhase.RESPONDED)
+        feed.clk()
+        self.assertIs(feed.predictor.sba.phase, feed.sba.SbaPhase.IDLE)
+        self.assertEqual(feed.dmi(READ, feed.sba.SBADDRESS0).data.allowed, (0,))
+
+    def test_rearm_before_the_response_lands(self) -> None:
+        feed = self.held()
+        feed.dmi(WRITE, feed.sba.DMCONTROL, 1)
+        feed.bus_response("r")
+        self.assertEqual(feed.dmi(READ, feed.sba.SBDATA0).data.allowed, (RDATA,))
+
+    def test_rearm_at_the_response_edge_raises(self) -> None:
+        """dmactive set by a request the DM takes at the R handshake's edge is refused."""
+        feed = self.held()
+        sba = feed.sba
+        feed.tck((sba.DMCONTROL << 34) | (1 << 2) | WRITE)
+        for name, value in (
+            ("dmi_req_op", WRITE),
+            ("dmi_req_addr", sba.DMCONTROL),
+            ("dmi_req_data", 1),
+            ("dmi_req_valid", 1),
+            ("dmi_req_ready", 1),
+            ("r_valid", 1),
+            ("r_ready", 1),
+        ):
+            feed.dut.sig(name).set(value)
+        with self.assertRaisesRegex(sba.SbaStimulusError, "S-TDR2AXI-0091"):
+            feed.clk()
+
+
+@unittest.skipUnless(HAS_COCOTB, "the predictor imports cocotb")
 class Tdr2axiPredictorUnpredictedRequest(unittest.TestCase):
     """An unpredicted DMI handshake raises at the next i_clk edge, not at its own."""
 
@@ -267,6 +353,17 @@ class Tdr2axiPredictorUnpredictedRequest(unittest.TestCase):
         feed.handshake(WRITE, feed.sba.SBDATA0, WDATA)
         self.assertEqual(len(feed.predictor.dm_answers), answers, "no answer is published")
         with self.assertRaisesRegex(pred.PredictorSyncError, "no request predicted"):
+            feed.clk()
+
+    def test_unrequested_dm_response_raises_at_the_next_edge(self) -> None:
+        """A DM response handshake with no request awaiting one raises at the next edge."""
+        feed = _Feed()
+        pred = importlib.import_module("env.tdr2axi_predictor")
+        feed.dut.sig("dmi_resp_valid").set(1)
+        feed.dut.sig("dmi_resp_ready").set(1)
+        feed.clk()
+        feed.dut.sig("dmi_resp_valid").set(0)
+        with self.assertRaisesRegex(pred.PredictorSyncError, "no request awaiting one"):
             feed.clk()
 
 

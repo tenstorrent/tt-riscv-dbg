@@ -11,7 +11,9 @@
   subordinate holding it: ARVALID waiting for ARREADY (AR), AWVALID waiting after W was
   taken (AW), WVALID waiting after AW was taken or WVALID and AWVALID both waiting, in
   seeded shares (W), R withheld after the AR (R), B withheld after AW and W (B). The first
-  loops take every stage once in seeded order. In a seeded share of the loops, and in at
+  loops take every stage once and the W stage once more in seeded order. A run with a
+  W-stage loop has WVALID waiting after AW was taken, and one with two or more, as every
+  run of the default loop count has, both W forms. In a seeded share of the loops, and in at
   least one per run, a dmcontrol write of dmactive and ackhavereset before the operation
   clears havereset, which the assertion sets again. The subordinate resets alongside,
   dropping what it holds (CHK-ENV-FABRIC-RESET) and requiring every VALID low while i_arst_n
@@ -32,8 +34,9 @@
   and stops while i_clk runs, which puts the TCK side's CDC clear sequences three handshake
   steps ahead. The dmcontrol read and the NOP then capture busy, and TCK stops on the edge
   the request CDC takes the read, which reaches an i_clk side that isolates it from the DM
-  until TCK runs again. The first capture after each release comes before the CDC clear
-  sequence ends.
+  until TCK runs again; the read must then be valid at the request CDC's destination with
+  the DM's request valid low (CHK-RESET-ASYNC-ANY-TIME). The first capture after each
+  release comes before the CDC clear sequence ends.
   The scoreboard grades every capture and DM answer against the models, the first capture
   after a reset at address 0, data 0 and status 0 (CHK-RESET-ASYNC-ANY-TIME), and any
   transaction, DMI request or capture after it that only a cut-off operation explains
@@ -44,6 +47,32 @@
   of the cut-off operation's address (CHK-RESET-NO-STALE-AXI), returning the memory the
   subordinate holds, which a cut-off write changed only when the subordinate had taken its
   AW and W (CHK-SBA-SINGLE-READ). S-TDR2AXI-0026, -0051, -0052.
+* ``tdr2axi_reset_during_clear_test``: seeded loops, one per clear-sequence receiver in
+  seeded order by default and twice each in a full run, each of which holds an operation
+  at a drawn stage as the traffic test does, asserts i_arst_n at a drawn phase with the
+  subordinate reset alongside and releases it at a drawn phase with the other clock
+  stopped, so the clock of the drawn receiver, the cdc_4phase_dst state of one
+  reset-controller half of u_cdc_req or u_cdc_resp that tb_top exposes, runs alone for a
+  drawn SYNC_STAGES + 5 to SYNC_STAGES + 8 edges. Its side leaves reset and acknowledges
+  the isolate request the other side's half holds in reset, so that side's clear request
+  arrives before the receiver's own half enters its clear phase. TCK then runs one edge at
+  a time through the CDC clear sequence of both CDCs, with a drawn 5 to 8 i_clk edges and
+  TCK low after each, so every i_clk-side handshake step ends between two TCK edges at any
+  ratio, and the loop reads the receiver after each edge of its clock. The first time it reads WAIT_DOWNSTREAM_ACK,
+  a state it holds for one cycle of its clock while it waits for its own half's clear
+  acknowledge, i_arst_n falls at a drawn time on no edge of either clock and before that
+  clock's next rising edge, with TCK stopped from then on, so the receiver's asynchronous
+  reset takes it from WAIT_DOWNSTREAM_ACK to IDLE; every receiver must read IDLE in that
+  step (CHK-RESET-ASYNC-ANY-TIME). The release after it holds i_clk,
+  in a seeded share of the loops and at least one per run, so a dmcontrol read and a NOP
+  capture busy before the bridge is ready and op 3 clears it once i_clk runs; the others
+  release with both clocks running and let the clear sequence end. The loop then checks
+  what the traffic test checks after its release (CHK-RESET-ASYNC-ANY-TIME,
+  CHK-RESET-NO-STALE-AXI, CHK-AXISUB-RESET-VALID-LOW, CHK-ENV-FABRIC-RESET). A loop whose
+  receiver does not reach WAIT_DOWNSTREAM_ACK before the clear sequence ends logs it as not
+  reached and asserts nothing more; the run logs, per receiver, the loops that asserted
+  i_arst_n in that state, and a run with a drawn receiver that none did is inconclusive.
+  S-TDR2AXI-0026, -0051, -0052.
 * ``tdr2axi_reset_release_test``: seeded loops of i_arst_n asserted and released at a
   drawn phase, with both clocks running, with TCK stopped or with i_clk stopped at the
   release. Both internal resets fall in the step i_arst_n falls. After it rises the TCK
@@ -184,7 +213,8 @@ TRST_CASE_IDS = {
 }
 
 TRAFFIC_LOOPS_KNOB = "TDR2AXI_RESET_TRAFFIC_TEST_LOOPS"
-TRAFFIC_LOOPS = 10
+# Every stage once and the W stage once more, then two drawn stages
+TRAFFIC_LOOPS = 11
 RELEASE_LOOPS_KNOB = "TDR2AXI_RESET_RELEASE_TEST_LOOPS"
 RELEASE_LOOPS = 5
 TEST_MODE_LOOPS_KNOB = "TDR2AXI_RESET_TEST_MODE_TEST_LOOPS"
@@ -257,7 +287,9 @@ BUSY_RELEASE_SHARE = 0.3
 # Share of the second assertions whose first release has both clocks running; at least one
 # per run, and with two or more second assertions at least one with i_clk held
 LIVE_CLEAR_SHARE = 0.5
-# Share of the W-stage loops whose W waits after AW was taken; the rest hold both waiting
+# Share of the W-stage loops whose W waits after AW was taken, the rest holding both waiting;
+# in the traffic test at least one per run, and with two W-stage loops or more at least one
+# of the rest
 W_ALONE_SHARE = 0.5
 # Share of the traffic loops that write ackhavereset before the operation, at least one per
 # run
@@ -305,6 +337,40 @@ CDC_CLEAR_NETS = (
 # CFG-CLK-RATIO
 TRAFFIC_TIMEOUT_MS = 5 * TIMEOUT_MS
 
+# The clear-sequence phase receiver (cdc_4phase_dst) of each CDC reset-controller half as
+# tb_top exposes it. The request CDC's src side and the response CDC's dst side run on TCK,
+# the other two on i_clk.
+RECEIVERS = {
+    "cdc_req_src_rx_state": "u_cdc_req half a (TCK)",
+    "cdc_req_dst_rx_state": "u_cdc_req half b (i_clk)",
+    "cdc_resp_src_rx_state": "u_cdc_resp half a (i_clk)",
+    "cdc_resp_dst_rx_state": "u_cdc_resp half b (TCK)",
+}
+RECEIVERS_ON_TCK = frozenset({"cdc_req_src_rx_state", "cdc_resp_dst_rx_state"})
+# cdc_4phase_dst states: IDLE, and WAIT_DOWNSTREAM_ACK, entered when a phase request arrives
+# before the receiving half acknowledges it
+RX_IDLE = 0
+RX_WAIT_DOWNSTREAM_ACK = 1
+DURING_CLEAR_LOOPS_KNOB = "TDR2AXI_RESET_DURING_CLEAR_TEST_LOOPS"
+DURING_CLEAR_LOOPS = 2 * len(RECEIVERS)
+# Edges beyond SYNC_STAGES the receiver's clock runs alone after the first release of a
+# during-clear loop. Its side leaves reset within SYNC_STAGES + 1 edges, and its half's
+# receiver acknowledges the other half's isolate request, which a half drives from reset,
+# four edges later: two synchronizer stages, the state and the acknowledge.
+LEAD_EDGES_MIN = 5
+LEAD_EDGES_MAX = 8
+# i_clk edges after each TCK edge of a during-clear loop's watch, with TCK low. A handshake
+# step of a clear-sequence half takes at most four edges of its clock: two synchronizer
+# stages, the state and the acknowledge.
+CLEAR_GAP_MIN = 5
+CLEAR_GAP_MAX = 8
+# Share of the during-clear loops whose final release holds i_clk for a busy capture before
+# the bridge is ready, at least one per run
+DURING_CLEAR_BUSY_SHARE = 0.5
+# TCK edges a loop watches the clear sequence after the first release for its receiver:
+# twice the longest sequence of CFG-CLK-RATIO
+CLEAR_WATCH_TCK = 2 * max(latest for _, latest in CDC_CLEAR_EDGES.values())
+
 
 def _fault(tb: Tdr2axiTb, name: str) -> bool:
     """Whether this run arms fault ``name`` of ``NEGATIVE_KNOB``; an armed fault logs a
@@ -348,20 +414,6 @@ def _arm_test_mode_arst(tb: Tdr2axiTb) -> None:
 
 def _loops(knob: str, default: int) -> int:
     return int(os.environ.get(knob, str(default)))
-
-
-def _off_edge_delay(tb: Tdr2axiTb) -> int:
-    """Picoseconds from now to a drawn time within one period of the slower clock that is
-    no rising or falling edge of i_clk or TCK. i_clk changes at ``tb.clk_edge_ps`` plus a
-    whole number of half periods, and TCK at whole half periods from time 0."""
-    cfg = tb.cfg
-    now = round(get_sim_time("ps"))
-    delay = tb.rng.randrange(1, max(cfg.clk_ps, cfg.tck_ps))
-    while (now + delay - tb.clk_edge_ps) % (cfg.clk_ps // 2) == 0 or (now + delay) % (
-        cfg.tck_ps // 2
-    ) == 0:
-        delay += 1
-    return delay
 
 
 def _edges_to_update(tb: Tdr2axiTb) -> int:
@@ -493,16 +545,18 @@ class _ResetTraffic:
         tb.sub.add_transaction_callback(self._on_handshake)
 
     def schedule(self, loops: int) -> list[_CutOff]:
-        """Every stage once in seeded order, then drawn stages, from a stream of their own;
-        the second assertion, the busy release and the ackhavereset write each in a seeded
-        share and at least once when there is a loop; among the second assertions, both
-        clocks running at the first release in a seeded share, at least once, and i_clk held
-        at least once when there are two; among the busy releases at a ratio that allows it,
-        the read crossing into isolation in a seeded share, at least once, and i_clk held at
-        least once when there are two; and the W stage's form."""
+        """Every stage once and the W stage twice in seeded order, then drawn stages, from a
+        stream of their own; the second assertion, the busy release and the ackhavereset
+        write each in a seeded share and at least once when there is a loop; among the second
+        assertions, both clocks running at the first release in a seeded share, at least once,
+        and i_clk held at least once when there are two; among the busy releases at a ratio
+        that allows it, the read crossing into isolation in a seeded share, at least once, and
+        i_clk held at least once when there are two; and among the W-stage loops, W waiting
+        alone in a seeded share, at least once, and W and AW both waiting at least once when
+        there are two."""
         tb = self.tb
         rng = rng_for(tb.cfg.seed, f"{tb.name}:stages")
-        stages = list(STAGES)
+        stages = [*STAGES, "w"]
         rng.shuffle(stages)
         stages += [rng.choice(STAGES) for _ in range(loops - len(stages))]
         stages = stages[:loops]
@@ -518,6 +572,11 @@ class _ResetTraffic:
         if len(seconds) > 1 and all(live[i] for i in seconds):
             live[rng.choice(seconds)] = False
         w_alone = [rng.random() < W_ALONE_SHARE for _ in stages]
+        ws = [i for i, stage in enumerate(stages) if stage == "w"]
+        if ws and not any(w_alone[i] for i in ws):
+            w_alone[rng.choice(ws)] = True
+        if len(ws) > 1 and all(w_alone[i] for i in ws):
+            w_alone[rng.choice(ws)] = False
         ack = [rng.random() < ACK_HAVERESET_SHARE for _ in stages]
         if ack and not any(ack):
             ack[rng.randrange(loops)] = True
@@ -738,7 +797,7 @@ class _ResetTraffic:
         the subordinate's hold ends with it. Returns the handshake counts in that step, with
         the recorded transactions cleared."""
         tb = self.tb
-        delay = _off_edge_delay(tb)
+        delay = tb.off_edge_delay()
         await Timer(delay, "ps")
         tb.checker.require_stimulus(created=held(), reason=f"{what} is not held at i_arst_n")
         tb.log.info(
@@ -800,7 +859,7 @@ class _ResetTraffic:
         tb = self.tb
         if clk_held:
             await self._stop_clk()
-        delay = _off_edge_delay(tb)
+        delay = tb.off_edge_delay()
         await Timer(delay, "ps")
         tb.log.info(
             "%s: i_arst_n rises at %.0f ns, %d ps into the drawn phase, i_clk %s",
@@ -905,7 +964,10 @@ class _ResetTraffic:
         SYNC_STAGES + 3 i_clk edges. With its clear sequence three steps ahead, the TCK side
         leaves isolation as soon as the i_clk side's last phase reaches it, and the read
         crosses while the i_clk side waits for TCK edges to end that phase, isolating the
-        read from the DM."""
+        read from the DM. The read reaches the request CDC's destination valid SYNC_STAGES +
+        1 i_clk edges after the TCK edge that hands it over, so after the stop it must wait
+        there, valid at the destination with the DM's request valid low
+        (CHK-RESET-ASYNC-ANY-TIME)."""
         tb = self.tb
         edges = 0
         limit = CROSS_CLK_MAX * math.ceil(tb.cfg.clk_ps / tb.cfg.tck_ps)
@@ -917,20 +979,30 @@ class _ResetTraffic:
         await ReadOnly()
         taken = tb.observe("bridge_state") in BRIDGE_AWAITING
         isolating = tb.observe("cdc_req_dst_clear_pending") == 1
+        waiting = tb.observe("cdc_req_dst_valid") == 1
         requested = tb.observe("dmi_req_valid") == 1
         tb.log.info(
             "%s: loop %d: dmcontrol read taken %d TCK edges after the NOP, then TCK held for "
-            "%d i_clk edges: i_clk side %s, DMI request %s",
+            "%d i_clk edges: i_clk side %s, request CDC destination %s, DMI request %s",
             tb.name,
             loop,
             edges,
             hold,
             "isolating" if isolating else "open",
+            "valid" if waiting else "not valid",
             "valid" if requested else "not valid",
         )
         tb.checker.require_stimulus(
             created=taken and isolating and not requested,
-            reason=f"loop {loop}: the dmcontrol read does not wait in the isolated i_clk side",
+            reason=f"loop {loop}: the dmcontrol read is not handed to the request CDC while the "
+            "i_clk side isolates it from the DM",
+        )
+        tb.checker.expect_true(
+            ASYNC_ANY_TIME,
+            passed=waiting,
+            detail=f"loop {loop}: the dmcontrol read the request CDC took is not valid at its "
+            f"destination {hold} i_clk edges later, so it does not wait in the isolated i_clk "
+            "side",
         )
 
     async def _check_after(self, loop: int, cut: _CutOff, mark: Counter[str]) -> None:
@@ -983,16 +1055,18 @@ class _ResetTraffic:
             return seen
 
         def expect_one(when: str) -> None:
-            """One AW, one W and no AR since the mark; a failure names both VALIDs and the
-            subordinate's write order."""
+            """One AW, one W and no AR since the mark; a failure names both VALIDs, X or Z
+            included, and the subordinate's write order."""
             seen = sent()
-            tb.checker.expect_true(
-                NO_STALE_AXI,
-                passed=seen["aw"] == 1 and seen["w"] == 1 and not seen["ar"],
-                detail=f"{what}: AW {seen['aw']} W {seen['w']} AR {seen['ar']} {when}, "
-                f"AWVALID {tb.observe('aw_valid')} WVALID {tb.observe('w_valid')} there, "
-                f"{_write_order(tb.sub.cfg.timing)}; expected one AW and one W",
-            )
+            passed = seen["aw"] == 1 and seen["w"] == 1 and not seen["ar"]
+            detail = ""
+            if not passed:
+                detail = (
+                    f"{what}: AW {seen['aw']} W {seen['w']} AR {seen['ar']} {when}, AWVALID "
+                    f"{tb.observe_bits('aw_valid')} WVALID {tb.observe_bits('w_valid')} there, "
+                    f"{_write_order(tb.sub.cfg.timing)}; expected one AW and one W"
+                )
+            tb.checker.expect_true(NO_STALE_AXI, passed=passed, detail=detail)
 
         await tb.dmi_write(SBDATA0, data & WORD_MASK)
         await self._clk_until(lambda: sent()["aw"] > 0 and sent()["w"] > 0)
@@ -1015,6 +1089,245 @@ async def tdr2axi_reset_traffic_test(dut: SimHandleBase) -> None:
     for loop, cut in enumerate(run.schedule(loops), 1):
         tb.log.info("%s: loop %d of %d, %s", tb.name, loop, loops, cut.describe())
         await run.cycle(loop, cut)
+    tb.finish()
+
+
+# --- tdr2axi_reset_during_clear_test ------------------------------------------------------
+@dataclass(frozen=True)
+class _ClearLoop:
+    """One during-clear loop's draws: the receiver the second assertion is timed on, the
+    edges its clock runs alone after the first release, the i_clk edges after each TCK
+    edge of the watch, and the operation the first assertion cuts off."""
+
+    receiver: str
+    lead: int
+    gap: int
+    cut: _CutOff
+
+    @property
+    def on_tck(self) -> bool:
+        """Whether the receiver's half runs on TCK."""
+        return self.receiver in RECEIVERS_ON_TCK
+
+    def describe(self) -> str:
+        """Every draw of the loop, for its log line."""
+        clock = "TCK" if self.on_tck else "i_clk"
+        return (
+            f"second assertion timed on {RECEIVERS[self.receiver]}, first release with "
+            f"{clock} running alone for {self.lead} edges, then {self.gap} i_clk edges after "
+            f"each TCK edge, {self.cut.describe()}"
+        )
+
+
+class _ResetDuringClear(_ResetTraffic):
+    """One loop per ``run_loop``: i_arst_n cuts off an operation held at a drawn stage, rises,
+    and falls again in the CDC clear sequence that follows, on a cycle where a drawn
+    receiver waits in WAIT_DOWNSTREAM_ACK."""
+
+    def __init__(self, tb: Tdr2axiTb) -> None:
+        super().__init__(tb)
+        self.attempts: Counter[str] = Counter()
+        self.landed: Counter[str] = Counter()
+        self._fired = False
+        self._watcher: Task | None = None
+
+    def cancel(self) -> None:
+        """Stop the i_clk receiver's watcher, if one runs."""
+        if self._watcher is not None:
+            self._watcher.kill()
+            self._watcher = None
+
+    def plan(self, loops: int) -> list[_ClearLoop]:
+        """Every receiver in seeded order, as many rounds as the loops take, from a stream of
+        their own; per loop a drawn lead and gap, a drawn stage and its W form, and the busy
+        release in a seeded share and at least once when there is a loop."""
+        tb = self.tb
+        rng = rng_for(tb.cfg.seed, f"{tb.name}:receivers")
+        receivers: list[str] = []
+        while len(receivers) < loops:
+            round_ = list(RECEIVERS)
+            rng.shuffle(round_)
+            receivers += round_
+        receivers = receivers[:loops]
+        sync = tb.build.sync_stages
+        leads = [rng.randint(sync + LEAD_EDGES_MIN, sync + LEAD_EDGES_MAX) for _ in receivers]
+        gaps = [rng.randint(CLEAR_GAP_MIN, CLEAR_GAP_MAX) for _ in receivers]
+        stages = [rng.choice(STAGES) for _ in receivers]
+        busy = [rng.random() < DURING_CLEAR_BUSY_SHARE for _ in receivers]
+        if busy and not any(busy):
+            busy[rng.randrange(loops)] = True
+        w_alone = [rng.random() < W_ALONE_SHARE for _ in receivers]
+        draws = zip(receivers, leads, gaps, stages, busy, w_alone, strict=True)
+        return [
+            _ClearLoop(
+                receiver,
+                lead,
+                gap,
+                self._draw(
+                    stage, second=True, busy=b, live=True, w_alone=w, ack=False, cross=False
+                ),
+            )
+            for receiver, lead, gap, stage, b, w in draws
+        ]
+
+    async def run_loop(self, loop: int, draw: _ClearLoop) -> None:
+        """Hold the operation at its stage and assert i_arst_n, release it, assert it again
+        when the receiver waits in WAIT_DOWNSTREAM_ACK, release, and check what follows. A
+        loop whose receiver never waits there asserts nothing more."""
+        tb = self.tb
+        cut = draw.cut
+        word = await self._prepare(cut)
+        await self._reach(cut, word)
+        mark = await self._assert(f"loop {loop}: the {cut.stage} stage", lambda: self._held(cut))
+        if cut.stage == "b":
+            tb.ref_write(cut.addr, cut.size, cut.data)
+        await self._hold()
+        fired = await self._assert_on_receiver(loop, draw)
+        if fired:
+            await self._hold()
+            await self._release(clk_held=cut.busy)
+        if fired and cut.busy:
+            await self._busy_recovery(loop, cross=False)
+        else:
+            await tb.scan(tdr_word(DmiOp.NOP, 0, 0))
+            await tb.wait_reset_ready()
+        await self._check_after(loop, cut, mark)
+
+    def summarize(self, loops: int) -> None:
+        """Log, per receiver, the loops that asserted i_arst_n in WAIT_DOWNSTREAM_ACK; a run
+        with a drawn receiver and no such assertion on it is inconclusive."""
+        tb = self.tb
+        for receiver, name in RECEIVERS.items():
+            tb.log.info(
+                "%s: %s: WAIT_DOWNSTREAM_ACK %s, i_arst_n asserted in it in %d of %d loops",
+                tb.name,
+                name,
+                "reached" if self.landed[receiver] else "not reached",
+                self.landed[receiver],
+                self.attempts[receiver],
+            )
+        missed = [
+            RECEIVERS[net] for net in RECEIVERS if self.attempts[net] and not self.landed[net]
+        ]
+        tb.checker.require_stimulus(
+            created=not missed,
+            reason="i_arst_n never asserted in WAIT_DOWNSTREAM_ACK of " + ", ".join(missed),
+        )
+
+    async def _assert_on_receiver(self, loop: int, draw: _ClearLoop) -> bool:
+        """i_arst_n rises at a drawn phase with the other clock stopped, and the receiver's
+        clock runs ``draw.lead`` edges alone; then TCK runs one edge at a time through the
+        CDC clear sequence, with ``draw.gap`` i_clk edges after each. The first time the
+        receiver reads WAIT_DOWNSTREAM_ACK after an edge of its own clock, i_arst_n falls at
+        a drawn time on no edge of either clock and before that clock's next rising edge, and
+        TCK stops. Returns whether i_arst_n fell, and logs the receiver as not reached when
+        the sequence ends, or CLEAR_WATCH_TCK edges pass, without it."""
+        tb = self.tb
+        receiver = draw.receiver
+        self.attempts[receiver] += 1
+        self._fired = False
+        await self._rise(clk_held=draw.on_tck)
+        if draw.on_tck:
+            await tb.tck_cycles(draw.lead)
+            self._start_clk()
+        else:
+            self._watcher = cocotb.start_soon(self._watch_clk_receiver(loop, receiver))
+            await tb.clk_cycles(draw.lead)
+        edges = 0
+        while not self._fired and edges < CLEAR_WATCH_TCK and not self._clear_done():
+            await self._tck_edge(loop, receiver, on_tck=draw.on_tck)
+            edges += 1
+            if not self._fired:
+                await tb.clk_cycles(draw.gap)
+        if self._fired and self._watcher is not None:
+            await self._watcher
+        self.cancel()
+        if not self._fired:
+            tb.log.info(
+                "%s: loop %d: %s not reached WAIT_DOWNSTREAM_ACK in %d TCK edges of the CDC "
+                "clear sequence, which %s",
+                tb.name,
+                loop,
+                RECEIVERS[receiver],
+                edges,
+                "ended" if self._clear_done() else "had not ended",
+            )
+        return self._fired
+
+    async def _tck_edge(self, loop: int, receiver: str, *, on_tck: bool) -> None:
+        """One TCK period; a TCK receiver that reads WAIT_DOWNSTREAM_ACK after it times the
+        assertion, and holds that state while TCK stays low."""
+        tb = self.tb
+        await tb.tck_cycles(1)
+        if on_tck and not self._fired and tb.observe(receiver) == RX_WAIT_DOWNSTREAM_ACK:
+            self._fired = True
+            await self._assert_in_wait(loop, receiver, within=None)
+
+    async def _watch_clk_receiver(self, loop: int, receiver: str) -> None:
+        """Read ``receiver`` after each i_clk rising edge; the first WAIT_DOWNSTREAM_ACK times
+        the assertion within the i_clk period."""
+        tb = self.tb
+        while True:
+            await tb.clk_cycles(1)
+            await ReadOnly()
+            if tb.observe(receiver) == RX_WAIT_DOWNSTREAM_ACK:
+                self._fired = True
+                await self._assert_in_wait(loop, receiver, within=tb.cfg.clk_ps)
+                return
+
+    async def _assert_in_wait(self, loop: int, receiver: str, *, within: int | None) -> None:
+        """i_arst_n falls at a drawn time on no edge of either clock, under ``within``
+        picoseconds from the receiver's edge when given; with TCK stopped, a TCK receiver
+        holds its state at any delay. Both internal resets fall in that step, so every
+        receiver must read IDLE in it (CHK-RESET-ASYNC-ANY-TIME)."""
+        tb = self.tb
+        delay = tb.off_edge_delay(within)
+        await Timer(delay, "ps")
+        in_wait = tb.observe(receiver) == RX_WAIT_DOWNSTREAM_ACK
+        if in_wait:
+            self.landed[receiver] += 1
+        tb.log.info(
+            "%s: loop %d: %s reads WAIT_DOWNSTREAM_ACK; i_arst_n falls at %.0f ns, %d ps after "
+            "the edge that showed it, with the receiver %s",
+            tb.name,
+            loop,
+            RECEIVERS[receiver],
+            get_sim_time("ns"),
+            delay,
+            "still in it" if in_wait else "out of it",
+        )
+        tb.clear_monitor()
+        tb.assert_reset()
+        self._release_subordinate()
+        await ReadOnly()
+        states = {net: tb.observe(net) for net in RECEIVERS}
+        tb.checker.expect_true(
+            ASYNC_ANY_TIME,
+            passed=all(state == RX_IDLE for state in states.values()),
+            detail=f"loop {loop}: receiver states in the step i_arst_n falls: "
+            + ", ".join(f"{RECEIVERS[net]} {state}" for net, state in states.items()),
+        )
+
+    def _clear_done(self) -> bool:
+        """Both synchronized resets high, no CDC clear pending and every receiver IDLE."""
+        tb = self.tb
+        if not all(_internal_resets(tb)) or any(tb.observe(net) for net in CDC_CLEAR_NETS):
+            return False
+        return all(tb.observe(net) == RX_IDLE for net in RECEIVERS)
+
+
+@cocotb.test(timeout_time=TRAFFIC_TIMEOUT_MS, timeout_unit="ms")
+async def tdr2axi_reset_during_clear_test(dut: SimHandleBase) -> None:
+    """i_arst_n asserted in the CDC clear sequence after a release, with a clear-sequence
+    receiver waiting in WAIT_DOWNSTREAM_ACK, resets both sides: nothing from before it
+    reaches the bus and operations after the release complete."""
+    tb = await Tdr2axiTb.setup(dut, "tdr2axi_reset_during_clear_test")
+    run = _ResetDuringClear(tb)
+    loops = _loops(DURING_CLEAR_LOOPS_KNOB, DURING_CLEAR_LOOPS)
+    for loop, draw in enumerate(run.plan(loops), 1):
+        tb.log.info("%s: loop %d of %d, %s", tb.name, loop, loops, draw.describe())
+        await run.run_loop(loop, draw)
+    run.summarize(loops)
     tb.finish()
 
 
@@ -1090,7 +1403,7 @@ class _ResetRelease:
 
     async def _assert(self) -> None:
         tb = self.tb
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         before = _internal_resets(tb)
         tb.assert_reset()
         await ReadOnly()
@@ -1113,7 +1426,7 @@ class _ResetRelease:
     async def _release_both_running(self) -> tuple[int | None, int | None, int]:
         """Release between edges of both running clocks."""
         tb, w, cfg = self.tb, self.window, self.tb.cfg
-        delay = _off_edge_delay(tb)
+        delay = tb.off_edge_delay()
         tck_count = (
             math.ceil((delay + (w.clk.latest + 2) * cfg.clk_ps) / cfg.tck_ps) + w.tck.latest + 2
         )
@@ -1128,7 +1441,7 @@ class _ResetRelease:
     async def _release_tck_stopped(self) -> tuple[int | None, int | None, int]:
         """Release with TCK stopped: the TCK side stays in reset until TCK runs."""
         tb, w = self.tb, self.window
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         self._release()
         clk_edges = await _clk_release_edges(tb, w.clk.latest + 2)
         clk_at = self.tck.count
@@ -1150,7 +1463,7 @@ class _ResetRelease:
         tb, w, cfg = self.tb, self.window, self.tb.cfg
         tb.stop_clk()
         await tb.wait_clk_periods(CLK_STOP_SETTLE)
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         self._release()
         await tb.tck_cycles(w.tck.latest + 1 + tb.rng.randint(0, HOLD_TCK_MAX))
         await ReadOnly()
@@ -1270,17 +1583,17 @@ class _TestMode:
     async def enter(self) -> None:
         """i_test_mode rises with i_arst_scan_n high, between clock edges."""
         tb = self.tb
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.set_test_mode(on=True)
 
     async def leave(self) -> None:
         """i_test_mode falls with i_arst_n low, so the functional reset takes over and
         releases through the synchronizers."""
         tb = self.tb
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.assert_reset()
         await tb.clk_cycles(tb.rng.randint(HOLD_CLK_MIN, HOLD_CLK_MAX))
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.set_test_mode(on=False)
         await tb.clk_cycles(tb.rng.randint(HOLD_CLK_MIN, HOLD_CLK_MAX))
         await tb.tck_cycles(tb.rng.randint(0, HOLD_TCK_MAX))
@@ -1297,7 +1610,7 @@ class _TestMode:
         tb.log.info("%s: i_test_mode = 1, %s", tb.name, what)
         if pending:
             await self._pend_write()
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.assert_scan_reset()
         await ReadOnly()
         self._expect_resets((0, 0), f"{what}: in the step i_arst_scan_n fell")
@@ -1314,12 +1627,12 @@ class _TestMode:
             await tb.tck_cycles(tck_hold)
             await ReadOnly()
             self._expect_resets((0, 0), f"{what}: while i_arst_scan_n is low")
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.release_scan_reset()
         await ReadOnly()
         self._expect_resets((1, 1), f"{what}: in the step i_arst_scan_n rose")
         if pending:
-            await Timer(_off_edge_delay(tb), "ps")
+            await Timer(tb.off_edge_delay(), "ps")
             tb.start_clk()
         await tb.wait_reset_ready()
         cap = await tb.scan(tdr_word(DmiOp.NOP, 0, 0))
@@ -1345,7 +1658,7 @@ class _TestMode:
         await tb.dmi_write(SBCS, sbcs)
         await tb.scan(tdr_word(DmiOp.NOP, addr, data))
         state = self._state()
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.assert_reset()
         await ReadOnly()
         self._expect_resets((1, 1), "in the step i_arst_n fell")
@@ -1354,7 +1667,7 @@ class _TestMode:
         await ReadOnly()
         self._expect_resets((1, 1), "while i_arst_n is low")
         self._expect_state(state, "while i_arst_n is low")
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.release_reset()
         await ReadOnly()
         self._expect_resets((1, 1), "in the step i_arst_n rose")
@@ -1392,7 +1705,7 @@ class _TestMode:
         await self._held
         await ReadOnly()
         self._expect_resets((1, 1), "i_arst_n low from the AR of an SBA read")
-        await Timer(_off_edge_delay(tb), "ps")
+        await Timer(tb.off_edge_delay(), "ps")
         tb.release_reset()
         tb.expect_read(addr, size, check_id=TEST_MODE)
         got = await tb.sba_read_data(size)

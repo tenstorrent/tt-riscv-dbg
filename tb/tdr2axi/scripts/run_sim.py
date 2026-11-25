@@ -111,11 +111,12 @@ The manifest records the merges under "coverage_merge", each build's under its "
 --cov also writes each test's cover hits to sim/cover_hits.<timestamp>/<test>.json as
 {"test", "hits", "runs", "expected_fail_runs"}, the form the trace store's results check
 reads: "hits" maps the label of every cover property in the design to its matches, summed
-over the instances that share the label and over the test's passing runs that left coverage
-data. Expected failures count, as do the bring-up runs of a build-check test's legal cases;
-failing runs do not, and a --mutation command writes no file. A test whose passing runs left
-no coverage data gets no file and fails the run. On Verilator the counts come from each
-run's coverage.dat. On VCS one merge job per test runs the command cov_hits_argv names in
+over the instances that share the label and over the test's passing runs. Expected failures
+count, as do the bring-up runs of a build-check test's legal cases; failing runs do not, and
+a --mutation command writes no file. A test with a passing run that left no coverage data
+gets no file and fails the run; its manifest entry counts its passing runs and, when some
+of them left data, names those that did not. On Verilator the counts come from each run's
+coverage.dat. On VCS one merge job per test runs the command cov_hits_argv names in
 the site file over the simv.vdb of each build the test's runs used and over their databases,
 and the runner reads the matches from the text assertion report it writes; without
 cov_hits_argv no file is written, and a note on stderr says why. The manifest records each
@@ -2312,8 +2313,7 @@ def plan_merges(
 def hits_runs(results: Sequence[RunResult]) -> dict[str, list[RunResult]]:
     """The passing runs of each test under the test the manifest names, expected failures and
     the bring-up runs of legal build checks included; an illegal build check records no
-    coverage and is left out. A test's cover-hit file counts those of its runs that left
-    coverage data."""
+    coverage and is left out. A test's cover-hit file counts every one of them."""
     by_test: dict[str, list[RunResult]] = {}
     for result in results:
         if result.status == PASS and result.spec.expect_message is None:
@@ -2344,8 +2344,8 @@ def verilator_cover_counts(text: str) -> Counter[str]:
 
 def vcs_cover_counts(report: str) -> Counter[str]:
     """Matches per cover label in a VCS text assertion report: each row of its cover-property
-    sections, read in the column the section's header row names MATCHES, summed over the
-    instances that share a label."""
+    sections that starts with a hierarchical name, read in the column the section's header
+    row names MATCHES, summed over the instances that share a label."""
     counts: Counter[str] = Counter()
     inside, column = False, 0
     for line in report.splitlines():
@@ -2360,7 +2360,7 @@ def vcs_cover_counts(report: str) -> Counter[str]:
         elif (
             column
             and len(words) > -column
-            and not words[0].isdigit()
+            and "." in words[0]
             and all(word.isdigit() for word in words[1:])
         ):
             counts[cover_label(words[0])] += int(words[column])
@@ -2446,16 +2446,24 @@ def plan_hits(
     results: Sequence[RunResult], *, ctx: Context, hits_dir: Path
 ) -> tuple[list[HitsResult], list[tuple[HitsResult, ToolJob]]]:
     """Each test's cover-hit file in ``hits_dir``: on Verilator written at once, on VCS
-    unsettled with its merge job; an error, without a file, for a test whose passing runs left
-    no coverage data."""
+    unsettled with its merge job; an error, without a file, for a test with a passing run
+    that left no coverage data, counting its passing runs and, when some of them left
+    data, naming those that did not."""
     hits_dir.mkdir(parents=True, exist_ok=True)
     ready: list[HitsResult] = []
     pending: list[tuple[HitsResult, ToolJob]] = []
     for index, (test, passing) in enumerate(hits_runs(results).items()):
         runs = [result for result in passing if result.coverage is not None]
-        if not runs:
-            hits = unsettled_hits(test, runs, hits_dir)
-            ready.append(replace(hits, status=ERROR, reason=NO_COVERAGE))
+        bare = [result.spec.run_dir.name for result in passing if result.coverage is None]
+        if bare:
+            reason = NO_COVERAGE
+            if runs:
+                reason = (
+                    f"{len(bare)} of {len(passing)} passing runs left no coverage data: "
+                    f"{', '.join(bare)}"
+                )
+            hits = unsettled_hits(test, passing, hits_dir)
+            ready.append(replace(hits, status=ERROR, reason=reason))
         elif ctx.sim.name == "vcs":
             task_id = f"hits{index:03d}"
             pending.append(plan_vcs_hits(test, runs, ctx=ctx, hits_dir=hits_dir, task_id=task_id))

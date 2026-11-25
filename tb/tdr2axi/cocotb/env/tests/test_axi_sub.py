@@ -4,9 +4,10 @@
 
 They cover READY before VALID on the early share of accesses and never without it, the
 late share of response latencies, a share of 0 drawing nothing from the seed, the write
-channel orders ``w_before_aw`` and ``aw_before_w``, and the knob: ``negative_fault``
-returns only a fault the caller grades, the subordinate never reads the variable, and
-``arm_fault`` logs ``NEGATIVE VALIDATION:``.
+channel orders ``w_before_aw`` and ``aw_before_w``, ``hold_responses`` withholding a due
+response until it is cleared, the reset state dropping a request recorded at the dmactive
+fall, and the knob: ``negative_fault`` returns only a fault the caller grades, the
+subordinate never reads the variable, and ``arm_fault`` logs ``NEGATIVE VALIDATION:``.
 
 ``axi_sub`` imports cocotb, so these tests run in the bench's Python environment and are
 skipped where cocotb is missing.
@@ -63,6 +64,37 @@ def _load_package(name: str, directory: Path) -> ModuleType:
 def _axi_sub() -> ModuleType:
     _load_package("env", COCOTB_DIR / "env")
     return importlib.import_module("env.axi_sub")
+
+
+class _Net:
+    """A net of the stand-in DUT: a 2-state value."""
+
+    def __init__(self) -> None:
+        self.value = 0
+
+
+class _Dut:
+    """Stand-in for tb_top: every net reads 0 until a test sets it."""
+
+    def __getattr__(self, name: str) -> _Net:
+        net = _Net()
+        setattr(self, name, net)
+        return net
+
+    def drive(self, name: str, value: int) -> None:
+        """Set net ``name`` to ``value``."""
+        getattr(self, name).value = value
+
+
+class _Reports:
+    """The failures a subordinate reports, as (check ID, detail)."""
+
+    def __init__(self) -> None:
+        self.failed: list[tuple[str, str]] = []
+
+    def __call__(self, check_id: str, *, passed: bool, detail: str) -> None:
+        if not passed:
+            self.failed.append((check_id, detail))
 
 
 def _sub(mod: ModuleType, seed: int = 1, **timing: object) -> Any:
@@ -166,6 +198,79 @@ class AxiSubWriteOrderTest(unittest.TestCase):
     def test_both_orders_raise(self) -> None:
         with self.assertRaises(ValueError):
             self.mod.AxiSubTiming(w_before_aw=True, aw_before_w=True)
+
+
+@unittest.skipUnless(HAS_COCOTB, "cocotb is not installed")
+class AxiSubHoldAndResetTest(unittest.TestCase):
+    """``hold_responses`` and the dmactive record across a reset, on a stand-in DUT."""
+
+    def setUp(self) -> None:
+        self.mod = _axi_sub()
+        self.dut = _Dut()
+        self.reports = _Reports()
+        cfg = _sub(self.mod).cfg
+        self.sub = self.mod.AxiSub(self.dut, cfg, self.reports, random.Random(1))
+        self.ar = self.mod.AxiAddr(0x40, 2, 0, 1, 0, 0, 2, 0, 0, 0, 0)
+
+    def _sample(self, *, ar_valid: int) -> None:
+        """One edge of the dmactive check with AR held at READY low or withdrawn."""
+        valid = {"ar": ar_valid, "aw": 0, "w": 0}
+        ready = dict.fromkeys(("ar", "aw", "w"), False)
+        req = {"ar": self.ar if ar_valid else None, "aw": None, "w": None}
+        self.sub._check_dmactive_inflight(valid, ready, req)
+
+    def _fall_with_ar_held(self) -> None:
+        """dmactive falls while AR waits at READY low."""
+        self.dut.drive("dmactive", 1)
+        self._sample(ar_valid=1)
+        self.dut.drive("dmactive", 0)
+        self._sample(ar_valid=1)
+
+    def test_withdrawal_after_the_fall_fails(self) -> None:
+        """ARVALID falling before its handshake after the dmactive fall is a failure."""
+        self._fall_with_ar_held()
+        self._sample(ar_valid=0)
+        self.assertEqual([c for c, _ in self.reports.failed], ["CHK-DM-DMACTIVE-INFLIGHT"])
+
+    def test_reset_ends_the_held_request_without_a_failure(self) -> None:
+        """ARVALID falling after a reset that follows the dmactive fall is no failure."""
+        self._fall_with_ar_held()
+        self.sub._reset_state()
+        self._sample(ar_valid=0)
+        self.assertEqual(self.reports.failed, [])
+
+    def test_reset_forgets_dmactive(self) -> None:
+        """dmactive reads 0 out of reset: the first request after it is no dmactive fall."""
+        self.dut.drive("dmactive", 1)
+        self._sample(ar_valid=0)
+        self.sub._reset_state()
+        self.dut.drive("dmactive", 0)
+        self._sample(ar_valid=1)
+        self.assertEqual(self.sub._inflight_at_dmactive_fall, {})
+
+    def test_hold_responses_withholds_a_due_read_response(self) -> None:
+        """A read response due while the hold is set raises RVALID only once it clears."""
+        self.sub._rd_pend = [self.ar, 0]
+        self.sub.hold_responses = True
+        for _ in range(3):
+            self.sub._issue_responses()
+        self.assertFalse(self.sub._r_vld)
+        self.sub.hold_responses = False
+        self.sub._issue_responses()
+        self.assertTrue(self.sub._r_vld)
+        self.assertIs(self.sub._r_owner, self.ar)
+
+    def test_hold_responses_keeps_the_remaining_latency(self) -> None:
+        """A write response's latency pauses while held and runs out after the release."""
+        self.sub._wr_pend = [0, 2, self.ar]
+        self.sub.hold_responses = True
+        self.sub._issue_responses()
+        self.sub.hold_responses = False
+        issued = []
+        for _ in range(3):
+            self.sub._issue_responses()
+            issued.append(self.sub._b_vld)
+        self.assertEqual(issued, [False, False, True])
 
 
 @unittest.skipUnless(HAS_COCOTB, "cocotb is not installed")

@@ -160,10 +160,16 @@ class SbcsFieldsTest(unittest.TestCase):
             self.assertFalse(answer.data.matches(DMSTATUS_SPEC ^ 1))
             self.assertFalse(answer.data.matches(DMSTATUS_SPEC ^ (1 << 12)))
 
-    def test_inactive_reads_free(self) -> None:
-        """X-RISCV_DEBUG-dmactive: sbcs and dmstatus are not predicted while dmactive = 0."""
+    def test_inactive_reads(self) -> None:
+        """X-RISCV_DEBUG-dmactive, X-RISCV_DEBUG-sbbusy, X-RISCV_DEBUG-sbbusyerror: while
+        dmactive = 0 with no access in flight, sbcs compares sbbusy = 0 and sbbusyerror = 0
+        and dmstatus compares nothing."""
         model = sba.SbaRefModel(sba.SbaModelCfg(False, 64, 64))
-        self.assertEqual(model.predict_dmi_read(sba.SBCS).data.mask, 0)
+        data = model.predict_dmi_read(sba.SBCS).data
+        self.assertEqual(data.mask, BUSY | BUSYERROR)
+        self.assertTrue(data.matches(0x0004_0000))
+        self.assertFalse(data.matches(BUSY))
+        self.assertFalse(data.matches(BUSYERROR))
         self.assertEqual(model.predict_dmi_read(sba.DMSTATUS).data.mask, 0)
 
 
@@ -567,10 +573,13 @@ class BusErrorTest(unittest.TestCase):
 
 class NoIncrementAfterErrorTest(unittest.TestCase):
     """CHK-SBA-NO-INC-AFTER-ERROR: S-TDR2AXI-0061, S-TDR2AXI-0076, S-TDR2AXI-0079,
-    X-RISCV_DEBUG-sbaddress0-read, X-RISCV_DEBUG-sbdata0-write, X-RISCV_DEBUG-sbdata0-read."""
+    S-TDR2AXI-0093, S-TDR2AXI-0094, X-RISCV_DEBUG-sbaddress0-read,
+    X-RISCV_DEBUG-sbdata0-write, X-RISCV_DEBUG-sbdata0-read."""
 
     def _address(self, model: object) -> object:
-        return model.predict_dmi_read(sba.SBADDRESS0).data
+        data = model.predict_dmi_read(sba.SBADDRESS0).data
+        self.assertLessEqual({"S-TDR2AXI-0093", "S-TDR2AXI-0094"}, set(data.atoms))
+        return data
 
     def test_sbaddress0_read_error(self) -> None:
         model = enabled()
@@ -591,13 +600,17 @@ class NoIncrementAfterErrorTest(unittest.TestCase):
         self.assertTrue(self._address(model).matches(0x504))
 
     def test_sbdata0_read_error(self) -> None:
-        """The Debug 1.0 reading of X-RISCV_DEBUG-sbdata0-read: no increment after an error."""
+        """S-TDR2AXI-0094, the Debug 1.0 reading of X-RISCV_DEBUG-sbdata0-read: a read an
+        sbdata0 read starts does not increment after an error, and does after a success."""
         model = enabled()
         model.predict_dmi_write(sba.SBCS, sbcs_write(2, readondata=True, autoinc=True))
         model.predict_dmi_write(sba.SBADDRESS0, 0x600)
-        model.predict_dmi_read(sba.SBDATA0)
+        self.assertEqual(model.predict_dmi_read(sba.SBDATA0).access.addr, 0x600)
+        complete(model)
+        self.assertEqual(self._address(model).allowed, (0x604,))
+        self.assertEqual(model.predict_dmi_read(sba.SBDATA0).access.addr, 0x604)
         complete(model, error=True)
-        self.assertTrue(self._address(model).matches(0x600))
+        self.assertEqual(self._address(model).allowed, (0x604,))
 
 
 class BusyTest(unittest.TestCase):
@@ -808,7 +821,7 @@ class DmactiveTest(unittest.TestCase):
             data = model.predict_dmi_read(addr).data
             self.assertNotEqual(data.mask, 0)
             self.assertTrue(data.matches(0))
-        self.assertEqual(model.predict_dmi_read(sba.SBCS).data.mask, 0)
+        self.assertEqual(model.predict_dmi_read(sba.SBCS).data.mask, BUSY | BUSYERROR)
         self.assertTrue(model.predict_dmi_read(sba.DMCONTROL).data.matches(0))
 
     def test_no_bus_access_while_inactive(self) -> None:
@@ -825,20 +838,275 @@ class DmactiveTest(unittest.TestCase):
         self.assertEqual(model.predict_dmi_read(sba.SBCS).data.allowed, (sbcs_idle(model.cfg),))
 
     def test_access_in_flight_completes_with_its_payload(self) -> None:
-        """An access in flight when dmactive drops completes with its original payload."""
+        """S-TDR2AXI-0090: an access in flight when dmactive drops completes with its original
+        payload, and an error response leaves its bytes unknown."""
+        for error in (False, True):
+            with self.subTest(error=error):
+                model = enabled()
+                model.load_memory(0x800, bytes(4))
+                self.assertEqual(single_write(model, 0x800, 2, 0x0BAD_CAFE).addr, 0x800)
+                model.predict_dmi_write(sba.DMCONTROL, 0)
+                self.assertEqual(model.phase, sba.SbaPhase.PENDING)
+                self.assertTrue(model.held)
+                model.bus_response(error=error)
+                want = (None,) * 4 if error else (0xFE, 0xCA, 0xAD, 0x0B)
+                self.assertEqual(model.predict_memory(0x800, 4), want)
+                model.predict_dmi_write(sba.DMCONTROL, 1)
+                self.assertFalse(model.held)
+                self.assertEqual(
+                    model.predict_dmi_read(sba.SBCS).data.allowed, (sbcs_idle(model.cfg),)
+                )
+
+
+HOLD_ADDR = 0x1000
+HOLD_RW = sbcs_write(2, readonaddr=True, autoinc=True)
+HOLD_RDATA = 0x5A5A_5A5A_1234_5678
+
+
+def held_read(*, busyerror: bool = False) -> object:
+    """A single read with sbautoincrement in flight, abstractcs.cmderr = 2, and dmactive
+    cleared; ``busyerror`` sets sbbusyerror with a colliding sbdata0 write first."""
+    model = enabled()
+    model.predict_dmi_write(sba.SBCS, HOLD_RW)
+    model.predict_dmi_write(sba.SBADDRESS1, 0)
+    model.predict_dmi_write(sba.SBADDRESS0, HOLD_ADDR)
+    if busyerror:
+        model.predict_dmi_write(sba.SBDATA0, 0)
+    model.predict_dmi_write(sba.COMMAND, 0x0022_1000)
+    model.predict_dmi_write(sba.DMCONTROL, 0)
+    return model
+
+
+class HoldTest(unittest.TestCase):
+    """CHK-DM-DMACTIVE-INFLIGHT-HOLD, CHK-DM-DMACTIVE-CLEAR: S-TDR2AXI-0090,
+    X-RISCV_DEBUG-dmactive. The DMI answer to an access during the hold is open, the
+    R-RISCV_DEBUG profile's dm_reset entry."""
+
+    def assert_held(self, model: object, *, busyerror: bool = False) -> None:
+        """sbcs reads its value at the fall with sbbusy = 1, sbaddress the access address."""
+        sbcs = model.predict_dmi_read(sba.SBCS).data
+        want = sbcs_idle(model.cfg, rw=HOLD_RW, busyerror=busyerror) | BUSY
+        self.assertEqual(sbcs.mask, sba.SBCS_DEFINED)
+        self.assertEqual(sbcs.allowed, (want,))
+        self.assertIn("S-TDR2AXI-0090", sbcs.atoms)
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.allowed, (HOLD_ADDR,))
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.mask, 0xFFFF_FFFF)
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS1).data.allowed, (0,))
+
+    def test_registers_held_and_the_rest_reset(self) -> None:
+        """While held, sbcs and sbaddress keep their values; cmderr and dmcontrol reset."""
+        model = held_read()
+        self.assertTrue(model.held)
+        self.assertFalse(model.dmactive)
+        self.assertEqual(model.phase, sba.SbaPhase.PENDING)
+        self.assert_held(model)
+        cmderr = model.predict_dmi_read(sba.ABSTRACTCS).data
+        self.assertEqual(cmderr.mask, 0x7 << 8)
+        self.assertTrue(cmderr.matches(0))
+        self.assertTrue(model.predict_dmi_read(sba.DMCONTROL).data.matches(0))
+
+    def test_hold_time_accesses_change_nothing(self) -> None:
+        """A write of any SBA register and an sbdata read change nothing, sbbusyerror
+        included, start nothing, and have an open answer."""
+        for busyerror in (False, True):
+            model = held_read(busyerror=busyerror)
+            for op, addr, data in (
+                ("w", sba.SBADDRESS0, 0x3000),
+                ("w", sba.SBADDRESS1, 0x1),
+                ("w", sba.SBDATA0, 0xFFFF_FFFF),
+                ("w", sba.SBDATA1, 0xFFFF_FFFF),
+                ("w", sba.SBCS, BUSYERROR | CLEAR_ERRORS | sbcs_write(0, readondata=True)),
+                ("r", sba.SBDATA0, 0),
+                ("r", sba.SBDATA1, 0),
+            ):
+                with self.subTest(busyerror=busyerror, op=op, addr=addr):
+                    if op == "w":
+                        answer = model.predict_dmi_write(addr, data)
+                    else:
+                        answer = model.predict_dmi_read(addr)
+                    self.assertTrue(answer.open_status)
+                    self.assertFalse(answer.busy)
+                    self.assertEqual(answer.data.mask, 0)
+                    self.assertIsNone(answer.access)
+                    self.assert_held(model, busyerror=busyerror)
+            self.assertEqual(model.phase, sba.SbaPhase.PENDING)
+
+    def test_hold_time_sbaddress_above_the_width_is_open(self) -> None:
+        """A hold-time sbaddress0 write with bits at and above AXI_ADDR_WIDTH changes
+        nothing and has an open answer."""
+        model = enabled(addr_width=20, data_width=32)
+        model.predict_dmi_write(sba.SBCS, HOLD_RW)
+        model.predict_dmi_write(sba.SBADDRESS0, HOLD_ADDR)
+        model.predict_dmi_write(sba.DMCONTROL, 0)
+        self.assertTrue(model.held)
+        answer = model.predict_dmi_write(sba.SBADDRESS0, 0xFFFF_FFFF)
+        self.assertTrue(answer.open_status)
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.allowed, (HOLD_ADDR,))
+
+    def test_completion_drops_the_result(self) -> None:
+        """The held access's response lands nowhere: after it sbbusy reads 0 and sbaddress
+        and sbdata read their reset values, before and after dmactive is set again."""
+        for error in (False, True):
+            with self.subTest(error=error):
+                model = held_read()
+                model.bus_response(error=error, rdata=HOLD_RDATA)
+                self.assertEqual(model.phase, sba.SbaPhase.RESPONDED)
+                self.assertTrue(model.held)
+                self.assertEqual(
+                    set(model.predict_dmi_read(sba.SBADDRESS0).data.allowed), {HOLD_ADDR, 0}
+                )
+                self.assertEqual(model.predict_dmi_read(sba.SBCS).data.mask, BUSY | BUSYERROR)
+                model.access_retired()
+                self.assertFalse(model.held)
+                sbcs = model.predict_dmi_read(sba.SBCS).data
+                self.assertEqual((sbcs.allowed, sbcs.mask), ((0,), BUSY | BUSYERROR))
+                for addr in (sba.SBADDRESS0, sba.SBADDRESS1, sba.SBDATA0, sba.SBDATA1):
+                    data = model.predict_dmi_read(addr).data
+                    self.assertEqual((data.allowed, data.mask), ((0,), 0xFFFF_FFFF))
+                model.predict_dmi_write(sba.DMCONTROL, 1)
+                self.assertEqual(
+                    model.predict_dmi_read(sba.SBCS).data.allowed, (sbcs_idle(model.cfg),)
+                )
+                for addr in (sba.SBADDRESS0, sba.SBADDRESS1, sba.SBDATA0, sba.SBDATA1):
+                    self.assertEqual(model.predict_dmi_read(addr).data.allowed, (0,))
+                self.assertTrue(model.predict_dmi_read(sba.ABSTRACTCS).data.matches(0))
+
+    def test_completion_window_pairs_sbbusy_with_sbbusyerror(self) -> None:
+        """Between the held response and sbbusy's fall, sbcs reads sbbusy and sbbusyerror
+        as held or both 0, never one without the other; once sbbusy has fallen, both 0."""
+        for busyerror in (False, True):
+            with self.subTest(busyerror=busyerror):
+                model = held_read(busyerror=busyerror)
+                model.bus_response(error=False, rdata=HOLD_RDATA)
+                held = BUSY | (BUSYERROR if busyerror else 0)
+                sbcs = model.predict_dmi_read(sba.SBCS).data
+                self.assertEqual(sbcs.mask, BUSY | BUSYERROR)
+                self.assertEqual(set(sbcs.allowed), {held, 0})
+                self.assertTrue(sbcs.matches(sbcs_idle(model.cfg, rw=HOLD_RW) | held))
+                self.assertTrue(sbcs.matches(0x0004_0000))
+                self.assertFalse(sbcs.matches(held ^ BUSYERROR))
+                self.assertFalse(sbcs.matches(BUSYERROR))
+                model.access_retired()
+                sbcs = model.predict_dmi_read(sba.SBCS).data
+                self.assertEqual((sbcs.allowed, sbcs.mask), ((0,), BUSY | BUSYERROR))
+                self.assertFalse(sbcs.matches(BUSYERROR))
+                model.predict_dmi_write(sba.DMCONTROL, 1)
+                self.assertEqual(
+                    model.predict_dmi_read(sba.SBCS).data.allowed, (sbcs_idle(model.cfg),)
+                )
+
+    def test_fall_with_no_access_clears_sbbusyerror(self) -> None:
+        """sbbusyerror set with the bus idle, then dmactive = 0: sbcs reads it 0."""
+        model = enabled()
+        model.predict_dmi_write(sba.SBCS, HOLD_RW)
+        model.predict_dmi_write(sba.SBADDRESS1, 0)
+        model.predict_dmi_write(sba.SBADDRESS0, HOLD_ADDR)
+        self.assertTrue(model.predict_dmi_write(sba.SBDATA0, 0).busy)
+        complete(model, rdata=HOLD_RDATA)
+        self.assertEqual(
+            model.predict_dmi_read(sba.SBCS).data.allowed,
+            (sbcs_idle(model.cfg, rw=HOLD_RW, busyerror=True),),
+        )
+        model.predict_dmi_write(sba.DMCONTROL, 0)
+        self.assertFalse(model.held)
+        sbcs = model.predict_dmi_read(sba.SBCS).data
+        self.assertEqual((sbcs.allowed, sbcs.mask), ((0,), BUSY | BUSYERROR))
+        self.assertFalse(sbcs.matches(BUSYERROR))
+
+    def test_reads_in_the_completion_window(self) -> None:
+        """Between the response and sbbusy's fall the registers read held or reset values."""
+        model = held_read()
+        model.bus_response(error=False, rdata=HOLD_RDATA)
+        sbcs = model.predict_dmi_read(sba.SBCS).data
+        self.assertTrue(sbcs.matches(sbcs_idle(model.cfg, rw=HOLD_RW) | BUSY))
+        self.assertTrue(sbcs.matches(0x0004_0000))
+        answer = model.predict_dmi_read(sba.SBDATA0)
+        self.assertTrue(answer.open_status)
+        self.assertTrue(model.predict_dmi_write(sba.SBADDRESS0, 0x40).open_status)
+        model.access_retired()
+        self.assertFalse(model.predict_dmi_write(sba.SBADDRESS0, 0x40).open_status)
+
+    def test_bus_reset_ends_the_hold(self) -> None:
+        """RST-ARST-BUS drops the held access and its unanswered bytes."""
         model = enabled()
         model.load_memory(0x800, bytes(4))
-        self.assertEqual(single_write(model, 0x800, 2, 0x0BAD_CAFE).addr, 0x800)
+        single_write(model, 0x800, 2, 0x0BAD_CAFE)
         model.predict_dmi_write(sba.DMCONTROL, 0)
+        model.reset("RST-ARST-BUS")
+        self.assertFalse(model.held)
+        self.assertEqual(model.phase, sba.SbaPhase.IDLE)
+        self.assertEqual(model.predict_memory(0x800, 4), (None,) * 4)
+
+
+class RearmTest(unittest.TestCase):
+    """CHK-DM-DMACTIVE-REARM: S-TDR2AXI-0091, X-RISCV_DEBUG-dmactive. dmactive set again
+    before the held access's response: nothing resets and the result lands."""
+
+    def test_read_result_lands(self) -> None:
+        """The read data lands in sbdata0, sbaddress advances with autoinc, sbbusy falls."""
+        model = held_read()
+        answer = model.predict_dmi_write(sba.DMCONTROL, 1)
+        self.assertIn("S-TDR2AXI-0091", answer.atoms)
+        self.assertFalse(model.held)
         self.assertEqual(model.phase, sba.SbaPhase.PENDING)
-        with self.assertRaises(sba.SbaStimulusError):
-            model.predict_dmi_read(sba.SBDATA0)
-        with self.assertRaises(sba.SbaStimulusError):
-            model.predict_dmi_write(sba.DMCONTROL, 1)
-        model.bus_response(error=False)
-        self.assertEqual(model.predict_memory(0x800, 4), (0xFE, 0xCA, 0xAD, 0x0B))
+        self.assertEqual(
+            model.predict_dmi_read(sba.SBCS).data.allowed,
+            (sbcs_idle(model.cfg, rw=HOLD_RW) | BUSY,),
+        )
+        complete(model, rdata=HOLD_RDATA)
+        self.assertEqual(
+            model.predict_dmi_read(sba.SBCS).data.allowed, (sbcs_idle(model.cfg, rw=HOLD_RW),)
+        )
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.allowed, (HOLD_ADDR + 4,))
+        self.assertEqual(model.predict_sbdata(0).allowed, (0x1234_5678,))
+        self.assertTrue(model.predict_dmi_read(sba.ABSTRACTCS).data.matches(0))
+
+    def test_error_lands(self) -> None:
+        """An error response sets sberror = 2 and sbaddress does not advance."""
+        model = held_read()
         model.predict_dmi_write(sba.DMCONTROL, 1)
+        complete(model, error=True)
+        self.assertEqual(
+            model.predict_dmi_read(sba.SBCS).data.allowed,
+            (sbcs_idle(model.cfg, rw=HOLD_RW, sberror=2),),
+        )
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.allowed, (HOLD_ADDR,))
+
+    def test_write_lands(self) -> None:
+        """A held write completes into memory and sbaddress advances with autoinc."""
+        model = enabled()
+        model.load_memory(0x800, bytes(4))
+        model.predict_dmi_write(sba.SBCS, sbcs_write(2, autoinc=True))
+        model.predict_dmi_write(sba.SBADDRESS1, 0)
+        model.predict_dmi_write(sba.SBADDRESS0, 0x800)
+        model.predict_dmi_write(sba.SBDATA0, 0x0BAD_CAFE)
+        model.predict_dmi_write(sba.DMCONTROL, 0)
+        model.predict_dmi_write(sba.DMCONTROL, 1)
+        complete(model)
+        self.assertEqual(model.predict_memory(0x800, 4), (0xFE, 0xCA, 0xAD, 0x0B))
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.allowed, (0x804,))
+
+    def test_active_rules_return(self) -> None:
+        """After the re-arm an sbdata0 write collides and latches sbbusyerror."""
+        model = held_read()
+        model.predict_dmi_write(sba.DMCONTROL, 1)
+        self.assertTrue(model.predict_dmi_write(sba.SBDATA0, 1).busy)
+        complete(model, rdata=HOLD_RDATA)
+        self.assertEqual(
+            model.predict_dmi_read(sba.SBCS).data.allowed,
+            (sbcs_idle(model.cfg, rw=HOLD_RW, busyerror=True),),
+        )
+
+    def test_rearm_after_the_drop_resets(self) -> None:
+        """dmactive set after the held response, before sbbusy falls: the reset values."""
+        model = held_read()
+        model.bus_response(error=False, rdata=HOLD_RDATA)
+        model.predict_dmi_write(sba.DMCONTROL, 1)
+        self.assertFalse(model.held)
+        self.assertEqual(model.phase, sba.SbaPhase.IDLE)
         self.assertEqual(model.predict_dmi_read(sba.SBCS).data.allowed, (sbcs_idle(model.cfg),))
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.allowed, (0,))
+        self.assertEqual(model.predict_sbdata(0).allowed, (0,))
 
 
 class AbstractCommandTest(unittest.TestCase):
@@ -894,14 +1162,17 @@ class AddressWidthTest(unittest.TestCase):
                         high = model.predict_dmi_read(sba.SBADDRESS1).data
                         self.assertTrue(low.matches((1 << bit) & 0xFFFF_FFFF))
                         self.assertTrue(high.matches((1 << bit) >> 32))
-                        self.assertEqual(high.mask, ((1 << addr_width) - 1) >> 32)
+                        high_mask = ((1 << addr_width) - 1) >> 32 if addr_width > 32 else 0
+                        self.assertEqual(high.mask, high_mask or 0xFFFF_FFFF)
 
     def test_bits_above_the_width_are_refused(self) -> None:
-        """The H2 narrowing: no sbaddress bit at or above AXI_ADDR_WIDTH is predicted."""
-        model = enabled(addr_width=32, data_width=32)
-        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS1).data.mask, 0)
+        """The H2 narrowing: no sbaddress bit at or above AXI_ADDR_WIDTH is predicted in a
+        register that exists."""
+        model = enabled(addr_width=33, data_width=32)
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS1).data.mask, 0x1)
+        model.predict_dmi_write(sba.SBADDRESS1, 0x1)
         with self.assertRaises(sba.SbaStimulusError):
-            model.predict_dmi_write(sba.SBADDRESS1, 0x1)
+            model.predict_dmi_write(sba.SBADDRESS1, 0x2)
         model = enabled(addr_width=20, data_width=32)
         self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.mask, 0xF_FFFF)
         model.predict_dmi_write(sba.SBADDRESS0, 0xF_FFFF)
@@ -928,6 +1199,56 @@ class AddressWidthTest(unittest.TestCase):
         """The top word of the address space is reachable when nothing increments past it."""
         model = enabled(addr_width=32, data_width=32)
         self.assertEqual(single_read(model, 0xFFFF_FFFC, 2).addr, 0xFFFF_FFFC)
+
+
+class AbsentSbaddress1Test(unittest.TestCase):
+    """CHK-SBA-SBADDRESS1-ABSENT: S-TDR2AXI-0014, X-RISCV_DEBUG-sbaddress-regs. At
+    AXI_ADDR_WIDTH <= 32 sbaddress1 reads 0 and a write of it changes nothing, but collides
+    like the present register (the R-RISCV_DEBUG profile's departure_absent entry)."""
+
+    WIDTHS = ((2, 32), (3, 64), (20, 32), (32, 32), (32, 64))
+
+    def test_reads_zero_after_any_write(self) -> None:
+        """Each width reads 0 before and after writes of any value, and the next access
+        and sbcs are unchanged."""
+        for addr_width, data_width in self.WIDTHS:
+            with self.subTest(addr_width=addr_width, data_width=data_width):
+                model = enabled(addr_width=addr_width, data_width=data_width)
+                read = model.predict_dmi_read(sba.SBADDRESS1)
+                self.assertEqual((read.data.allowed, read.data.mask), ((0,), 0xFFFF_FFFF))
+                for value in (0xFFFF_FFFF, 0x8000_0000, 0x1):
+                    answer = model.predict_dmi_write(sba.SBADDRESS1, value)
+                    self.assertFalse(answer.busy)
+                    self.assertIsNone(answer.access)
+                    self.assertEqual(model.predict_dmi_read(sba.SBADDRESS1).data.allowed, (0,))
+                self.assertEqual(single_read(model, 0, 0).addr, 0)
+                complete(model)
+                self.assertEqual(
+                    model.predict_dmi_read(sba.SBCS).data.allowed,
+                    (sbcs_idle(model.cfg, rw=sbcs_write(0, readonaddr=True)),),
+                )
+
+    def test_write_collides_while_busy_or_busyerror(self) -> None:
+        """While an access is in flight, or after one collided, the write is answered busy
+        and sets sbbusyerror."""
+        model = enabled(addr_width=32, data_width=32)
+        single_read(model, 0x40, 2)
+        self.assertTrue(model.predict_dmi_write(sba.SBADDRESS1, 0x1).busy)
+        complete(model)
+        rw = sbcs_write(2, readonaddr=True)
+        self.assertEqual(
+            model.predict_dmi_read(sba.SBCS).data.allowed,
+            (sbcs_idle(model.cfg, rw=rw, busyerror=True),),
+        )
+        self.assertTrue(model.predict_dmi_write(sba.SBADDRESS1, 0x0).busy)
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS1).data.allowed, (0,))
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS0).data.allowed, (0x40,))
+
+    def test_write_free_while_inactive(self) -> None:
+        """While dmactive = 0 the write is taken and changes nothing."""
+        model = sba.SbaRefModel(sba.SbaModelCfg(False, 32, 32))
+        self.assertFalse(model.predict_dmi_write(sba.SBADDRESS1, 0xFFFF_FFFF).busy)
+        self.assertEqual(model.predict_dmi_read(sba.SBADDRESS1).data.allowed, (0,))
 
 
 class ResetTest(unittest.TestCase):

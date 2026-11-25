@@ -98,6 +98,9 @@ EXTRA_FAULTS = {
     sb_mod.STICKY_IGNORE: ("spurious-access", "spurious-request"),
     sb_mod.BUSY_UPDATE: ("spurious-access", "spurious-request"),
     sb_mod.OP3_CLEAR: ("spurious-request",),
+    sb_mod.SBADDRESS1_ABSENT: ("write-busy", "spurious-access", "next-address-changed"),
+    # sbcs read while dmactive = 0 with no access held
+    sb_mod.DMACTIVE_CLEAR: ("sbbusyerror-kept", "sbbusy-set"),
 }
 
 # DMI ops and responses, DM register addresses (RISC-V External Debug Support 0.13.2)
@@ -105,6 +108,7 @@ READ, WRITE, CLEAR = 1, 2, 3
 OK, BUSY_RESP = 0, 3
 DMSTATUS, HARTINFO, DATA0, DATA1 = 0x11, 0x12, 0x04, 0x05
 SBCS_BUSY = 1 << 21
+SBCS_BUSYERROR = 1 << 22
 SBCS_READONADDR = 1 << 20
 SBCS_AUTOINC = 1 << 16
 SBCS_READONDATA = 1 << 15
@@ -171,6 +175,7 @@ class Scenario:
     reset_scope: str = sb_mod.RST_ARST_BUS
     lite: bool = False
     sync_stages: int = 3
+    addr_width: int = 64
     custom: dict[str, list[Event]] = field(default_factory=dict)
 
 
@@ -190,6 +195,11 @@ def exact(value: int, mask: int = WORD) -> Any:
 
 def answer(data: Any = None, access: Any = None, *, busy: bool = False) -> Any:
     return sba.DmAnswer(busy, data or sba.Expected.free(ATOMS), access, ATOMS)
+
+
+def open_answer() -> Any:
+    """An answer whose response code the model leaves open."""
+    return sba.DmAnswer(False, sba.Expected.free(ATOMS), None, ATOMS, open_status=True)
 
 
 def read_access(addr: int, size: int, *, lite: bool = False) -> Any:
@@ -364,6 +374,23 @@ def feed(sb: Any, event: Event) -> None:
     FEEDERS[event[0]](sb, event)
 
 
+def verdicts(start: list[Event], events: list[Event], check: str) -> list[bool]:
+    """The verdicts ``check`` records while ``events`` are fed after ``start``."""
+    records: list[tuple[str, bool]] = []
+
+    def report(check_id: str, *, passed: bool, detail: str) -> None:
+        del detail
+        records.append((check_id, passed))
+
+    sb = sb_mod.Tdr2axiScoreboard(sb_mod.Tdr2axiScoreboardCfg(lite=False), report)
+    for event in start:
+        feed(sb, event)
+    before = len(records)
+    for event in events:
+        feed(sb, event)
+    return [passed for check_id, passed in records[before:] if check_id == check]
+
+
 def observed_only(event: Event) -> Event:
     """The DUT side of an event: a DMI handshake with no answer the model would give."""
     if event[0] == "dmi":
@@ -428,7 +455,9 @@ def run_case(check: str, scenario: Scenario, fault: str) -> str:
         name=f"{check}:{fault}", required_ids={checker_mod.NONVAC, check}
     )
     sb = sb_mod.Tdr2axiScoreboard(
-        sb_mod.Tdr2axiScoreboardCfg(lite=scenario.lite, sync_stages=scenario.sync_stages),
+        sb_mod.Tdr2axiScoreboardCfg(
+            lite=scenario.lite, sync_stages=scenario.sync_stages, addr_width=scenario.addr_width
+        ),
         report=checker.record,
     )
     for event in faulted(scenario, fault):
@@ -588,20 +617,87 @@ def sbbusy() -> Scenario:
 
 
 def dmactive_clear() -> Scenario:
-    """sbaddress0 read while dmactive = 0, then sbcs read after dmactive is set again."""
+    """sbaddress0 and sbcs read while dmactive = 0 with no access held, then sbcs read after
+    dmactive is set again. sbbusyerror-kept and sbbusy-set read sbcs while dmactive = 0 with
+    that bit set."""
     start = [*activate(), *write(sba.SBADDRESS0, 0x100), *write(sba.DMCONTROL, 0)]
     t1 = len(start) + 1
     events = [
         *start,
         *read(sba.SBADDRESS0, 0),
+        *read(sba.SBCS, 0, mask=SBCS_BUSY | SBCS_BUSYERROR),
         *activate(),
         *read(sba.SBCS, SBCS_IDLE),
+    ]
+    probe = events[t1]
+    inactive = t1 + 2
+    sbcs = events[inactive]
+    return Scenario(
+        events,
+        t1,
+        wrong=dmi(*probe[1:5], response=(0xDEAD, OK)),
+        stale=dmi(*probe[1:5], response=(0x100, OK)),
+        custom={
+            "sbbusyerror-kept": _replace(
+                events, inactive, dmi(*sbcs[1:5], response=(SBCS_BUSYERROR, OK))
+            ),
+            "sbbusy-set": _replace(events, inactive, dmi(*sbcs[1:5], response=(SBCS_BUSY, OK))),
+        },
+    )
+
+
+SBCS_INACTIVE = 0x0004_0000  # an sbcs read value with sbbusy = 0 while dmactive = 0
+
+
+def dmactive_inflight_hold() -> Scenario:
+    """dmactive cleared with a bus read in flight: sbcs reads its held value with sbbusy = 1,
+    an open answer to a hold-time sbdata0 read grades nothing, and after the response
+    sbaddress0 reads 0 before dmactive is set again. stale reads the cleared sbcs."""
+    sbcs = SBCS_IDLE | SBACCESS32 | SBCS_READONADDR
+    start = [
+        *activate(),
+        *write(sba.SBCS, SBACCESS32 | SBCS_READONADDR),
+        *write(sba.SBADDRESS0, 0x100, read_access(0x100, 2)),
+        *write(sba.DMCONTROL, 0),
+        *access(READ, sba.SBDATA0, 0, open_answer(), response=(0, BUSY_RESP)),
+    ]
+    t1 = len(start) + 1
+    events = [
+        *start,
+        *read(sba.SBCS, sbcs | SBCS_BUSY),
+        ("ar", 0x100, 2),
+        ("bresp", False),
+        *read(sba.SBCS, 0, mask=SBCS_BUSY),
+        *read(sba.SBADDRESS0, 0),
     ]
     probe = events[t1]
     return Scenario(
         events,
         t1,
-        wrong=dmi(*probe[1:5], response=(0xDEAD, OK)),
+        wrong=dmi(*probe[1:5], response=(sbcs, OK)),
+        stale=dmi(*probe[1:5], response=(SBCS_INACTIVE, OK)),
+    )
+
+
+def dmactive_rearm() -> Scenario:
+    """dmactive cleared and set again before a bus read with sbautoincrement is answered:
+    sbaddress0 reads the advanced address; stale reads it without the increment."""
+    start = [
+        *activate(),
+        *write(sba.SBCS, SBACCESS32 | SBCS_READONADDR | SBCS_AUTOINC),
+        *write(sba.SBADDRESS0, 0x100, read_access(0x100, 2)),
+        *write(sba.DMCONTROL, 0),
+        *activate(),
+        ("ar", 0x100, 2),
+        ("bresp", False),
+    ]
+    t1 = len(start) + 1
+    events = [*start, *read(sba.SBADDRESS0, 0x104)]
+    probe = events[t1]
+    return Scenario(
+        events,
+        t1,
+        wrong=dmi(*probe[1:5], response=(0, OK)),
         stale=dmi(*probe[1:5], response=(0x100, OK)),
     )
 
@@ -626,15 +722,23 @@ def op3_keeps_dm() -> Scenario:
     )
 
 
-def no_inc_after_error() -> Scenario:
-    """A read with sbautoincrement fails with an error response; sbaddress0 is read back."""
-    start = [
-        *activate(),
-        *write(sba.SBCS, SBACCESS32 | SBCS_READONADDR | SBCS_AUTOINC),
-        *write(sba.SBADDRESS0, 0x140, read_access(0x140, 2)),
-        ("ar", 0x140, 2),
-        ("bresp", True),
-    ]
+def no_inc_after_error(*, trigger: str = "addr") -> Scenario:
+    """A read with sbautoincrement fails with an error response; sbaddress0 is read back.
+    The read is started by an sbaddress0 write (``addr``) or by an sbdata0 read with
+    sbreadondata (``data``, S-TDR2AXI-0094)."""
+    if trigger == "addr":
+        started = [
+            *write(sba.SBCS, SBACCESS32 | SBCS_READONADDR | SBCS_AUTOINC),
+            *write(sba.SBADDRESS0, 0x140, read_access(0x140, 2)),
+        ]
+    else:
+        sbdata0 = answer(exact(0x55), read_access(0x140, 2))
+        started = [
+            *write(sba.SBCS, SBACCESS32 | SBCS_READONDATA | SBCS_AUTOINC),
+            *write(sba.SBADDRESS0, 0x140),
+            *access(READ, sba.SBDATA0, 0, sbdata0, response=(0x55, OK)),
+        ]
+    start = [*activate(), *started, ("ar", 0x140, 2), ("bresp", True)]
     t1 = len(start) + 1
     events = [*start, *read(sba.SBADDRESS0, 0x140)]
     probe = events[t1]
@@ -822,6 +926,66 @@ def dm_version() -> Scenario:
     )
     scenario.custom["authbusy-set"] = modelled_dmstatus(DMSTATUS_SPEC | DMSTATUS_AUTHBUSY)
     return scenario
+
+
+def sbaddress1_absent() -> Scenario:
+    """At AXI_ADDR_WIDTH 32: sbaddress0 written twice, sbaddress1 written all ones with
+    sbbusy and sbbusyerror clear, sbaddress1, sbaddress0 and sbcs read, and an sbdata0 read
+    with sbreadondata that reads at the address sbaddress0 holds; then an sbaddress0 write
+    with sbreadonaddr starts a read, an sbaddress1 write collides with it and is answered
+    busy, and sbcs reads sbbusyerror set. The collision is CHK-SBA-SBBUSYERROR's alone.
+
+    Mismatch reads sbaddress1 as written; stale reads sbaddress0 as written before its last
+    write; write-busy answers the first sbaddress1 write busy; spurious-access adds an AR
+    after it; next-address-changed moves the sbdata0 read's AR. Collision-success answers
+    the colliding write with success, and sbbusyerror-clear reads sbcs after it with
+    sbbusyerror clear, for the unit test that neither grades this check."""
+    on_data = SBACCESS32 | SBCS_READONDATA
+    on_addr = SBACCESS32 | SBCS_READONADDR
+    events = [
+        *activate(),
+        *write(sba.SBCS, on_data),
+        *write(sba.SBADDRESS0, 0x80),
+        *write(sba.SBADDRESS0, 0x100),
+    ]
+    ones = len(events) + 1
+    events += access(WRITE, sba.SBADDRESS1, WORD, answer(), response=(0, OK))
+    t1 = len(events) + 1
+    events += read(sba.SBADDRESS1, 0)
+    sbaddress0 = len(events) + 1
+    events += [*read(sba.SBADDRESS0, 0x100), *read(sba.SBCS, SBCS_IDLE | on_data)]
+    events += access(
+        READ, sba.SBDATA0, 0, answer(exact(0), read_access(0x100, 2)), response=(0, OK)
+    )
+    next_ar = len(events)
+    events += [("ar", 0x100, 2), ("bresp", False)]
+    events += [*write(sba.SBCS, on_addr), *write(sba.SBADDRESS0, 0x140, read_access(0x140, 2))]
+    collide = len(events) + 1
+    events += access(WRITE, sba.SBADDRESS1, WORD, answer(busy=True), response=(0, BUSY_RESP))
+    events += [("ar", 0x140, 2), ("bresp", False)]
+    after = len(events) + 1
+    events += read(sba.SBCS, SBCS_IDLE | on_addr | SBCS_BUSYERROR)
+
+    def edited(index: int, event: Event) -> list[Event]:
+        return _replace(events, index, event)
+
+    def answered(index: int, response: tuple[int, int]) -> list[Event]:
+        return edited(index, dmi(*events[index][1:5], response=response))
+
+    return Scenario(
+        events,
+        t1,
+        wrong=dmi(*events[t1][1:5], response=(WORD, OK)),
+        addr_width=32,
+        custom={
+            "stale": answered(sbaddress0, (0x80, OK)),
+            "write-busy": answered(ones, (0, BUSY_RESP)),
+            "spurious-access": [*events[: ones + 1], ("ar", 0x100, 2), *events[ones + 1 :]],
+            "next-address-changed": edited(next_ar, ("ar", 0x104, 2)),
+            "collision-success": answered(collide, (0, OK)),
+            "sbbusyerror-clear": answered(after, (SBCS_IDLE | on_addr, OK)),
+        },
+    )
 
 
 def forbid(
@@ -1192,11 +1356,14 @@ SCENARIOS: dict[str, Callable[[], Scenario]] = {
     sb_mod.SBBUSY: sbbusy,
     sb_mod.SBBUSYERROR: sbbusyerror,
     sb_mod.DMACTIVE_CLEAR: dmactive_clear,
+    sb_mod.DMACTIVE_INFLIGHT_HOLD: dmactive_inflight_hold,
+    sb_mod.DMACTIVE_REARM: dmactive_rearm,
     sb_mod.OP3_KEEPS_DM: op3_keeps_dm,
     sb_mod.NO_INC_AFTER_ERROR: no_inc_after_error,
     sb_mod.SINGLE_READ: lambda: bus_reads(READ_OFFSET_WRONG),
     sb_mod.BLOCK_READ: lambda: bus_reads(READ_OFFSET_WRONG, trigger="data"),
     sb_mod.ADDRESS_WIDTH: lambda: bus_reads(READ_HIGH_LOST),
+    sb_mod.SBADDRESS1_ABSENT: sbaddress1_absent,
     sb_mod.AXI4_SIZE: lambda: bus_reads(READ_BASE, size2=1, wrong=("ar", READ_BASE, 3)),
     sb_mod.SINGLE_WRITE: lambda: bus_writes(),
     sb_mod.BLOCK_WRITE: lambda: bus_writes(autoinc=True),
@@ -1451,6 +1618,156 @@ class Tdr2axiScoreboardFaultMatrix(unittest.TestCase):
                 result = run_case(sb_mod.NO_STALE_AXI, no_stale_axi(), fault)
                 LOG.info("checker-kind %s fault=%s result=%s", sb_mod.NO_STALE_AXI, fault, result)
                 self.assertEqual(result, "pass" if fault == "none" else "caught")
+
+    def test_no_inc_after_a_failed_sbdata0_read(self) -> None:
+        """A failed read that an sbdata0 read started grades the sbaddress0 read after it
+        under CHK-SBA-NO-INC-AFTER-ERROR, and catches every fault of its kind."""
+        check = sb_mod.NO_INC_AFTER_ERROR
+        for fault in faults_for(check, planned_kinds()[check]):
+            with self.subTest(fault=fault):
+                result = run_case(check, no_inc_after_error(trigger="data"), fault)
+                self.assertEqual(result, "pass" if fault == "none" else "caught")
+
+    def test_open_answer_grades_nothing(self) -> None:
+        """An answer whose response code the model leaves open records no check, busy or
+        success, whatever data it carries."""
+        records: list[str] = []
+
+        def report(check: str, **_kw: object) -> None:
+            records.append(check)
+
+        for resp in (OK, BUSY_RESP):
+            with self.subTest(resp=resp):
+                sb = sb_mod.Tdr2axiScoreboard(sb_mod.Tdr2axiScoreboardCfg(lite=False), report)
+                for event in [*activate(), update(READ, sba.SBDATA0, 0)]:
+                    feed(sb, event)
+                before = len(records)
+                feed(sb, dmi(READ, sba.SBDATA0, 0, open_answer(), response=(0xDEAD, resp)))
+                self.assertEqual([c for c in records[before:] if c != sb_mod.OP_DECODE], [])
+
+    def test_hold_completion_grades_the_sbcs_pair(self) -> None:
+        """From the held access's response until sbbusy falls, the model predicts sbbusy and
+        sbbusyerror as a pair, both as held or both 0: CHK-DM-DMACTIVE-INFLIGHT-HOLD passes
+        a read of either pair and fails a read of one bit without the other."""
+        pair = SBCS_BUSY | SBCS_BUSYERROR
+        prediction = sba.Expected((pair, 0), pair, ATOMS)
+        start = [
+            *activate(),
+            *write(sba.SBCS, SBACCESS32 | SBCS_READONADDR),
+            *write(sba.SBADDRESS0, 0x100, read_access(0x100, 2)),
+            *write(sba.DMCONTROL, 0),
+            ("ar", 0x100, 2),
+            ("bresp", False),
+        ]
+        cases = ((pair, True), (0, True), (SBCS_BUSYERROR, False), (SBCS_BUSY, False))
+        for value, want in cases:
+            with self.subTest(value=f"0x{value:08x}"):
+                read_sbcs = access(READ, sba.SBCS, 0, answer(prediction), response=(value, OK))
+                self.assertEqual(verdicts(start, read_sbcs, sb_mod.DMACTIVE_INFLIGHT_HOLD), [want])
+
+    def test_absent_sbaddress1_read_keeps_its_checks(self) -> None:
+        """At 32 bits, an sbaddress1 read that returns what was written fails
+        CHK-SBA-SBADDRESS1-ABSENT beside the checks every sbaddress1 read grades,
+        CHK-SBA-ADDRESS-WIDTH and CHK-DM-REGISTER-MAP, and no other check."""
+        checker = checker_mod.Tdr2axiChecker(
+            name="absent-beside", required_ids={checker_mod.NONVAC, sb_mod.SBADDRESS1_ABSENT}
+        )
+        sb = sb_mod.Tdr2axiScoreboard(
+            sb_mod.Tdr2axiScoreboardCfg(lite=False, addr_width=32), report=checker.record
+        )
+        for event in faulted(sbaddress1_absent(), "mismatch"):
+            feed(sb, event)
+        sb.drain()
+        with self.assertRaises(checker_mod.Tdr2axiCheckError) as caught:
+            checker.finalize()
+        failed = {line.split()[0] for line in str(caught.exception).splitlines()}
+        expected = {sb_mod.SBADDRESS1_ABSENT, sb_mod.ADDRESS_WIDTH, sb_mod.REGISTER_MAP}
+        self.assertEqual(failed, expected)
+
+    def test_absent_window_access_from_sbaddress0(self) -> None:
+        """At 32 bits, the read an sbaddress0 write with sbreadonaddr starts after an
+        sbaddress1 write is not graded under CHK-SBA-SBADDRESS1-ABSENT: on the address
+        written it passes with no record of that check, and moved it fails its own check
+        and not that one."""
+        records: list[tuple[str, bool]] = []
+
+        def report(check: str, *, passed: bool, **_kw: object) -> None:
+            records.append((check, passed))
+
+        on_addr = SBACCESS32 | SBCS_READONADDR
+        start = [
+            *activate(),
+            *write(sba.SBCS, on_addr),
+            *access(WRITE, sba.SBADDRESS1, WORD, answer(), response=(0, OK)),
+            *write(sba.SBADDRESS0, 0x200, read_access(0x200, 2)),
+        ]
+        for addr in (0x200, 0x204):
+            with self.subTest(addr=addr):
+                records.clear()
+                sb = sb_mod.Tdr2axiScoreboard(
+                    sb_mod.Tdr2axiScoreboardCfg(lite=False, addr_width=32), report
+                )
+                for event in start:
+                    feed(sb, event)
+                before = len(records)
+                for event in (("ar", addr, 2), ("bresp", False)):
+                    feed(sb, event)
+                sb.drain()
+                after = records[before:]
+                self.assertNotIn(sb_mod.SBADDRESS1_ABSENT, {check for check, _ in after})
+                failed = {check for check, passed in after if not passed}
+                self.assertEqual(failed != set(), addr != 0x200)
+
+    def test_absent_sbaddress1_collision_is_sbbusyerrors(self) -> None:
+        """At 32 bits a colliding sbaddress1 write grades CHK-SBA-SBBUSYERROR and not
+        CHK-SBA-SBADDRESS1-ABSENT: answered success it fails CHK-SBA-SBBUSYERROR, and no
+        record from the collision on carries CHK-SBA-SBADDRESS1-ABSENT."""
+        records: list[tuple[str, bool]] = []
+
+        def report(check: str, *, passed: bool, **_kw: object) -> None:
+            records.append((check, passed))
+
+        for fault in ("none", "collision-success", "sbbusyerror-clear"):
+            with self.subTest(fault=fault):
+                records.clear()
+                sb = sb_mod.Tdr2axiScoreboard(
+                    sb_mod.Tdr2axiScoreboardCfg(lite=False, addr_width=32), report
+                )
+                events = faulted(sbaddress1_absent(), fault)
+                collide = next(
+                    i
+                    for i, event in enumerate(events)
+                    if event[0] == "dmi" and event[2] == sba.SBADDRESS1 and event[4].busy
+                )
+                for event in events[:collide]:
+                    feed(sb, event)
+                before = len(records)
+                for event in events[collide:]:
+                    feed(sb, event)
+                after = records[before:]
+                self.assertNotIn(sb_mod.SBADDRESS1_ABSENT, {check for check, _ in after})
+                failed = {check for check, passed in after if not passed}
+                if fault == "none":
+                    self.assertEqual(failed, set())
+                if fault == "collision-success":
+                    self.assertIn(sb_mod.SBBUSYERROR, failed)
+
+    def test_sbaddress1_present_above_32_bits(self) -> None:
+        """Above 32 bits sbaddress1 exists, and nothing grades CHK-SBA-SBADDRESS1-ABSENT."""
+        records: list[str] = []
+
+        def report(check: str, **_kw: object) -> None:
+            records.append(check)
+
+        for width in (33, 48, 64):
+            with self.subTest(width=width):
+                records.clear()
+                sb = sb_mod.Tdr2axiScoreboard(
+                    sb_mod.Tdr2axiScoreboardCfg(lite=False, addr_width=width), report
+                )
+                for event in sbaddress1_absent().events:
+                    feed(sb, event)
+                self.assertNotIn(sb_mod.SBADDRESS1_ABSENT, records)
 
     def test_reset_inside_tap_reset(self) -> None:
         """Another reset between a TAP reset and its end fails the TAP reset's check."""

@@ -1,13 +1,13 @@
 schema_version = 1
 dut = "tdr2axi"
 prefix = "TDR2AXI"
-next_id = 89
+next_id = 95
 
 [[source]]
 key = "spec"
 path = "doc/tdr2axi.md"
 format = "markdown"
-sha256 = "8e5c34989ea0541fbe94025e83d4323beb4a9642622092b502bc92673c6ac901"
+sha256 = "5083abaff0ae6a4e49052a5518a49f70928f4c01144a78e00a6b7d97e862ce1f"
 
 [[atom]]
 id = "S-TDR2AXI-0001"
@@ -826,6 +826,61 @@ terms = ["i_arst_n"]
 refs = ["AXI4", "AXI4-Lite"]
 
 [[atom]]
+id = "S-TDR2AXI-0089"
+kind = "normative"
+status = "current"
+text = "While `dmcontrol.dmactive` = 0 no bus access starts."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 123
+classified = "model"
+hash = "aebf43d1fc8f"
+terms = ["dmcontrol", "dmactive"]
+quantities = ["dmcontrol.dmactive=0"]
+
+[[atom]]
+id = "S-TDR2AXI-0090"
+kind = "normative"
+status = "current"
+text = "An access already in flight when `dmactive` falls completes on the bus with the address, size, data and strobes it started with; `sbcs`, `sbaddress` and `sbdata` keep their values until it completes and then take their reset values."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 123
+classified = "model"
+hash = "e2a63e08b288"
+terms = ["dmactive", "sbcs", "sbaddress", "sbdata"]
+
+[[atom]]
+id = "S-TDR2AXI-0091"
+kind = "normative"
+status = "current"
+text = "Set `dmactive` again only after that (wait for the access, or allow the fabric's worst-case response time): if it is set while the access is still in flight, those registers are not reset and the access's result lands in them."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 126
+classified = "model"
+hash = "7839c154d0e4"
+flags = ["ambiguous"]
+terms = ["dmactive"]
+
+[[atom]]
+id = "S-TDR2AXI-0092"
+kind = "normative"
+status = "current"
+text = "AXI cannot abort a transaction, so an access the fabric never answers is cleared only by `i_arst_n`."
+source = "spec"
+anchor = "timing-and-reset-rules"
+section = "tdr2axi: TDR to AXI through the System Bus Access / Timing and reset rules"
+line = 129
+classified = "model"
+hash = "08b1c287817d"
+terms = ["i_arst_n"]
+refs = ["AXI4", "AXI4-Lite"]
+
+[[atom]]
 id = "S-TDR2AXI-0058"
 kind = "normative"
 status = "current"
@@ -833,7 +888,7 @@ text = "One transaction at a time, single beat, ID 0, user 0, `AxPROT` = `AXI_PR
 source = "spec"
 anchor = "axi-transactions"
 section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
-line = 126
+line = 134
 classified = "model"
 hash = "b5989e954e15"
 flags = ["missing-value"]
@@ -849,7 +904,7 @@ text = "AXI4: `AxSIZE` follows `sbcs.sbaccess`, so a narrow read does not fetch 
 source = "spec"
 anchor = "axi-transactions"
 section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
-line = 128
+line = 136
 classified = "model"
 hash = "24988ecd1470"
 terms = ["AxSIZE", "sbcs", "sbaccess"]
@@ -863,7 +918,7 @@ text = "`dm_sba` only issues naturally aligned accesses (`sberror` = 3 otherwise
 source = "spec"
 anchor = "axi-transactions"
 section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
-line = 129
+line = 137
 classified = "model"
 hash = "2ff85d8b5e3d"
 flags = ["missing-value"]
@@ -879,12 +934,40 @@ text = "`SLVERR` and `DECERR` responses set `sbcs.sberror` = 2."
 source = "spec"
 anchor = "axi-transactions"
 section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
-line = 131
+line = 139
 classified = "model"
 hash = "25f2d2d3ebc2"
 terms = ["SLVERR", "DECERR", "sbcs", "sberror"]
 refs = ["AXI4", "AXI4-Lite"]
 quantities = ["sberror=2"]
+
+[[atom]]
+id = "S-TDR2AXI-0093"
+kind = "normative"
+status = "current"
+text = "With `sbautoincrement` = 1, `sbaddress` advances only after a successful access, so after an error it holds the failing address."
+source = "spec"
+anchor = "axi-transactions"
+section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
+line = 139
+classified = "model"
+hash = "be07dc35677a"
+terms = ["sbautoincrement", "sbaddress"]
+quantities = ["sbautoincrement=1"]
+
+[[atom]]
+id = "S-TDR2AXI-0094"
+kind = "normative"
+status = "current"
+text = "That includes a read started by a read of `sbdata0`: RISC-V Debug 0.13.2 words that increment without a success condition, and Debug 1.0 adds it."
+source = "spec"
+anchor = "axi-transactions"
+section = "tdr2axi: TDR to AXI through the System Bus Access / AXI transactions"
+line = 141
+classified = "model"
+hash = "721fa9bd6e8a"
+terms = ["sbdata0"]
+refs = ["RISC-V Debug Specification"]
 
 [[atom]]
 id = "S-TDR2AXI-0062"
@@ -894,7 +977,7 @@ text = "The DMI addresses are those of the RISC-V debug specification: `dmcontro
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 135
+line = 146
 classified = "model"
 hash = "be8f54303e36"
 terms = ["dmcontrol", "sbcs", "sbaddress0", "sbaddress1", "sbdata0", "sbdata1"]
@@ -909,7 +992,7 @@ text = "Each write or read below is one TDR scan with op 2 or op 1; a read retur
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 137
+line = 148
 classified = "model"
 hash = "77901a52f302"
 quantities = ["op 2", "op 1"]
@@ -922,7 +1005,7 @@ text = "Enable the DM once: write `dmcontrol` = 0x0000_0001 (`dmactive`)."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 140
+line = 151
 classified = "model"
 hash = "602666509c6e"
 flags = ["missing-value"]
@@ -938,7 +1021,7 @@ text = "Single write of `size` (0: 8-bit, 1: 16-bit, 2: 32-bit, 3: 64-bit):"
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 142
+line = 153
 classified = "model"
 hash = "fd440be76152"
 refs = ["RISC-V Debug Specification"]
@@ -952,7 +1035,7 @@ text = "Write `sbcs` with `sbaccess` = `size`."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 144
+line = 155
 classified = "model"
 hash = "5e085b9311c6"
 terms = ["sbcs", "sbaccess"]
@@ -965,7 +1048,7 @@ text = "If `AXI_ADDR_WIDTH` > 32, write `sbaddress1` with address bits 63:32."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 145
+line = 156
 classified = "model"
 hash = "7da09cf58456"
 terms = ["AXI_ADDR_WIDTH", "sbaddress1"]
@@ -979,7 +1062,7 @@ text = "Write `sbaddress0` with address bits 31:0."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 146
+line = 157
 classified = "model"
 hash = "0f54be0d0cc0"
 terms = ["sbaddress0"]
@@ -993,7 +1076,7 @@ text = "For 64-bit accesses, write `sbdata1` with data bits 63:32."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 147
+line = 158
 classified = "model"
 hash = "159af99619a2"
 terms = ["sbdata1"]
@@ -1007,7 +1090,7 @@ text = "Write `sbdata0` with data bits 31:0."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 148
+line = 159
 classified = "model"
 hash = "8b8980356e02"
 terms = ["sbdata0"]
@@ -1021,7 +1104,7 @@ text = "This starts the bus write."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 148
+line = 159
 classified = "model"
 hash = "1a5ad1125a58"
 flags = ["missing-value"]
@@ -1034,7 +1117,7 @@ text = "Read `sbcs` until `sbbusy` = 0, then check `sberror` and `sbbusyerror`."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 149
+line = 160
 classified = "model"
 hash = "7f5f4b982a78"
 terms = ["sbcs", "sbbusy", "sberror", "sbbusyerror"]
@@ -1048,7 +1131,7 @@ text = "Single read:"
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 151
+line = 162
 classified = "model"
 hash = "11efa358f623"
 
@@ -1060,7 +1143,7 @@ text = "Write `sbcs` with `sbaccess` = `size` and `sbreadonaddr` = 1."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 153
+line = 164
 classified = "model"
 hash = "eb113e4e991c"
 terms = ["sbcs", "sbaccess", "sbreadonaddr"]
@@ -1074,7 +1157,7 @@ text = "Write `sbaddress1` (if needed), then `sbaddress0`."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 154
+line = 165
 classified = "model"
 hash = "d8fe99ab1e82"
 terms = ["sbaddress1", "sbaddress0"]
@@ -1087,7 +1170,7 @@ text = "Writing `sbaddress0` starts the bus read."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 154
+line = 165
 classified = "model"
 hash = "6459cabdca3b"
 terms = ["sbaddress0"]
@@ -1100,7 +1183,7 @@ text = "For 64-bit accesses read `sbdata1` (it does not start a read), then read
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 156
+line = 167
 classified = "model"
 hash = "db7a0e27f747"
 terms = ["sbdata1", "sbdata0"]
@@ -1113,7 +1196,7 @@ text = "Read `sbcs` until `sbbusy` = 0, then check `sberror` and `sbbusyerror`."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 157
+line = 168
 classified = "model"
 hash = "7f5f4b982a78"
 terms = ["sbcs", "sbbusy", "sberror", "sbbusyerror"]
@@ -1127,7 +1210,7 @@ text = "Block write: as a single write, with `sbautoincrement` = 1 in `sbcs`; ea
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 159
+line = 170
 classified = "model"
 hash = "e0443d029994"
 terms = ["sbautoincrement", "sbcs", "sbdata0"]
@@ -1141,7 +1224,7 @@ text = "Block read: write `sbcs` with `sbreadonaddr`, `sbreadondata` and `sbauto
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 162
+line = 173
 classified = "model"
 hash = "6cd3d128b835"
 terms = ["sbcs", "sbreadonaddr", "sbreadondata", "sbautoincrement"]
@@ -1154,7 +1237,7 @@ text = "Each read of `sbdata0` returns one element and starts the next read."
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 163
+line = 174
 classified = "model"
 hash = "0421360e73cf"
 terms = ["sbdata0"]
@@ -1167,7 +1250,7 @@ text = "Before reading the last element, write `sbcs` again with `sbreadondata` 
 source = "spec"
 anchor = "programming-examples"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Programming examples"
-line = 164
+line = 175
 classified = "model"
 hash = "5fde616b3875"
 terms = ["sbcs", "sbreadondata"]
@@ -1181,7 +1264,7 @@ text = "`tb/tdr2axi/` holds a cocotb testbench."
 source = "spec"
 anchor = "verification"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
-line = 169
+line = 180
 classified = "model"
 hash = "08a72bbce7c2"
 
@@ -1193,7 +1276,7 @@ text = "Its TDR host models the TAP states and the OpenOCD DMI flow (busy, op 3,
 source = "spec"
 anchor = "verification"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
-line = 169
+line = 180
 classified = "model"
 hash = "01c57e3454e5"
 
@@ -1205,7 +1288,7 @@ text = "It covers every access size and lane, block accesses, bus errors, busy S
 source = "spec"
 anchor = "verification"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
-line = 172
+line = 183
 classified = "model"
 hash = "0d7c247e227d"
 
@@ -1217,7 +1300,7 @@ text = "cd tb/tdr2axi\nmake                       # 64-bit AXI4 with Verilator\n
 source = "spec"
 anchor = "verification"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
-line = 177
+line = 188
 classified = "model"
 hash = "406c4dee4f9e"
 
@@ -1229,6 +1312,6 @@ text = "It needs cocotb 1.9, Bender and Verilator 5.036 or later."
 source = "spec"
 anchor = "verification"
 section = "tdr2axi: TDR to AXI through the System Bus Access / Verification"
-line = 184
+line = 195
 classified = "model"
 hash = "636eab1dd669"

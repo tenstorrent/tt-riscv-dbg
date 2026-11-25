@@ -76,7 +76,15 @@ module tdr2axi_fcov #(
     input logic [                 2:0] sbcs_sberror,
     // The sticky sbcs.sbbusyerror field; while it is set, u_dm_csrs answers busy to every
     // sbaddress write and sbdata access before it tests sberror
-    input logic                        sbcs_sbbusyerror
+    input logic                        sbcs_sbbusyerror,
+    // abstractcs.cmderr as u_dm_csrs holds it
+    input logic [                 2:0] cmderr,
+    // The clear-sequence phase receiver (cdc_4phase_dst) of each side's CDC reset
+    // controller half, asynchronously reset by that side's internal reset
+    input logic [                 1:0] cdc_req_src_rx_state,
+    input logic [                 1:0] cdc_req_dst_rx_state,
+    input logic [                 1:0] cdc_resp_src_rx_state,
+    input logic [                 1:0] cdc_resp_dst_rx_state
 );
 
   localparam int unsigned NBytes = AXI_DATA_WIDTH / 8;
@@ -98,6 +106,8 @@ module tdr2axi_fcov #(
   localparam logic [1:0] ErrNone = 2'd0;
   localparam logic [1:0] ErrBusy = 2'd3;
   localparam logic [1:0] DmiRespBusy = 2'd3;
+  // cdc_4phase_dst state waiting for its local acknowledge
+  localparam logic [1:0] RxWaitDownstreamAck = 2'd1;
 
   // DMI register addresses (RISC-V debug specification)
   localparam logic [6:0] AddrDmcontrol = 7'h10;
@@ -246,8 +256,6 @@ module tdr2axi_fcov #(
   logic        b_valid_q;
   logic        r_valid_q;
   logic        aw_done_q;  // AW of the current write taken, B owed
-  logic        r_owed_q;  // AR taken, R owed
-  logic        b_owed_q;  // W taken, B owed
   logic [63:0] last_ar_addr_q;
   logic        ar_seen_q;
   logic [63:0] last_aw_addr_q;
@@ -263,14 +271,16 @@ module tdr2axi_fcov #(
   logic        last_resp_r_q;  // the last response handshake was an R
   logic [ 2:0] sberror_q;
   int unsigned sbbusy_cycles_q;
-  logic        dmactive_q;
-  logic        first_access_q;  // dmactive rose, no request handshake since
   logic        port_ar_seen_q;
   logic        port_aw_seen_q;
   logic        sba_written_q;  // an SBA register was written since reset
   logic        resp_pending_tck_q;  // a DMI response waits for TCK
+  logic        last_cmd_ones_q;  // the last DMI write of command had every bit set
+  logic [ 2:0] busy_size_q;  // sbaccess when sbbusy rose, the size of the access in flight
 
   wire         dmi_sba_reg = (dmi_req_addr >= AddrSbcs) && (dmi_req_addr <= AddrSbdata1);
+  wire         dm_held = !dmactive && sbbusy;
+  wire         bus_idle = !any_req_valid && !sbbusy;
   wire         aw_next_addr = aw_seen_q && (aw_addr64 == last_aw_addr_q + (64'd1 << sbaccess));
 
   always_ff @(posedge clk or negedge rst_n) begin
@@ -287,8 +297,6 @@ module tdr2axi_fcov #(
       b_valid_q           <= 1'b0;
       r_valid_q           <= 1'b0;
       aw_done_q           <= 1'b0;
-      r_owed_q            <= 1'b0;
-      b_owed_q            <= 1'b0;
       last_ar_addr_q      <= '0;
       ar_seen_q           <= 1'b0;
       last_aw_addr_q      <= '0;
@@ -304,10 +312,10 @@ module tdr2axi_fcov #(
       last_resp_r_q       <= 1'b0;
       sberror_q           <= '0;
       sbbusy_cycles_q     <= 0;
-      dmactive_q          <= 1'b0;
-      first_access_q      <= 1'b0;
       sba_written_q       <= 1'b0;
       resp_pending_tck_q  <= 1'b0;
+      last_cmd_ones_q     <= 1'b0;
+      busy_size_q         <= '0;
     end else begin
       ar_wait_q     <= (ar_valid && !ar_ready) ? ar_wait_q + 1 : 0;
       aw_wait_q     <= (aw_valid && !aw_ready) ? aw_wait_q + 1 : 0;
@@ -323,10 +331,6 @@ module tdr2axi_fcov #(
 
       if (aw_hs) aw_done_q <= 1'b1;
       else if (b_hs) aw_done_q <= 1'b0;
-      if (ar_hs) r_owed_q <= 1'b1;
-      else if (r_hs) r_owed_q <= 1'b0;
-      if (w_hs) b_owed_q <= 1'b1;
-      else if (b_hs) b_owed_q <= 1'b0;
 
       if (ar_hs) begin
         last_ar_addr_q <= ar_addr64;
@@ -355,12 +359,54 @@ module tdr2axi_fcov #(
 
       sberror_q       <= sberror;
       sbbusy_cycles_q <= sbbusy ? sbbusy_cycles_q + 1 : 0;
-      dmactive_q      <= dmactive;
-      if (dmactive && !dmactive_q) first_access_q <= 1'b1;
-      else if (req_hs) first_access_q <= 1'b0;
 
       if (dmi_resp_hs) resp_pending_tck_q <= 1'b1;
       else if (!tck_stopped) resp_pending_tck_q <= 1'b0;
+
+      if (dmi_wr && (dmi_req_addr == AddrCommand)) last_cmd_ones_q <= (dmi_req_data == '1);
+      if (sbbusy && (sbbusy_cycles_q == 0)) busy_size_q <= sbaccess;
+    end
+  end
+
+  // dmactive one i_clk edge back, the access in flight when dmactive fell, the first
+  // request after it rose, and the R or B the bridge's AXI manager waits for. All reset
+  // with u_dm_csrs and the manager on arst_clk_n, never rst_n: in test mode i_arst_n
+  // resets nothing in the DUT, and i_arst_scan_n clears dmactive and the manager with no
+  // edge in this history
+  logic dm_dmactive_q;
+  logic hold_inflight_q;  // dmactive fell with sbbusy high, that access's R or B owed
+  logic first_access_q;  // dmactive rose, no request handshake since
+  logic r_owed_q;  // AR taken, R owed
+  logic b_owed_q;  // W taken, B owed
+  // Set from a dmactive fall with the bus idle until an SBA register access, a bus
+  // request or dmactive rising
+  logic dmactive_alone_q;
+
+  wire  dm_dmactive_fall = !dmactive && dm_dmactive_q;
+  wire  dm_dmactive_rise = dmactive && !dm_dmactive_q;
+  // An access in flight when dmactive fell, up to and including its R or B handshake
+  wire  hold_inflight = hold_inflight_q || (dm_dmactive_fall && sbbusy);
+
+  always_ff @(posedge clk or negedge arst_clk_n) begin
+    if (!arst_clk_n) begin
+      dm_dmactive_q    <= 1'b0;
+      hold_inflight_q  <= 1'b0;
+      first_access_q   <= 1'b0;
+      r_owed_q         <= 1'b0;
+      b_owed_q         <= 1'b0;
+      dmactive_alone_q <= 1'b0;
+    end else begin
+      dm_dmactive_q <= dmactive;
+      if (r_hs || b_hs) hold_inflight_q <= 1'b0;
+      else if (dm_dmactive_fall && sbbusy) hold_inflight_q <= 1'b1;
+      if (dm_dmactive_rise) first_access_q <= 1'b1;
+      else if (req_hs) first_access_q <= 1'b0;
+      if (ar_hs) r_owed_q <= 1'b1;
+      else if (r_hs) r_owed_q <= 1'b0;
+      if (w_hs) b_owed_q <= 1'b1;
+      else if (b_hs) b_owed_q <= 1'b0;
+      if (dm_dmactive_fall && bus_idle) dmactive_alone_q <= 1'b1;
+      else if ((dmi_hs && dmi_sba_reg) || any_req_valid || dmactive) dmactive_alone_q <= 1'b0;
     end
   end
 
@@ -499,6 +545,8 @@ module tdr2axi_fcov #(
     logic cdc_req_inflight;
     logic cdc_clear;
     logic cdc_clear_live;
+    logic cdc_rx_wait_ack;
+    logic dm_held;
     logic idle;
   } pre_rst_t;
 
@@ -518,6 +566,11 @@ module tdr2axi_fcov #(
           cdc_resp_src_clear_pending || cdc_resp_dst_clear_pending;
       // A clear sequence that runs: both sides out of reset, so its phases can advance
       pre_rst.cdc_clear_live   = cdc_clear_any && arst_clk_n && arst_tck_n;
+      pre_rst.cdc_rx_wait_ack  = (cdc_req_src_rx_state == RxWaitDownstreamAck) ||
+          (cdc_req_dst_rx_state == RxWaitDownstreamAck) ||
+          (cdc_resp_src_rx_state == RxWaitDownstreamAck) ||
+          (cdc_resp_dst_rx_state == RxWaitDownstreamAck);
+      pre_rst.dm_held          = dm_held;
       pre_rst.idle             = (bridge_state == StIdle) && !any_req_valid;
     end
   end
@@ -538,6 +591,8 @@ module tdr2axi_fcov #(
   logic        clk_rel_with_tck_up;
   logic        rst_rose_tck_stopped;
   logic        scan_fell_in_test_mode;
+  // i_test_mode at the last i_arst_n fall; a fall in test mode resets nothing in the DUT
+  logic        arst_fell_in_test_mode;
 
   initial begin
     rst_falls              = 0;
@@ -556,9 +611,12 @@ module tdr2axi_fcov #(
     clk_rel_with_tck_up    = 1'b0;
     rst_rose_tck_stopped   = 1'b0;
     scan_fell_in_test_mode = 1'b0;
+    arst_fell_in_test_mode = 1'b0;
   end
 
   always @(negedge rst_n) rst_falls = rst_falls + 1;
+
+  always @(negedge rst_n) arst_fell_in_test_mode = test_mode;
 
   always @(posedge rst_n) begin
     rst_rose_tck_stopped = (tck_period == 0.0) || ($realtime - tck_rise_at > 2.0 * tck_period);
@@ -590,6 +648,8 @@ module tdr2axi_fcov #(
   end
 
   wire rst_fell_new = rst_falls != rst_falls_seen;
+  // An i_arst_n fall taken with i_test_mode = 0, the only mode in which it resets the DUT
+  wire arst_fell = rst_fell_new && !arst_fell_in_test_mode;
   wire tck_rel_new = tck_rel_count != tck_rel_seen;
   wire clk_rel_new = clk_rel_count != clk_rel_seen;
   wire tck_stopped_rel_new = tck_stopped_rel_count != tck_stopped_rel_seen;
@@ -756,7 +816,6 @@ module tdr2axi_fcov #(
   // ---------------------------------------------------------------------------
   // Cover properties: system bus access
   // ---------------------------------------------------------------------------
-  wire bus_idle = !any_req_valid && !sbbusy;
   wire r_err = r_hs && r_resp[1];
   wire b_err = b_hs && b_resp[1];
 
@@ -798,6 +857,11 @@ module tdr2axi_fcov #(
                                         AddrSbdata1})) ||
        (dmi_rd && (dmi_req_addr inside {AddrSbdata0, AddrSbdata1})));
   wire c_sba_sbcs_active_w = dmi_rd && (dmi_req_addr == AddrSbcs) && dmactive;
+  wire c_sba_sbaddress1_write_absent_w = dmi_wr && (dmi_req_addr == AddrSbaddress1) &&
+      (dmi_req_data == '1) && (AXI_ADDR_WIDTH <= 32);
+  // sbcs.sbaccess is bits 19:17 of the written value
+  wire c_sba_sbcs_write_busy_same_size_w = dmi_wr && sbbusy && (dmi_req_addr == AddrSbcs) &&
+      (dmi_req_data[19:17] == ((sbbusy_cycles_q == 0) ? sbaccess : busy_size_q));
   wire c_sba_sbcs_write_while_busy_w = dmi_wr && sbbusy && (dmi_req_addr == AddrSbcs);
   wire c_sba_sbdata0_read_no_readondata_w = dmi_rd && (dmi_req_addr == AddrSbdata0) &&
       !sbreadondata;
@@ -827,8 +891,12 @@ module tdr2axi_fcov #(
   c_sba_sbbusy_held : cover property (@(posedge clk) c_sba_sbbusy_held_w);
   c_sba_sbbusy_read_after_response :
   cover property (@(posedge clk) c_sba_sbbusy_read_after_response_w);
+  c_sba_sbaddress1_write_absent :
+  cover property (@(posedge clk) c_sba_sbaddress1_write_absent_w);
   c_sba_sbbusyerror_set : cover property (@(posedge clk) c_sba_sbbusyerror_set_w);
   c_sba_sbcs_active : cover property (@(posedge clk) c_sba_sbcs_active_w);
+  c_sba_sbcs_write_busy_same_size :
+  cover property (@(posedge clk) c_sba_sbcs_write_busy_same_size_w);
   c_sba_sbcs_write_while_busy : cover property (@(posedge clk) c_sba_sbcs_write_while_busy_w);
   c_sba_sbdata0_read_no_readondata :
   cover property (@(posedge clk) c_sba_sbdata0_read_no_readondata_w);
@@ -847,66 +915,90 @@ module tdr2axi_fcov #(
   wire dmi_addr_mapped = ((dmi_req_addr >= 7'h04) && (dmi_req_addr <= 7'h1D)) ||
       ((dmi_req_addr >= 7'h20) && (dmi_req_addr <= 7'h30)) || (dmi_req_addr == 7'h34) ||
       (dmi_req_addr == 7'h35) || ((dmi_req_addr >= 7'h37) && (dmi_req_addr <= 7'h40));
-  wire dmactive_fall = !dmactive && dmactive_q;
 
+  wire c_dm_command_ones_w = dmi_wr && (dmi_req_addr == AddrCommand) && (dmi_req_data == '1);
   wire c_dm_command_write_w = dmi_wr && (dmi_req_addr == AddrCommand);
-  wire c_dm_dmactive_fall_w = dmactive_fall;
-  wire c_dm_dmactive_fall_ar_wait_w = dmactive_fall && ar_valid && !ar_ready;
-  wire c_dm_dmactive_fall_aw_wait_w = dmactive_fall && aw_valid && !aw_ready;
-  wire c_dm_dmactive_fall_w_wait_w = dmactive_fall && w_valid && !w_ready;
+  wire c_dm_command_zero_after_ones_w = dmi_wr && (dmi_req_addr == AddrCommand) &&
+      (dmi_req_data == '0) && last_cmd_ones_q;
+  wire c_dm_dmactive_fall_w = dm_dmactive_fall;
+  wire c_dm_dmactive_fall_ar_wait_w = dm_dmactive_fall && ar_valid && !ar_ready;
+  wire c_dm_dmactive_fall_aw_wait_w = dm_dmactive_fall && aw_valid && !aw_ready;
+  wire c_dm_dmactive_fall_b_wait_w = dm_dmactive_fall && b_owed_q;
+  // u_dm_csrs clears cmderr on the i_clk edge after dmactive falls
+  wire c_dm_dmactive_fall_cmderr_w = dm_dmactive_fall && (cmderr != '0) && sbbusy;
+  wire c_dm_dmactive_fall_r_wait_w = dm_dmactive_fall && r_owed_q;
+  // With sbbusy high, u_dm_csrs keeps sbcs, sbbusyerror included, after dmactive falls
+  wire c_dm_dmactive_fall_sbbusyerror_w = dm_dmactive_fall && sbcs_sbbusyerror && sbbusy;
+  wire c_dm_dmactive_fall_w_wait_w = dm_dmactive_fall && w_valid && !w_ready;
+  wire c_dm_dmactive_rise_b_wait_w = dm_dmactive_rise && b_owed_q;
+  wire c_dm_dmactive_rise_inflight_w = dm_dmactive_rise && sbbusy;
+  wire c_dm_dmactive_rise_r_wait_w = dm_dmactive_rise && r_owed_q;
   wire c_dm_dmstatus_read_w = dmi_rd && (dmi_req_addr == AddrDmstatus);
   wire c_dm_hart_request_write_w = dmi_wr && (dmi_req_addr == AddrDmcontrol) &&
       (dmi_req_data[31] || dmi_req_data[30]);
   wire c_dm_ndmreset_set_w = dmi_wr && (dmi_req_addr == AddrDmcontrol) && dmi_req_data[1];
   wire c_dm_op3_dm_written_w = tdr_upd && (upd_op == OpClear) && sba_written_q;
+  wire c_dm_op3_while_held_w = tdr_upd && (upd_op == OpClear) && dm_held;
+  wire c_dm_response_while_inactive_w = (r_hs || b_hs) && !dmactive;
+  wire c_dm_sba_access_held_w = dm_held &&
+      ((dmi_wr && (dmi_req_addr inside {AddrSbcs, AddrSbaddress0, AddrSbaddress1, AddrSbdata0,
+                                        AddrSbdata1})) ||
+       (dmi_rd && (dmi_req_addr inside {AddrSbdata0, AddrSbdata1})));
   wire c_dm_sbaddress0_write_inactive_w = dmi_wr && (dmi_req_addr == AddrSbaddress0) && !dmactive;
+  wire c_dm_sbcs_read_held_w = dmi_rd && (dmi_req_addr == AddrSbcs) && dm_held;
   wire c_dm_sbdata0_write_inactive_w = dmi_wr && (dmi_req_addr == AddrSbdata0) && !dmactive;
   wire c_dm_unmapped_access_w = dmi_hs && !dmi_addr_mapped;
 
+  c_dm_command_ones : cover property (@(posedge clk) c_dm_command_ones_w);
   c_dm_command_write : cover property (@(posedge clk) c_dm_command_write_w);
+  c_dm_command_zero_after_ones : cover property (@(posedge clk) c_dm_command_zero_after_ones_w);
   c_dm_dmactive_fall : cover property (@(posedge clk) c_dm_dmactive_fall_w);
   c_dm_dmactive_fall_ar_wait : cover property (@(posedge clk) c_dm_dmactive_fall_ar_wait_w);
   c_dm_dmactive_fall_aw_wait : cover property (@(posedge clk) c_dm_dmactive_fall_aw_wait_w);
+  c_dm_dmactive_fall_b_wait : cover property (@(posedge clk) c_dm_dmactive_fall_b_wait_w);
+  c_dm_dmactive_fall_cmderr : cover property (@(posedge clk) c_dm_dmactive_fall_cmderr_w);
+  c_dm_dmactive_fall_r_wait : cover property (@(posedge clk) c_dm_dmactive_fall_r_wait_w);
+  c_dm_dmactive_fall_sbbusyerror :
+  cover property (@(posedge clk) c_dm_dmactive_fall_sbbusyerror_w);
   c_dm_dmactive_fall_w_wait : cover property (@(posedge clk) c_dm_dmactive_fall_w_wait_w);
+  c_dm_dmactive_rise_b_wait : cover property (@(posedge clk) c_dm_dmactive_rise_b_wait_w);
+  c_dm_dmactive_rise_inflight : cover property (@(posedge clk) c_dm_dmactive_rise_inflight_w);
+  c_dm_dmactive_rise_r_wait : cover property (@(posedge clk) c_dm_dmactive_rise_r_wait_w);
   c_dm_dmstatus_read : cover property (@(posedge clk) c_dm_dmstatus_read_w);
   c_dm_hart_request_write : cover property (@(posedge clk) c_dm_hart_request_write_w);
   c_dm_ndmreset_set : cover property (@(posedge clk) c_dm_ndmreset_set_w);
   c_dm_op3_dm_written : cover property (@(posedge tck) c_dm_op3_dm_written_w);
+  c_dm_op3_while_held : cover property (@(posedge tck) c_dm_op3_while_held_w);
+  c_dm_response_while_inactive : cover property (@(posedge clk) c_dm_response_while_inactive_w);
+  c_dm_sba_access_held : cover property (@(posedge clk) c_dm_sba_access_held_w);
   c_dm_sbaddress0_write_inactive : cover property (@(posedge clk) c_dm_sbaddress0_write_inactive_w);
+  c_dm_sbcs_read_held : cover property (@(posedge clk) c_dm_sbcs_read_held_w);
   c_dm_sbdata0_write_inactive : cover property (@(posedge clk) c_dm_sbdata0_write_inactive_w);
   c_dm_unmapped_access : cover property (@(posedge clk) c_dm_unmapped_access_w);
 
   // ---------------------------------------------------------------------------
   // Cover properties: reset
   // ---------------------------------------------------------------------------
-  // Set from a dmactive fall with the bus idle until an SBA register access, a bus
-  // request or dmactive rising
-  logic dmactive_alone_q;
-
-  always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) dmactive_alone_q <= 1'b0;
-    else if (dmactive_fall && bus_idle) dmactive_alone_q <= 1'b1;
-    else if ((dmi_hs && dmi_sba_reg) || any_req_valid || dmactive) dmactive_alone_q <= 1'b0;
-  end
-
-  wire c_rst_ar_wait_w = rst_fell_new && pre_rst.ar_wait;
-  wire c_rst_b_pending_w = rst_fell_new && pre_rst.b_pending;
-  wire c_rst_bridge_busy_w = rst_fell_new && pre_rst.bridge_busy;
+  wire c_rst_ar_wait_w = arst_fell && pre_rst.ar_wait;
+  wire c_rst_b_pending_w = arst_fell && pre_rst.b_pending;
+  wire c_rst_bridge_busy_w = arst_fell && pre_rst.bridge_busy;
   wire c_rst_busy_after_release_w = tdr_cap && (cap_status == StatusBusy) && rel_no_req_q;
   wire c_rst_cdc_clear_20to1_w = cdc_clear_done && ratio_clk_much_faster;
   wire c_rst_cdc_clear_20to19_w = cdc_clear_done && ratio_clk_slightly_faster;
   wire c_rst_cdc_clear_20to21_w = cdc_clear_done && ratio_tck_slightly_faster;
   wire c_rst_cdc_clear_1to2_w = cdc_clear_done && ratio_tck_faster;
   wire c_rst_cdc_clear_1to20_w = cdc_clear_done && ratio_tck_much_faster;
-  wire c_rst_cdc_req_inflight_w = rst_fell_new && pre_rst.cdc_req_inflight;
-  wire c_rst_dmactive_alone_w = dmactive && !dmactive_q && dmactive_alone_q;
-  wire c_rst_dmactive_idle_w = dmactive_fall && bus_idle && !r_owed_q && !b_owed_q;
-  wire c_rst_dmactive_sba_access_w = dmactive_fall &&
+  wire c_rst_cdc_dst_wait_ack_w = arst_fell && pre_rst.cdc_rx_wait_ack;
+  wire c_rst_cdc_req_inflight_w = arst_fell && pre_rst.cdc_req_inflight;
+  wire c_rst_dmactive_alone_w = dm_dmactive_rise && dmactive_alone_q;
+  wire c_rst_dmactive_held_w = arst_fell && pre_rst.dm_held;
+  wire c_rst_dmactive_idle_w = dm_dmactive_fall && bus_idle && !r_owed_q && !b_owed_q;
+  wire c_rst_dmactive_sba_access_w = dm_dmactive_fall &&
       (sbbusy || any_req_valid || r_owed_q || b_owed_q);
-  wire c_rst_during_cdc_clear_w = rst_fell_new && pre_rst.cdc_clear;
-  wire c_rst_during_live_cdc_clear_w = rst_fell_new && pre_rst.cdc_clear_live;
-  wire c_rst_idle_w = rst_fell_new && pre_rst.idle;
-  wire c_rst_r_pending_w = rst_fell_new && pre_rst.r_pending;
+  wire c_rst_during_cdc_clear_w = arst_fell && pre_rst.cdc_clear;
+  wire c_rst_during_live_cdc_clear_w = arst_fell && pre_rst.cdc_clear_live;
+  wire c_rst_idle_w = arst_fell && pre_rst.idle;
+  wire c_rst_r_pending_w = arst_fell && pre_rst.r_pending;
   wire c_rst_release_clk_first_w = tck_rel_new && tck_rel_with_clk_up;
   wire c_rst_release_tck_first_w = clk_rel_new && clk_rel_with_tck_up;
   wire c_rst_release_tck_stopped_w = tck_stopped_rel_new;
@@ -916,8 +1008,8 @@ module tdr2axi_fcov #(
   wire c_rst_tck_release_ss4_w = tck_rel_new && (SYNC_STAGES == 4);
   wire c_rst_test_mode_access_w = req_hs && test_mode;
   wire c_rst_trst_op_in_flight_w = trst_stop_new && tdr_cap && (cap_status == StatusOk);
-  wire c_rst_w_alone_w = rst_fell_new && pre_rst.w_alone;
-  wire c_rst_w_wait_w = rst_fell_new && pre_rst.w_wait;
+  wire c_rst_w_alone_w = arst_fell && pre_rst.w_alone;
+  wire c_rst_w_wait_w = arst_fell && pre_rst.w_wait;
 
   c_rst_ar_wait : cover property (@(posedge clk) c_rst_ar_wait_w);
   c_rst_b_pending : cover property (@(posedge clk) c_rst_b_pending_w);
@@ -928,8 +1020,10 @@ module tdr2axi_fcov #(
   c_rst_cdc_clear_20to21 : cover property (@(posedge tck) c_rst_cdc_clear_20to21_w);
   c_rst_cdc_clear_1to2 : cover property (@(posedge tck) c_rst_cdc_clear_1to2_w);
   c_rst_cdc_clear_1to20 : cover property (@(posedge tck) c_rst_cdc_clear_1to20_w);
+  c_rst_cdc_dst_wait_ack : cover property (@(posedge clk) c_rst_cdc_dst_wait_ack_w);
   c_rst_cdc_req_inflight : cover property (@(posedge clk) c_rst_cdc_req_inflight_w);
   c_rst_dmactive_alone : cover property (@(posedge clk) c_rst_dmactive_alone_w);
+  c_rst_dmactive_held : cover property (@(posedge clk) c_rst_dmactive_held_w);
   c_rst_dmactive_idle : cover property (@(posedge clk) c_rst_dmactive_idle_w);
   c_rst_dmactive_sba_access : cover property (@(posedge clk) c_rst_dmactive_sba_access_w);
   c_rst_during_cdc_clear : cover property (@(posedge clk) c_rst_during_cdc_clear_w);
@@ -1025,6 +1119,17 @@ module tdr2axi_fcov #(
     cx_size_lane_dir_lite: cross cp_size, cp_lane, cp_dir iff (USE_AXI_LITE);
   endgroup
 
+  wire [1:0] hold_resp = r_hs ? r_resp : b_resp;
+
+  covergroup dm_hold_cg @(posedge clk iff ((r_hs || b_hs) && hold_inflight));
+    cp_dmactive: coverpoint dmactive {bins held = {1'b0}; bins set_again = {1'b1};}
+    cp_resp: coverpoint hold_resp {
+      bins okay = {2'd0}; bins slverr = {2'd2}; bins decerr = {2'd3};
+    }
+    cp_autoincrement: coverpoint sbautoincrement;
+    cx_resp_dmactive: cross cp_dmactive, cp_resp, cp_autoincrement;
+  endgroup
+
   covergroup dm_reg_cg @(posedge clk iff dmi_hs);
     cp_addr: coverpoint dmi_req_addr {
       bins dmcontrol = {AddrDmcontrol};
@@ -1105,6 +1210,7 @@ module tdr2axi_fcov #(
   axi_attr_cg    axi_attr_cg_inst = new();
   axi_cfg_cg     axi_cfg_cg_inst = new();
   axi_size_cg    axi_size_cg_inst = new();
+  dm_hold_cg     dm_hold_cg_inst = new();
   dm_reg_cg      dm_reg_cg_inst = new();
   rst_cfg_cg     rst_cfg_cg_inst = new();
   sba_block_cg   sba_block_cg_inst = new();

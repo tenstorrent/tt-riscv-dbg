@@ -5,9 +5,10 @@
 ``Tdr2axiBuild`` holds the tb_top parameters the base test reads from the ``cfg_*`` nets.
 ``exercises`` says whether a check ID has stimulus on this build: the AXI4 attribute,
 size, burst and ID-order checks need USE_AXI_LITE = 0, the AXI4-Lite full-width check
-needs it 1, and a check whose timing item holds the bounds of one SYNC_STAGES needs that
-SYNC_STAGES. The base test drops a required ID its build cannot exercise. There is no SV
-twin: the bench has one cocotb realization.
+needs it 1, the absent-sbaddress1 check needs AXI_ADDR_WIDTH 32 or less, and a check
+whose timing item holds the bounds of one SYNC_STAGES needs that SYNC_STAGES. The base
+test drops a required ID its build cannot exercise. There is no SV twin: the bench has one
+cocotb realization.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 __all__ = [
+    "ADDR_WIDTH_32_IDS",
     "AXI4_ONLY_IDS",
     "LITE_ONLY_IDS",
     "SYNC_STAGES_IDS",
@@ -42,6 +44,10 @@ AXI4_ONLY_IDS = frozenset(
     }
 )
 LITE_ONLY_IDS = frozenset({"CHK-AXI-LITE-FULL-WIDTH"})
+# Checks of the absent sbaddress1: sbaddress1 exists only where sbasize, AXI_ADDR_WIDTH, is
+# above 32 (S-TDR2AXI-0014)
+ADDR_WIDTH_32_IDS = frozenset({"CHK-SBA-SBADDRESS1-ABSENT"})
+ADDR_WIDTH_ABSENT_MAX = 32
 # Checks whose timing item holds the bounds of one SYNC_STAGES: T-TDR2AXI-tck-reset-release
 # and T-TDR2AXI-resp-to-tdr (3), T-TDR2AXI-tck-reset-release-ss4 and
 # T-TDR2AXI-resp-to-tdr-ss4 (4)
@@ -93,6 +99,8 @@ class Tdr2axiBuild:
             return not self.lite
         if check_id in LITE_ONLY_IDS:
             return self.lite
+        if check_id in ADDR_WIDTH_32_IDS:
+            return self.addr_width <= ADDR_WIDTH_ABSENT_MAX
         if check_id in SYNC_STAGES_IDS:
             return self.sync_stages == SYNC_STAGES_IDS[check_id]
         return True

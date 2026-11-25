@@ -209,40 +209,66 @@ kind = "scoreboard"
 atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive"]
 feature = "F-DM-dmactive-clear"
 compare = "state"
-intent = "While dmactive = 0, sbaddress0, sbaddress1, sbdata0, sbdata1 and abstractcs read their reset values whatever was written before, with sbcs not compared; after dmactive = 1, sbcs reads its reset value and accesses work"
+intent = "While dmactive = 0, whether a dmcontrol write or i_arst_n cleared it, abstractcs reads cmderr = 0 whatever was written before, whether or not a system-bus access is in flight; after i_arst_n, or after a dmcontrol write of dmactive = 0 that found no system-bus access in flight, sbaddress0, sbaddress1, sbdata0 and sbdata1 read their reset values while dmactive = 0 whatever was written before, with sbcs compared only in sbbusy and sbbusyerror, which read 0, sbbusyerror also when it was set before dmactive fell, and sbcs reads its reset value once dmactive = 1; after dmactive = 1, cmderr reads 0 when a dmcontrol write cleared dmactive, and when that write found no system-bus access in flight, sbaddress0, sbaddress1, sbdata0 and sbdata1 read their reset values and accesses work"
 atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
 
 [[check]]
 id = "CHK-DM-DMACTIVE-INFLIGHT"
 kind = "checker"
-atoms = ["S-TDR2AXI-0056"]
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0090"]
 feature = "F-DM-dmactive-inflight"
 intent = "An access stalled on AR, AW or W when dmactive drops keeps its address, size, data and strobes until its handshake, and completes once"
-atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b" }
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0090 = "e2a63e08b288" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-INFLIGHT-HOLD"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0090"]
+feature = "F-DM-dmactive-inflight"
+compare = "state"
+intent = "While dmactive = 0 holds an access in flight, sbcs reads the value it had when dmactive fell, with sbbusy = 1 and sbbusyerror as it was then, 1 after a collision before the fall, and sbaddress0 and sbaddress1 the access's address; a write of sbcs, sbaddress0, sbaddress1, sbdata0 or sbdata1 or a read of sbdata0 or sbdata1 during the hold changes none of them and leaves sbbusyerror as it was, an sbcs write of 1 to sbbusyerror included, whatever the DMI answer; once sbcs reads sbbusy = 0, with dmactive still 0, it reads sbbusyerror = 0 with it, and sbaddress0, sbaddress1, sbdata0 and sbdata1 read their reset values; after dmactive is set again sbcs, sbaddress0, sbaddress1, sbdata0 and sbdata1 read their reset values, sbbusyerror = 0 included, with no trace of the access's read data or error response"
+atom_hashes = { S-TDR2AXI-0090 = "e2a63e08b288" }
 
 [[check]]
 id = "CHK-DM-DMACTIVE-INFLIGHT-SVA"
 kind = "assertion"
-atoms = ["S-TDR2AXI-0056"]
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0090"]
 feature = "F-DM-dmactive-inflight"
 intent = "With DMI writes of dmcontrol free, every o_axi_req request field holds while its VALID is high and READY low"
-atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b" }
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0090 = "e2a63e08b288" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-NO-ABORT"
+kind = "checker"
+atoms = ["S-TDR2AXI-0092"]
+feature = "F-DM-dmactive-inflight"
+intent = "With the subordinate withholding READY or the response, dmactive = 0 and op 3 leave the access in place for as long as the subordinate withholds it: ARVALID, AWVALID or WVALID stays high for an AR, AW or W hold, RREADY or BREADY stays high for an R or B hold, and sbcs reads sbbusy = 1 after op 3 and after a wait longer than any other stall; i_arst_n ends the access, lowering every VALID, and the DM then reads its reset values, with sbcs compared only in sbbusy and sbbusyerror, both 0"
+atom_hashes = { S-TDR2AXI-0092 = "08b1c287817d" }
 
 [[check]]
 id = "CHK-DM-DMACTIVE-NO-BUS"
 kind = "checker"
-atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive"]
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive", "S-TDR2AXI-0089"]
 feature = "F-DM-dmactive-no-bus-access"
 intent = "While dmactive = 0, writes of sbdata0, sbaddress0 and sbcs raise no ARVALID or AWVALID"
-atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e", S-TDR2AXI-0089 = "aebf43d1fc8f" }
 
 [[check]]
 id = "CHK-DM-DMACTIVE-NO-BUS-SVA"
 kind = "assertion"
-atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive"]
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "X-RISCV_DEBUG-dmactive", "S-TDR2AXI-0089"]
 feature = "F-DM-dmactive-no-bus-access"
 intent = "No ARVALID or AWVALID rises while dmactive is 0"
-atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e", S-TDR2AXI-0089 = "aebf43d1fc8f" }
+
+[[check]]
+id = "CHK-DM-DMACTIVE-REARM"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0091"]
+feature = "F-DM-dmactive-inflight"
+compare = "state"
+intent = "dmactive set again by a dmcontrol write the DM takes in a cycle before the access's R or B handshake, whether the access waits for READY or for its R or B response, resets none of sbcs, sbaddress and sbdata, and the access's result lands in them: sbbusy falls at the response, sbdata0 reads the read data, sberror reads 2 after SLVERR or DECERR, and with sbautoincrement set sbaddress advances only after a successful access. A write taken in the handshake's own cycle neither resets them nor lands the result, a boundary S-TDR2AXI-0091 leaves open, and the check grades no re-arm in that cycle"
+atom_hashes = { S-TDR2AXI-0091 = "7839c154d0e4" }
 
 [[check]]
 id = "CHK-DM-HART-UNAVAIL"
@@ -360,7 +386,7 @@ kind = "scoreboard"
 atoms = ["S-TDR2AXI-0026", "S-TDR2AXI-0051", "S-TDR2AXI-0052"]
 feature = "F-RESET-async-any-time"
 compare = "state"
-intent = "After i_arst_n at a random phase of both clocks with an operation at any stage, the capture reads address 0, data 0 and status 0, the DM registers read their reset values, and the next operations complete with the predicted results, a busy before the bridge is ready being recovered with op 3"
+intent = "After i_arst_n at a random phase of both clocks with an operation at any stage, the capture reads address 0, data 0 and status 0, the DM registers read their reset values, a read the request CDC takes while the i_clk side isolates it waits valid at the CDC's destination, and the next operations complete with the predicted results, a busy before the bridge is ready being recovered with op 3; every clear-sequence receiver reads IDLE in the step i_arst_n falls"
 atom_hashes = { S-TDR2AXI-0026 = "122754e00bef", S-TDR2AXI-0051 = "56b178b0aa12", S-TDR2AXI-0052 = "a2c835cc4ea4" }
 
 [[check]]
@@ -500,7 +526,7 @@ kind = "scoreboard"
 atoms = ["S-TDR2AXI-0079", "X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbautoincrement"]
 feature = "F-SBA-block-write"
 compare = "in-order"
-intent = "With sbautoincrement set, each sbdata0 write gives one bus write at the current address, sbaddress advances by the access size, and sbaddress0 and sbaddress1 read back the advanced address"
+intent = "With sbautoincrement set, each sbdata0 write gives one bus write at the current address, after each successful write sbaddress advances by the access size, and sbaddress0 and sbaddress1 read back the advanced address"
 atom_hashes = { S-TDR2AXI-0079 = "e0443d029994" }
 
 [[check]]
@@ -541,11 +567,11 @@ atom_hashes = { S-TDR2AXI-0060 = "2ff85d8b5e3d" }
 [[check]]
 id = "CHK-SBA-NO-INC-AFTER-ERROR"
 kind = "scoreboard"
-atoms = ["S-TDR2AXI-0061", "S-TDR2AXI-0076", "S-TDR2AXI-0079", "X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbaddress0-read"]
+atoms = ["S-TDR2AXI-0061", "S-TDR2AXI-0076", "S-TDR2AXI-0079", "S-TDR2AXI-0093", "S-TDR2AXI-0094", "X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbaddress0-read", "X-RISCV_DEBUG-sbdata0-read"]
 feature = "F-SBA-no-increment-after-error"
 compare = "state"
-intent = "With sbautoincrement set, after SLVERR or DECERR on a read started by an sbaddress0 write or on a write started by an sbdata0 write, sbaddress reads the failing address; a read started by an sbdata0 read is outside this check"
-atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2", S-TDR2AXI-0076 = "6459cabdca3b", S-TDR2AXI-0079 = "e0443d029994" }
+intent = "With sbautoincrement set, after SLVERR or DECERR on a read started by an sbaddress0 write, a write started by an sbdata0 write, or a read started by an sbdata0 read with sbreadondata set, sbaddress0 and sbaddress1 read the failing address"
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2", S-TDR2AXI-0076 = "6459cabdca3b", S-TDR2AXI-0079 = "e0443d029994", S-TDR2AXI-0093 = "be07dc35677a", S-TDR2AXI-0094 = "721fa9bd6e8a" }
 
 [[check]]
 id = "CHK-SBA-NO-READ-ON-ADDR"
@@ -573,6 +599,16 @@ intent = "With sbreadondata clear, an sbdata0 read issues no AR and leaves sbadd
 atom_hashes = { S-TDR2AXI-0081 = "0421360e73cf" }
 
 [[check]]
+id = "CHK-SBA-SBADDRESS1-ABSENT"
+kind = "scoreboard"
+atoms = ["S-TDR2AXI-0014", "X-RISCV_DEBUG-sbaddress-regs"]
+feature = "F-SBA-address-width"
+compare = "state"
+intent = "Where AXI_ADDR_WIDTH is 32 or less, a write of sbaddress1 made with sbbusy and sbbusyerror clear has no effect whatever its value, all ones included: sbaddress1 reads 0 after it, and sbaddress0 and the AxADDR of the next access are unchanged. A write of it while sbbusy or sbbusyerror is set collides, and CHK-SBA-SBBUSYERROR grades that"
+applies = { AXI_ADDR_WIDTH = ["2", "3", "32"] }
+atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b" }
+
+[[check]]
 id = "CHK-SBA-SBBUSY"
 kind = "scoreboard"
 atoms = ["S-TDR2AXI-0002", "X-RISCV_DEBUG-sbbusy"]
@@ -587,7 +623,7 @@ kind = "scoreboard"
 atoms = ["S-TDR2AXI-0002", "S-TDR2AXI-0043", "X-RISCV_DEBUG-sbbusyerror"]
 feature = "F-SBA-busy-status"
 compare = "state"
-intent = "While sbbusy is set, a write of sbaddress0, sbaddress1, sbdata0 or sbdata1, or a read of sbdata0 or sbdata1, sets sbbusyerror, is answered DMI busy and starts no bus access, and a colliding write leaves sbaddress and sbdata as the stalled access leaves them; a read of sbaddress0 or sbaddress1 returns the address and does not set sbbusyerror"
+intent = "While sbbusy is set, a write of sbaddress0, sbaddress1, sbdata0 or sbdata1, or a read of sbdata0 or sbdata1, sets sbbusyerror, is answered DMI busy and starts no bus access, and a colliding write leaves sbaddress and sbdata as the stalled access leaves them; an sbcs write with sbbusyerror already set is answered DMI busy, starts no bus access and leaves every sbcs field as it was; a read of sbaddress0 or sbaddress1 returns the address and does not set sbbusyerror. With sbbusyerror set and sbbusy clear, an sbcs write that leaves bit 22 clear is taken and leaves sbbusyerror set, and with sbreadonaddr and sbreadondata set by that write, each of six accesses, a write of sbaddress0, sbaddress1, sbdata0 or sbdata1 or a read of sbdata0 or sbdata1, is answered DMI busy and starts no bus access"
 atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3", S-TDR2AXI-0043 = "8e6844992030" }
 
 [[check]]
@@ -1026,6 +1062,15 @@ model = ["CLK-BUS", "RST-ARST-BUS", "CFG-USE-AXI-LITE"]
 vehicle = "ports"
 
 [[item]]
+test = "tdr2axi_dm_write_ones_test"
+features = ["F-DM-abstract-cmd-unsupported", "F-SBA-address-width"]
+checks = ["CHK-DM-CMDERR", "CHK-SBA-SBADDRESS1-ABSENT", "CHK-NONVAC", "CHK-AXISUB-DRAIN"]
+seeds = 5
+realizations = ["cocotb"]
+model = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
+vehicle = "ports"
+
+[[item]]
 test = "tdr2axi_dmactive_clear_test"
 features = ["F-DM-dmactive-clear"]
 checks = ["CHK-DM-DMACTIVE-CLEAR", "CHK-DM-OP3-KEEPS-DM", "CHK-NONVAC"]
@@ -1045,11 +1090,11 @@ vehicle = "ports"
 
 [[item]]
 test = "tdr2axi_dmactive_inflight_test"
-features = ["F-DM-dmactive-inflight"]
-checks = ["CHK-DM-DMACTIVE-INFLIGHT", "CHK-AXISUB-PAYLOAD-STABLE", "CHK-NONVAC"]
+features = ["F-DM-dmactive-inflight", "F-DM-dmactive-clear"]
+checks = ["CHK-DM-DMACTIVE-INFLIGHT", "CHK-AXISUB-PAYLOAD-STABLE", "CHK-NONVAC", "CHK-DM-DMACTIVE-INFLIGHT-HOLD", "CHK-DM-DMACTIVE-REARM", "CHK-DM-DMACTIVE-NO-ABORT", "CHK-DM-DMACTIVE-CLEAR"]
 seeds = 20
 realizations = ["cocotb"]
-model = ["RST-DMACTIVE", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
+model = ["RST-DMACTIVE", "CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "RST-ARST-BUS", "RST-ARST-TCK"]
 vehicle = "ports"
 
 [[item]]
@@ -1086,6 +1131,15 @@ checks = ["CHK-CFG-ILLEGAL-PARAMS"]
 seeds = 5
 realizations = ["cocotb"]
 model = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH", "CFG-SYNC-STAGES", "CFG-USE-AXI-LITE"]
+vehicle = "ports"
+
+[[item]]
+test = "tdr2axi_reset_during_clear_test"
+features = ["F-RESET-async-any-time"]
+checks = ["CHK-RESET-ASYNC-ANY-TIME", "CHK-RESET-NO-STALE-AXI", "CHK-AXISUB-RESET-VALID-LOW", "CHK-ENV-FABRIC-RESET", "CHK-NONVAC"]
+seeds = 20
+realizations = ["cocotb"]
+model = ["RST-ARST-BUS", "RST-ARST-TCK", "RDC-ARST", "CDC-REQ", "CDC-RESP", "CFG-CLK-RATIO", "CFG-SYNC-STAGES"]
 vehicle = "ports"
 
 [[item]]
@@ -1144,8 +1198,8 @@ vehicle = "ports"
 
 [[item]]
 test = "tdr2axi_sba_busy_test"
-features = ["F-TDR-sticky-busy", "F-SBA-busy-status"]
-checks = ["CHK-TDR-BUSY-DM", "CHK-TDR-STICKY-IGNORE", "CHK-SBA-SBBUSY", "CHK-SBA-SBBUSYERROR", "CHK-NONVAC"]
+features = ["F-TDR-sticky-busy", "F-SBA-busy-status", "F-DM-dmactive-clear"]
+checks = ["CHK-TDR-BUSY-DM", "CHK-TDR-STICKY-IGNORE", "CHK-SBA-SBBUSY", "CHK-SBA-SBBUSYERROR", "CHK-NONVAC", "CHK-DM-OP3-KEEPS-DM"]
 seeds = 20
 realizations = ["cocotb"]
 model = ["CFG-USE-AXI-LITE", "CFG-CLK-RATIO"]
@@ -1153,8 +1207,8 @@ vehicle = "ports"
 
 [[item]]
 test = "tdr2axi_sba_error_address_test"
-features = ["F-SBA-no-increment-after-error"]
-checks = ["CHK-SBA-NO-INC-AFTER-ERROR", "CHK-NONVAC"]
+features = ["F-SBA-no-increment-after-error", "F-SBA-block-write"]
+checks = ["CHK-SBA-NO-INC-AFTER-ERROR", "CHK-NONVAC", "CHK-SBA-BLOCK-WRITE"]
 seeds = 5
 realizations = ["cocotb"]
 model = ["CFG-USE-AXI-LITE", "CFG-AXI-ADDR-WIDTH"]

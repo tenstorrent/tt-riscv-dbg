@@ -104,26 +104,26 @@ atom_hashes = { S-TDR2AXI-0010 = "c74a68987a63" }
 
 [[feature]]
 id = "F-DM-dmactive-clear"
-title = "dmactive = 0 holds the DM registers at their reset values and writing dmactive = 1 enables the DM, while op 3 clears only the bridge status"
+title = "dmactive = 0 holds the DM registers at their reset values, sbcs, sbaddress and sbdata once no system-bus access is in flight, and writing dmactive = 1 enables the DM, while op 3 clears only the bridge status"
 priority = "P0"
 method = ["sim"]
-observe = "sbaddress, sbdata and the sbcs control fields read through o_dmi_tdr around dmactive changes; o_dmi_tdr status after op 3"
+observe = "sbaddress, sbdata and the sbcs control fields read through o_dmi_tdr around dmactive changes; abstractcs read while dmactive = 0, with and without an access in flight, and after dmactive = 1; o_dmi_tdr status after op 3"
 configs = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
-approved = true
+approved = false
 atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064"]
 xatoms = ["X-RISCV_DEBUG-dmactive"]
 atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
 
 [[feature]]
 id = "F-DM-dmactive-inflight"
-title = "An SBA access in flight when dmactive drops completes with the address, data, strobes and size it started with"
+title = "An SBA access in flight when dmactive drops completes with the address, data, strobes and size it started with; sbcs, sbaddress and sbdata hold, sbbusy reading 1, until it completes and then take their reset values, unless dmactive is set again first, when its result lands in them; neither dmactive nor op 3 aborts it, only i_arst_n"
 priority = "P0"
 method = ["sim", "vip", "formal"]
-observe = "AR, AW and W payload of o_axi_req while VALID is high and the AxiSub holds READY low across the dmcontrol write"
+observe = "AR, AW and W payload of o_axi_req while VALID is high and the AxiSub holds READY low across the dmcontrol write; sbcs, sbaddress0 and sbaddress1 read through o_dmi_tdr while the access is held, and sbcs, sbaddress and sbdata after it completes and dmactive is set again; o_axi_req valids after dmactive = 0 and op 3 with the response withheld, and after i_arst_n"
 configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
-approved = true
-atoms = ["S-TDR2AXI-0056"]
-atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b" }
+approved = false
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0090", "S-TDR2AXI-0091", "S-TDR2AXI-0092"]
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0090 = "e2a63e08b288", S-TDR2AXI-0091 = "7839c154d0e4", S-TDR2AXI-0092 = "08b1c287817d" }
 
 [[feature]]
 id = "F-DM-dmactive-no-bus-access"
@@ -132,10 +132,10 @@ priority = "P0"
 method = ["sim", "formal"]
 observe = "Every channel of o_axi_req after writes of sbdata0, sbaddress0 and sbcs while dmactive = 0"
 configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH"]
-approved = true
-atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064"]
+approved = false
+atoms = ["S-TDR2AXI-0056", "S-TDR2AXI-0064", "S-TDR2AXI-0089"]
 xatoms = ["X-RISCV_DEBUG-dmactive"]
-atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e" }
+atom_hashes = { S-TDR2AXI-0056 = "1dc45f92f42b", S-TDR2AXI-0064 = "602666509c6e", S-TDR2AXI-0089 = "aebf43d1fc8f" }
 
 [[feature]]
 id = "F-DM-hart-unavailable"
@@ -262,36 +262,36 @@ atom_hashes = { S-TDR2AXI-0060 = "2ff85d8b5e3d" }
 
 [[feature]]
 id = "F-SBA-address-width"
-title = "sbaddress0 and, above 32 bits, sbaddress1 reach every AxADDR bit up to AXI_ADDR_WIDTH whatever the data width"
+title = "sbaddress0 and, above 32 bits, sbaddress1 reach every AxADDR bit up to AXI_ADDR_WIDTH whatever the data width; at 32 bits or less sbaddress1 is absent: it reads 0, and a write of it with sbbusy and sbbusyerror clear has no effect"
 priority = "P1"
 method = ["sim"]
-observe = "ARADDR and AWADDR of o_axi_req against the sbaddress writes; sbaddress0 and sbaddress1 read back"
+observe = "ARADDR and AWADDR of o_axi_req against the sbaddress writes; sbaddress0 and sbaddress1 read back, sbaddress1 also after a write of all ones at 32 bits or less"
 configs = ["CFG-AXI-ADDR-WIDTH", "CFG-AXI-DATA-WIDTH"]
-approved = true
+approved = false
 atoms = ["S-TDR2AXI-0014", "S-TDR2AXI-0022"]
 xatoms = ["X-RISCV_DEBUG-sbaddress-regs"]
 atom_hashes = { S-TDR2AXI-0014 = "b0d1597d458b", S-TDR2AXI-0022 = "eee9256a3469" }
 
 [[feature]]
 id = "F-SBA-block-read"
-title = "Each read of sbdata0 returns one element; with sbreadondata set it starts the next read, after which sbautoincrement advances sbaddress, and with sbreadondata clear it issues no AR and leaves sbaddress unchanged"
+title = "Each read of sbdata0 returns one element; with sbreadondata set it starts the next read, after which, if it succeeded, sbautoincrement advances sbaddress, and with sbreadondata clear it issues no AR and leaves sbaddress unchanged"
 priority = "P1"
 method = ["sim"]
 observe = "sbdata0 read through o_dmi_tdr, AR addresses of o_axi_req, and sbaddress0 and sbaddress1 read back, the last read of a block included"
 configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
-approved = true
+approved = false
 atoms = ["S-TDR2AXI-0081"]
 xatoms = ["X-RISCV_DEBUG-sbdata0-read", "X-RISCV_DEBUG-sbautoincrement"]
 atom_hashes = { S-TDR2AXI-0081 = "0421360e73cf" }
 
 [[feature]]
 id = "F-SBA-block-write"
-title = "With sbautoincrement set, each write of sbdata0 performs one bus write and advances sbaddress by the access size"
+title = "With sbautoincrement set, each write of sbdata0 performs one bus write and, if it succeeded, advances sbaddress by the access size"
 priority = "P1"
 method = ["sim"]
 observe = "AW addresses and W data of o_axi_req, subordinate memory, and sbaddress0 and sbaddress1 read back"
 configs = ["CFG-USE-AXI-LITE", "CFG-AXI-DATA-WIDTH", "CFG-AXI-ADDR-WIDTH"]
-approved = true
+approved = false
 atoms = ["S-TDR2AXI-0079"]
 xatoms = ["X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbautoincrement"]
 atom_hashes = { S-TDR2AXI-0079 = "e0443d029994" }
@@ -310,12 +310,12 @@ atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2" }
 
 [[feature]]
 id = "F-SBA-busy-status"
-title = "sbbusy is set from the request until the access completes, and an sbaddress or sbdata access during it sets sbbusyerror, is answered busy and does nothing else"
+title = "sbbusy is set from the request until the access completes; an sbaddress or sbdata access during it sets sbbusyerror, is answered busy and does nothing else, and an sbcs write during it with sbbusyerror already set is answered busy and changes no field"
 priority = "P1"
 method = ["sim"]
 observe = "sbcs.sbbusy and sbcs.sbbusyerror read through o_dmi_tdr while the AxiSub stalls; o_dmi_tdr status; o_axi_req for a refused access"
 configs = ["CFG-USE-AXI-LITE", "CFG-CLK-RATIO"]
-approved = true
+approved = false
 atoms = ["S-TDR2AXI-0002", "S-TDR2AXI-0043"]
 xatoms = ["X-RISCV_DEBUG-sbbusy", "X-RISCV_DEBUG-sbbusyerror"]
 atom_hashes = { S-TDR2AXI-0002 = "4717e71a44f3", S-TDR2AXI-0043 = "8e6844992030" }
@@ -334,15 +334,15 @@ atom_hashes = { S-TDR2AXI-0015 = "3abbe99ca471", S-TDR2AXI-0077 = "db7a0e27f747"
 
 [[feature]]
 id = "F-SBA-no-increment-after-error"
-title = "With sbautoincrement set, a read started by writing sbaddress0 or a write started by writing sbdata0 that ends in SLVERR or DECERR leaves sbaddress at the failing address"
+title = "With sbautoincrement set, an access that ends in SLVERR or DECERR leaves sbaddress at the failing address, whether a write of sbaddress0, a write of sbdata0 or a read of sbdata0 started it"
 priority = "P2"
 method = ["sim"]
 observe = "sbaddress0 and sbaddress1 read through o_dmi_tdr after an error response on R or B"
 configs = ["CFG-USE-AXI-LITE", "CFG-AXI-ADDR-WIDTH"]
-approved = true
-atoms = ["S-TDR2AXI-0061", "S-TDR2AXI-0076", "S-TDR2AXI-0079"]
-xatoms = ["X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbaddress0-read"]
-atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2", S-TDR2AXI-0076 = "6459cabdca3b", S-TDR2AXI-0079 = "e0443d029994" }
+approved = false
+atoms = ["S-TDR2AXI-0061", "S-TDR2AXI-0076", "S-TDR2AXI-0079", "S-TDR2AXI-0093", "S-TDR2AXI-0094"]
+xatoms = ["X-RISCV_DEBUG-sbdata0-write", "X-RISCV_DEBUG-sbaddress0-read", "X-RISCV_DEBUG-sbdata0-read"]
+atom_hashes = { S-TDR2AXI-0061 = "25f2d2d3ebc2", S-TDR2AXI-0076 = "6459cabdca3b", S-TDR2AXI-0079 = "e0443d029994", S-TDR2AXI-0093 = "be07dc35677a", S-TDR2AXI-0094 = "721fa9bd6e8a" }
 
 [[feature]]
 id = "F-SBA-sbcs-fields"

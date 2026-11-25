@@ -1112,7 +1112,8 @@ class TestVcsExpectedFailure(unittest.TestCase):
 
 class FakeLauncher:
     """Stands in for make: a build returns ``build_rc``; a run writes a JUnit file and,
-    unless ``covers`` is None, a Verilator coverage.dat with its points."""
+    unless ``covers`` is None or ``covered`` refuses its command, a Verilator coverage.dat
+    with its points."""
 
     def __init__(
         self,
@@ -1122,6 +1123,7 @@ class FakeLauncher:
         clocks: Callable[[int, int], str] = clocks_line,
         run_log: str = "",
         covers: Mapping[str, int] | None = fake_make.COVERS,
+        covered: Callable[[Sequence[str]], bool] | None = None,
     ) -> None:
         self.timeout_s = 60.0
         self.build_rc = build_rc
@@ -1129,6 +1131,7 @@ class FakeLauncher:
         self.clocks = clocks
         self.run_log = run_log
         self.covers = covers
+        self.covered = covered
         self.drawn_clk_ps = 54322
         self.commands: list[list[str]] = []
 
@@ -1141,9 +1144,10 @@ class FakeLauncher:
             template = JUNIT_PASS if self.run_passes(cmd) else JUNIT_FAIL
             write_junit(Path(target), template, test)
             knobs = dict(arg.split("=", 1) for arg in cmd if "=" in arg)
+            covers = self.covers if self.covered is None or self.covered(cmd) else None
             for arg in cmd:
-                if arg.startswith("VERILATOR_COVERAGE_FILE=") and self.covers is not None:
-                    Path(arg.split("=", 1)[1]).write_text(fake_make.coverage_dat(self.covers))
+                if arg.startswith("VERILATOR_COVERAGE_FILE=") and covers is not None:
+                    Path(arg.split("=", 1)[1]).write_text(fake_make.coverage_dat(covers))
             clk_knob, tck_ps = knobs["CLK_PERIOD_PS"], int(knobs["TCK_PERIOD_PS"])
             clk_ps = self.drawn_clk_ps if clk_knob == "random" else int(clk_knob)
             log.write_text("sim\n" + self.clocks(clk_ps, tck_ps) + self.run_log)
