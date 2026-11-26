@@ -127,8 +127,12 @@ side-effecting reads with `sbreadondata` unless enough Run-Test/Idle cycles are 
   the access completes and 0 afterwards, so after writing `dmactive` = 0, read `sbcs`
   until `sbbusy` = 0 and only then set `dmactive` again. If `dmactive` is set while
   the access is still in flight, those registers are not reset and the access's
-  result lands in them. AXI cannot abort a transaction, so an access the fabric never
-  answers keeps `sbbusy` = 1 and is cleared only by `i_arst_n`.
+  result lands in them. If it is set in the `i_clk` cycle the access's response
+  arrives, the result is lost and the registers are not reset: `sbbusy` and `sberror`
+  read 0 even after a bus error, `sbdata0` is not updated and `sbaddress` does not
+  advance. A debugger that waits for `sbbusy` = 0 never sees this. AXI cannot abort a
+  transaction, so an access the fabric never answers keeps `sbbusy` = 1 and is cleared
+  only by `i_arst_n`.
 
 ## AXI transactions
 
