@@ -345,6 +345,9 @@ module tb_top #(
   logic        cdc_req_src_valid;
   logic        cdc_req_src_ready;
   logic        cdc_resp_dst_valid;
+  // The request CDC's destination valid ahead of its isolation mask (i_clk): high while a
+  // request waits in the i_clk side, with dmi_req_valid low while that side isolates it
+  logic        cdc_req_dst_valid;
   // Clear sequences of both CDCs
   logic        cdc_req_src_clear_pending;
   logic        cdc_req_dst_clear_pending;
@@ -367,6 +370,15 @@ module tb_top #(
   // sbcs.sbbusyerror as u_dm_csrs holds it, from the refused access until the debugger
   // clears it
   logic        sbcs_sbbusyerror;
+  // abstractcs.cmderr as u_dm_csrs holds it
+  logic [ 2:0] cmderr;
+  // The clear-sequence phase receiver (cdc_4phase_dst state_q) of each side's CDC reset
+  // controller half: 0 IDLE, 1 WAIT_DOWNSTREAM_ACK, 2 WAIT_REQ_DEASSERT. The request CDC's
+  // src side and the response CDC's dst side run on TCK, the other two on i_clk.
+  logic [ 1:0] cdc_req_src_rx_state;
+  logic [ 1:0] cdc_req_dst_rx_state;
+  logic [ 1:0] cdc_resp_src_rx_state;
+  logic [ 1:0] cdc_resp_dst_rx_state;
 
   assign dmi_req_valid              = g_bus.u_dut.dmi_req_valid;
   assign dmi_req_ready              = g_bus.u_dut.dmi_req_ready;
@@ -384,6 +396,7 @@ module tb_top #(
   assign cdc_req_src_valid          = g_bus.u_dut.u_dmi_tdr_bridge.dmi_req_valid;
   assign cdc_req_src_ready          = g_bus.u_dut.u_dmi_tdr_bridge.dmi_req_ready;
   assign cdc_resp_dst_valid         = g_bus.u_dut.u_dmi_tdr_bridge.dmi_resp_valid;
+  assign cdc_req_dst_valid          = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_req.s_dst_valid;
   assign cdc_req_src_clear_pending  = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_req.src_clear_pending_o;
   assign cdc_req_dst_clear_pending  = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_req.dst_clear_pending_o;
   assign cdc_resp_src_clear_pending = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_resp.src_clear_pending_o;
@@ -399,6 +412,15 @@ module tb_top #(
   assign sberror                    = g_bus.u_dut.sberror;
   assign sbcs_sberror               = g_bus.u_dut.u_dm_csrs.sbcs_q.sberror;
   assign sbcs_sbbusyerror           = g_bus.u_dut.u_dm_csrs.sbcs_q.sbbusyerror;
+  assign cmderr                     = g_bus.u_dut.u_dm_csrs.cmderr_q;
+  assign cdc_req_src_rx_state       = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_req.i_cdc_reset_ctrlr
+      .i_cdc_reset_ctrlr_half_a.i_state_transition_cdc_dst.state_q;
+  assign cdc_req_dst_rx_state       = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_req.i_cdc_reset_ctrlr
+      .i_cdc_reset_ctrlr_half_b.i_state_transition_cdc_dst.state_q;
+  assign cdc_resp_src_rx_state      = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_resp.i_cdc_reset_ctrlr
+      .i_cdc_reset_ctrlr_half_a.i_state_transition_cdc_dst.state_q;
+  assign cdc_resp_dst_rx_state      = g_bus.u_dut.u_dmi_tdr_bridge.u_cdc_resp.i_cdc_reset_ctrlr
+      .i_cdc_reset_ctrlr_half_b.i_state_transition_cdc_dst.state_q;
 
   // ---------------------------------------------------------------------------
   // Assertions, and the failure and antecedent counts of each assertion check since

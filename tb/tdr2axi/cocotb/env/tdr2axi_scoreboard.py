@@ -25,17 +25,29 @@ Comparisons, by check ID, plan comparison kind and stream:
   with that sbbusy, so a value that a wrong sbbusy or a missing sberror explains equally
   fails both CHK-SBA-SBBUSY and the sberror check. The rest of the answer grades, first
   match wins: CHK-SBA-SBBUSYERROR (state) for a predicted busy
-  answer, which also takes a busy answer the model does not predict; CHK-DM-DMACTIVE-CLEAR
+  answer, which also takes a busy answer the model does not predict; nothing for an answer
+  whose response code the model leaves open (``DmAnswer.open_status``);
+  CHK-DM-DMACTIVE-INFLIGHT-HOLD (state) for reads of sbcs, sbaddress0, sbaddress1,
+  sbdata0 and sbdata1 from a dmactive = 0 write with a bus access in flight to the first
+  SBA register write with dmactive set again, and CHK-DM-DMACTIVE-REARM (state) for the
+  same reads in place of it when dmactive is set again before that access's R or B
+  response, sbbusy included in both; CHK-DM-DMACTIVE-CLEAR
   (state) for reads of sbaddress0, sbaddress1, sbdata0, sbdata1 and abstractcs while
-  dmactive = 0 and the first sbcs read after it is set again; CHK-DM-OP3-KEEPS-DM (state)
+  dmactive = 0, for sbcs reads while dmactive = 0 outside those two contexts, sbbusy
+  included and CHK-TDR-RATIO-INVARIANT beside it, for the first sbcs read after dmactive
+  is set again, and for the first abstractcs read after it is set again following a
+  dmactive = 0 write, until a command or abstractcs write; CHK-DM-OP3-KEEPS-DM (state)
   for reads after an op 3 update until the next DMI write; CHK-SBA-NO-INC-AFTER-ERROR
-  (state) for sbaddress reads after an SLVERR or DECERR to an access an sbaddress0 or
-  sbdata0 write started with sbautoincrement set, until the next access;
+  (state) for sbaddress reads after an SLVERR or DECERR to an access an sbaddress0 write,
+  an sbdata0 write or an sbdata0 read started with sbautoincrement set, until the next
+  access;
   CHK-SBA-ADDRESS-WIDTH for other sbaddress reads; for other sbdata reads, CHK-SBA-BLOCK-READ
   when the read starts a bus read, else the check of the bus read whose bytes sbdata holds,
   CHK-SBA-SINGLE-READ or CHK-SBA-BLOCK-READ, each with CHK-SBA-DATA-LANES for the lanes, and
   CHK-SBA-DATA-LANES alone for bytes an sbdata write puts in sbdata;
-  CHK-TDR-RATIO-INVARIANT, the result every clock ratio must share, for the rest.
+  CHK-SBA-SBADDRESS1-ABSENT for an sbaddress1 write the model answers without a collision
+  on a build whose AXI_ADDR_WIDTH is 32 or less; CHK-TDR-RATIO-INVARIANT, the result every
+  clock ratio must share, for the rest.
 * Bus transactions, in order (``write_bus``): each predicted AR, or AW with its W, is seen
   once and nothing else is. The whole transaction grades the check of the request that
   started it: CHK-SBA-SINGLE-READ for an sbaddress0 write, CHK-SBA-SINGLE-WRITE or, with
@@ -69,6 +81,16 @@ Further comparisons on the same streams, each beside the first-match check above
   i_arst_n or i_arst_scan_n reset, the bring-up reset included, until dmactive is set,
   CHK-RESET-TRST-INDEPENDENT for reads after a TAP reset until the next sbcs write, and
   CHK-TDR-BUSY-RECOVERY for the answer to a resend.
+* DM answers, the absent sbaddress1 (state): on a build whose AXI_ADDR_WIDTH is 32 or
+  less, CHK-SBA-SBADDRESS1-ABSENT grades each sbaddress1 write with dmactive = 1 that the
+  model answers without a collision, so with sbbusy and sbbusyerror clear: it answers
+  success, and it opens a context until the first access predicted after it or a DMI write
+  of another register than sbcs and sbaddress1. The check also grades that access when an
+  sbdata0 read or write starts it; an access an sbaddress0 write starts goes to the
+  address that write sets. In that context sbaddress1 and sbaddress0 reads grade it beside
+  their own checks, sbaddress1 reading 0, and sbcs reads grade it on sbbusyerror, which
+  the write leaves clear. A colliding sbaddress1 write is graded by CHK-SBA-SBBUSYERROR
+  alone, and opens no context.
 * Capture images, against every image the model allows, on the fields each check names:
   CHK-TDR-CAPTURE-IMAGE (in-order) address, data and status at every capture the model
   predicts with status 0; CHK-TDR-PIPELINED-READ (in-order) address and data at the
@@ -105,8 +127,8 @@ Further comparisons on the same streams, each beside the first-match check above
   by each predicted access with sbautoincrement),
   CHK-SBA-BUS-ERROR after an error response, CHK-TDR-BUSY-RECOVERY after a resent
   access, each until the next predicted access, and CHK-TDR-STICKY-IGNORE,
-  CHK-TDR-BUSY-UPDATE, CHK-DM-NDMRESET, CHK-TDR-TCK-STOP-HOLD and
-  CHK-RESET-NO-STALE-AXI while their contexts last. A predicted transaction also grades CHK-SBA-BUS-ERROR when its response is an
+  CHK-TDR-BUSY-UPDATE, CHK-DM-NDMRESET, CHK-TDR-TCK-STOP-HOLD,
+  CHK-SBA-SBADDRESS1-ABSENT and CHK-RESET-NO-STALE-AXI while their contexts last. A predicted transaction also grades CHK-SBA-BUS-ERROR when its response is an
   error, CHK-TDR-BUSY-RECOVERY when a resend started it, CHK-TDR-BUSY-UPDATE while a
   refused update's context lasts, CHK-RESET-TRST-INDEPENDENT when it is queued or in
   flight at a TAP reset, and CHK-TDR-TCK-STOP-HOLD when it falls in a TCK stop's round.
@@ -136,7 +158,8 @@ items; the sbbusy window is the order of the requests and the bus response the D
 Resets, per the clock-reset model: RST-ARST-BUS and RST-SCAN drop the DM answers, bus
 accesses, results, events and DMI requests in flight; RST-ARST-TCK drops the DMI requests
 in flight and the capture contexts; RST-DMACTIVE drops only the DM register contexts,
-since an access in flight completes; RST-TRST drops nothing and opens its own context
+since an access in flight completes, and opens the CHK-DM-DMACTIVE-INFLIGHT-HOLD context
+when one is in flight; RST-TRST drops nothing and opens its own context
 until ``end_trst``, and any other reset inside it fails CHK-RESET-TRST-INDEPENDENT, since
 the operation the TAP reset leaves in place then never shows. An item seen after a reset
 that only a dropped prediction matches fails that prediction's checks, and after an
@@ -205,6 +228,8 @@ __all__ = [
     "CMDERR",
     "DATA_LANES",
     "DMACTIVE_CLEAR",
+    "DMACTIVE_INFLIGHT_HOLD",
+    "DMACTIVE_REARM",
     "HART_UNAVAIL",
     "LITE_FULL_WIDTH",
     "MISALIGNED",
@@ -220,6 +245,7 @@ __all__ = [
     "REGISTER_MAP",
     "RESET_SCOPES",
     "RESULT_LATENCY",
+    "SBADDRESS1_ABSENT",
     "SBBUSY",
     "SBBUSYERROR",
     "SBCS_FIELDS",
@@ -248,6 +274,7 @@ SBBUSY = "CHK-SBA-SBBUSY"
 SBBUSYERROR = "CHK-SBA-SBBUSYERROR"
 DATA_LANES = "CHK-SBA-DATA-LANES"
 ADDRESS_WIDTH = "CHK-SBA-ADDRESS-WIDTH"
+SBADDRESS1_ABSENT = "CHK-SBA-SBADDRESS1-ABSENT"
 NO_INC_AFTER_ERROR = "CHK-SBA-NO-INC-AFTER-ERROR"
 SINGLE_READ = "CHK-SBA-SINGLE-READ"
 SINGLE_WRITE = "CHK-SBA-SINGLE-WRITE"
@@ -256,6 +283,8 @@ BLOCK_WRITE = "CHK-SBA-BLOCK-WRITE"
 AXI4_SIZE = "CHK-AXI-AXI4-SIZE"
 LITE_FULL_WIDTH = "CHK-AXI-LITE-FULL-WIDTH"
 DMACTIVE_CLEAR = "CHK-DM-DMACTIVE-CLEAR"
+DMACTIVE_INFLIGHT_HOLD = "CHK-DM-DMACTIVE-INFLIGHT-HOLD"
+DMACTIVE_REARM = "CHK-DM-DMACTIVE-REARM"
 OP3_KEEPS_DM = "CHK-DM-OP3-KEEPS-DM"
 CMDERR = "CHK-DM-CMDERR"
 HART_UNAVAIL = "CHK-DM-HART-UNAVAIL"
@@ -295,6 +324,7 @@ SCOREBOARD_CHECKS = frozenset(
         SBBUSYERROR,
         DATA_LANES,
         ADDRESS_WIDTH,
+        SBADDRESS1_ABSENT,
         NO_INC_AFTER_ERROR,
         SINGLE_READ,
         SINGLE_WRITE,
@@ -303,6 +333,8 @@ SCOREBOARD_CHECKS = frozenset(
         AXI4_SIZE,
         LITE_FULL_WIDTH,
         DMACTIVE_CLEAR,
+        DMACTIVE_INFLIGHT_HOLD,
+        DMACTIVE_REARM,
         OP3_KEEPS_DM,
         CMDERR,
         HART_UNAVAIL,
@@ -350,11 +382,12 @@ TDR_ADDR_FIELD = 0x7F
 TDR_DATA_LSB = 2
 TDR_DATA_FIELD = 0xFFFF_FFFF
 
-# dmcontrol.dmactive, sbcs.sbbusy and sbcs.sbautoincrement
+# dmcontrol.dmactive, sbcs.sbbusy, sbcs.sbbusyerror and sbcs.sbautoincrement
 DMCONTROL_DMACTIVE = 1 << 0
 DMCONTROL_NDMRESET = 1 << 1
 SBCS_SBBUSY_LSB = 21
 SBCS_SBBUSY = 1 << SBCS_SBBUSY_LSB
+SBCS_SBBUSYERROR = 1 << 22
 SBCS_SBAUTOINCREMENT = 1 << 16
 SBCS_SBREADONADDR = 1 << 20
 SBCS_SBREADONDATA = 1 << 15
@@ -376,11 +409,22 @@ _SBADDRESS = frozenset({SBADDRESS0, SBADDRESS1})
 _CLEARED_BY_DMACTIVE = frozenset({SBADDRESS0, SBADDRESS1, SBDATA0, SBDATA1, ABSTRACTCS})
 _SBDATA = frozenset({SBDATA0, SBDATA1})
 _WORD = 0xFFFF_FFFF
-_NO_INC_TRIGGERS = frozenset({(TdrOp.WRITE, SBADDRESS0), (TdrOp.WRITE, SBDATA0)})
+_NO_INC_TRIGGERS = frozenset(
+    {(TdrOp.WRITE, SBADDRESS0), (TdrOp.WRITE, SBDATA0), (TdrOp.READ, SBDATA0)}
+)
 _DEFAULT_TRIGGER = {BusDir.READ: SINGLE_READ, BusDir.WRITE: SINGLE_WRITE}
 _SBA_REGISTERS = frozenset({SBCS, SBADDRESS0, SBADDRESS1, SBDATA0, SBDATA1})
 _SBADDRESS0_MASK = 0xFFFF_FFFF
 _NDMRESET_READS = frozenset({SBCS, SBADDRESS0, SBADDRESS1})
+
+# A bus access in flight across a dmactive = 0 write: awaiting its response while dmactive
+# is 0, answered while dmactive is 0, or overtaken by dmactive set again
+_HELD, _DROPPED, _REARMED = "held", "dropped", "rearmed"
+_HOLD_CHECKS = {
+    _HELD: DMACTIVE_INFLIGHT_HOLD,
+    _DROPPED: DMACTIVE_INFLIGHT_HOLD,
+    _REARMED: DMACTIVE_REARM,
+}
 
 # Capture fields a check compares
 STATUS, ADDRESS, DATA = "status", "address", "data"
@@ -395,11 +439,18 @@ class ScoreboardSyncError(RuntimeError):
 class Tdr2axiScoreboardCfg:
     """The build's bus form: AXI4 carries AxSIZE, AXI4-Lite the full-width rule; the data
     width bounds the access sizes an oversize access exceeds; SYNC_STAGES names the
-    TCK-stop check."""
+    TCK-stop check; an address width of 32 or less makes sbaddress1 absent
+    (S-TDR2AXI-0014)."""
 
     lite: bool
     data_width: int = 64
     sync_stages: int = 3
+    addr_width: int = 64
+
+    @property
+    def sbaddress1_absent(self) -> bool:
+        """Whether sbaddress1 is absent: AXI_ADDR_WIDTH is 32 or less."""
+        return self.addr_width <= 32
 
     @property
     def max_size(self) -> int:
@@ -423,7 +474,8 @@ class _ExpectedRequest:
 @dataclass(frozen=True)
 class _Request:
     """A DMI request the DM took, with the context its read answer grades in, sbautoincrement,
-    and the check of the bus read whose bytes sbdata holds."""
+    the check of the bus read whose bytes sbdata holds, and whether its answer also grades
+    CHK-SBA-SBADDRESS1-ABSENT."""
 
     op: int
     addr: int
@@ -435,6 +487,7 @@ class _Request:
     resend: bool = False
     dmactive: bool = False
     sbcs_written: bool = False
+    absent: bool = False
 
 
 @dataclass(frozen=True)
@@ -532,6 +585,9 @@ class Tdr2axiScoreboard:
         self._capture: _ExpectedCapture | None = None
         self._dmactive = False
         self._dmactive_set = False
+        self._hold: str | None = None
+        self._dmactive_fell = False
+        self._cmderr_clear = False
         self._autoinc = False
         self._read_check: str | None = None
         self._after_op3 = False
@@ -575,6 +631,7 @@ class Tdr2axiScoreboard:
         self._stale_axi = False
         self._cut_off: list[tuple[int, int, int]] = []
         self._no_bus: str | None = None
+        self._absent_open = False
         self._inflight_ok = True
         self._access_since_update: tuple[_ExpectedAccess, bool] | None = None
         self._result_check: str | None = None
@@ -675,12 +732,22 @@ class Tdr2axiScoreboard:
         self._answers.append(
             _ExpectedAnswer(request, answer, _data_checks(request, answer), fields)
         )
+        # An access an sbaddress0 write starts goes to the address that write sets
+        absent = self._absent_open and request.addr != SBADDRESS0
+        if request.op == TdrOp.WRITE and request.addr not in (SBCS, SBADDRESS1):
+            self._absent_open = False
+        collides = answer.busy or answer.open_status
+        if request.absent and request.op == TdrOp.WRITE and not collides:
+            self._absent_open = True
         if answer.access is None:
             return
+        self._absent_open = False
         self._failed_access = False
         self._no_bus = None
         check = _trigger_check(request, answer.access)
         extra = (BUSY_RECOVERY,) if request.resend else ()
+        if absent:
+            extra += (SBADDRESS1_ABSENT,)
         if self._hold_round:
             extra += (self.cfg.tck_stop_check,)
         if self._trst_window:
@@ -724,6 +791,7 @@ class Tdr2axiScoreboard:
                 resend,
                 self._dmactive,
                 self._sbcs_written,
+                self._grades_absent(op, addr),
             )
         )
         self._apply_request(op, addr, data)
@@ -756,6 +824,9 @@ class Tdr2axiScoreboard:
     def write_bus_response(self, *, error: bool) -> None:
         """The R or B handshake of the transaction in flight; ``error`` is SLVERR or DECERR."""
         access, self._inflight = self._inflight, None
+        dropped = self._hold == _HELD and not self._accesses
+        if dropped:
+            self._hold = _DROPPED
         if not error or access is None:
             return
         self._record(
@@ -764,6 +835,8 @@ class Tdr2axiScoreboard:
             detail=f"{_describe_access(access.access)} answered with an error response",
         )
         self._no_bus = BUS_ERROR
+        if dropped:
+            return
         trigger = access.trigger
         if trigger.autoinc:
             self._sbaddr0 = access.access.addr & _SBADDRESS0_MASK
@@ -1052,15 +1125,30 @@ class Tdr2axiScoreboard:
 
     # --- Private: DM answers --------------------------------------------------------------
     def _read_context(self, addr: int) -> str | None:
+        if self._hold is not None and addr in _SBA_REGISTERS:
+            return _HOLD_CHECKS[self._hold]
         if not self._dmactive and addr in _CLEARED_BY_DMACTIVE:
             return DMACTIVE_CLEAR
+        # No access held: dmactive = 0 resets sbcs, sbbusy and sbbusyerror included
+        if not self._dmactive and addr == SBCS:
+            return DMACTIVE_CLEAR
         if self._dmactive_set and addr == SBCS:
+            return DMACTIVE_CLEAR
+        if self._cmderr_clear and addr == ABSTRACTCS:
             return DMACTIVE_CLEAR
         if self._after_op3:
             return OP3_KEEPS_DM
         if self._failed_access and addr in _SBADDRESS:
             return NO_INC_AFTER_ERROR
         return None
+
+    def _grades_absent(self, op: int, addr: int) -> bool:
+        """Whether a request's answer grades CHK-SBA-SBADDRESS1-ABSENT: an sbaddress1 write
+        with dmactive = 1 where it is absent, unless its answer is a collision, and an
+        sbaddress or sbcs read in the context such a write opens."""
+        if op == TdrOp.WRITE:
+            return addr == SBADDRESS1 and self.cfg.sbaddress1_absent and self._dmactive
+        return self._absent_open and addr in (SBADDRESS0, SBADDRESS1, SBCS)
 
     def _whole_checks(self, op: int, addr: int, *, resend: bool) -> tuple[str, ...]:
         """The checks a read's whole answer grades in the contexts open when it is taken."""
@@ -1082,10 +1170,16 @@ class Tdr2axiScoreboard:
         if op == TdrOp.READ:
             if addr == SBCS:
                 self._dmactive_set = False
+            if addr == ABSTRACTCS:
+                self._cmderr_clear = False
             return
         self._after_op3 = False
         if addr in _SBA_REGISTERS:
             self._ndmreset = False
+            if self._dmactive:
+                self._hold = None
+        if addr in (COMMAND, ABSTRACTCS):
+            self._cmderr_clear = False
         if addr == DMCONTROL:
             self._apply_dmcontrol(data)
             return
@@ -1101,13 +1195,24 @@ class Tdr2axiScoreboard:
 
     def _apply_dmcontrol(self, data: int) -> None:
         if not data & DMCONTROL_DMACTIVE:
+            fell = self._dmactive
+            hold = self._hold
+            if fell:
+                busy = bool(self._accesses) or self._inflight is not None
+                hold = _HELD if busy else None
             self.reset(RST_DMACTIVE)
+            self._hold = hold
+            self._dmactive_fell = fell or self._dmactive_fell
             return
         self._async_dm = False
         self._ndmreset = bool(data & DMCONTROL_NDMRESET) or self._ndmreset
         if not self._dmactive:
             self._dmactive = True
             self._dmactive_set = True
+            self._cmderr_clear = self._dmactive_fell
+            self._dmactive_fell = False
+            if self._hold == _HELD:
+                self._hold = _REARMED
 
     def _apply_sbcs(self, data: int) -> None:
         self._trst_dm = False
@@ -1140,6 +1245,9 @@ class Tdr2axiScoreboard:
 
     def _compare_answer(self, expected: _ExpectedAnswer, data: int | None, resp: int) -> None:
         answer = expected.answer
+        if answer.open_status:
+            self._busy_dm = self._busy_dm or resp == RESP_BUSY
+            return
         what = f"DM answer to {_describe(expected.request)}: response {resp} data {_hex(data)}"
         if answer.busy:
             self._record(SBBUSYERROR, passed=resp == RESP_BUSY, detail=f"{what}, predicted busy")
@@ -1190,10 +1298,10 @@ class Tdr2axiScoreboard:
     def _compare_sbcs(
         self, expected: _ExpectedAnswer, graded: Expected, data: int | None, what: str
     ) -> None:
-        """sbbusy grades CHK-SBA-SBBUSY; the other fields grade the answer's check against
-        ``graded``. A value whose other fields match some predicted value fails
-        CHK-SBA-SBBUSY unless it matches one whole, so a value that a wrong sbbusy or a
-        wrong field explains equally fails both."""
+        """sbbusy grades CHK-SBA-SBBUSY; the other fields grade the answer's checks against
+        ``graded``, and a check ``_owns_sbbusy`` names grades sbbusy too. A value whose
+        other fields match some predicted value fails CHK-SBA-SBBUSY unless it matches one
+        whole, so a value that a wrong sbbusy or a wrong field explains equally fails both."""
         exp = expected.answer.data
         rest = replace(graded, mask=graded.mask & ~SBCS_SBBUSY)
         rest_ok = _matches(rest, data)
@@ -1202,12 +1310,19 @@ class Tdr2axiScoreboard:
         allowed = sorted({(value >> SBCS_SBBUSY_LSB) & 1 for value in exp.allowed})
         seen = None if data is None else (data >> SBCS_SBBUSY_LSB) & 1
         detail = f"{what}, predicted {_describe_expected(exp)}"
-        self._record(expected.check, passed=rest_ok, detail=detail)
         any_rest = replace(exp, mask=exp.mask & ~SBCS_SBBUSY)
         sbbusy_ok = _matches(exp, data) or (not _matches(any_rest, data) and seen in allowed)
-        self._record(
-            SBBUSY, passed=sbbusy_ok, detail=f"{detail}: sbbusy {seen}, window allows {allowed}"
-        )
+        sbbusy_detail = f"{detail}: sbbusy {seen}, window allows {allowed}"
+        for check in expected.checks:
+            if _owns_sbbusy(expected.request, check):
+                self._record(
+                    check,
+                    passed=rest_ok and sbbusy_ok,
+                    detail=detail if sbbusy_ok else sbbusy_detail,
+                )
+            else:
+                self._record(check, passed=rest_ok, detail=detail)
+        self._record(SBBUSY, passed=sbbusy_ok, detail=sbbusy_detail)
 
     def _unexpected_response(self, data: int | None, resp: int) -> None:
         stale = _take_first(self._stale_answers, lambda e: _matches(e.answer.data, data))
@@ -1318,6 +1433,7 @@ class Tdr2axiScoreboard:
             (self._busy_update, BUSY_UPDATE),
             (self._ndmreset, NDMRESET),
             (self._hold_round, self.cfg.tck_stop_check),
+            (self._absent_open, SBADDRESS1_ABSENT),
             (self._stale_axi, NO_STALE_AXI),
         ]
         return [check for open_, check in contexts if open_ and check is not None]
@@ -1433,6 +1549,7 @@ class Tdr2axiScoreboard:
         self._results.clear()
         self._events.clear()
         self._no_bus = None
+        self._absent_open = False
         self._async_dm = True
         self._stale_answers.extend(self._answers)
         self._answers.clear()
@@ -1509,10 +1626,14 @@ class Tdr2axiScoreboard:
         self._ndmreset = False
         self._dmactive = False
         self._dmactive_set = False
+        self._hold = None
+        self._dmactive_fell = False
+        self._cmderr_clear = False
         self._autoinc = False
         self._read_check = None
         self._failed_access = False
         self._after_op3 = False
+        self._absent_open = False
 
     def _record(self, check_id: str, *, passed: bool, detail: str) -> None:
         if passed:
@@ -1551,15 +1672,20 @@ class Tdr2axiTdrModelTap(TdrStatusModel):
 
 
 def _data_checks(request: _Request, answer: DmAnswer) -> tuple[str, ...]:
-    """The checks an answer's response code and read data grade, first match wins."""
+    """The checks an answer's response code and read data grade, first match wins, and
+    CHK-SBA-SBADDRESS1-ABSENT beside them on an sbaddress read that grades it. A busy
+    answer is a collision, which CHK-SBA-SBBUSYERROR grades alone."""
     if answer.busy:
         return (SBBUSYERROR,)
     if request.op != TdrOp.READ:
-        return (RATIO_INVARIANT,)
+        return (SBADDRESS1_ABSENT,) if request.absent else (RATIO_INVARIANT,)
+    absent = request.absent and request.addr in _SBADDRESS
+    if request.context == DMACTIVE_CLEAR and request.addr == SBCS and not request.dmactive:
+        return (DMACTIVE_CLEAR, RATIO_INVARIANT)
     if request.context is not None:
-        return (request.context,)
+        return (request.context, SBADDRESS1_ABSENT) if absent else (request.context,)
     if request.addr in _SBADDRESS:
-        return (ADDRESS_WIDTH,)
+        return (ADDRESS_WIDTH, SBADDRESS1_ABSENT) if absent else (ADDRESS_WIDTH,)
     if request.addr not in _SBDATA:
         return (RATIO_INVARIANT,)
     starts_read = answer.access is not None and answer.access.direction is BusDir.READ
@@ -1571,6 +1697,14 @@ def _trigger_check(request: _Request, access: SbaBusAccess) -> str:
     if access.direction is BusDir.READ:
         return BLOCK_READ if request.op == TdrOp.READ else SINGLE_READ
     return BLOCK_WRITE if request.autoinc else SINGLE_WRITE
+
+
+def _owns_sbbusy(request: _Request, check: str) -> bool:
+    """Whether ``check`` grades an sbcs read's sbbusy beside CHK-SBA-SBBUSY: the hold
+    checks, and CHK-DM-DMACTIVE-CLEAR on a read while dmactive = 0."""
+    if check in (DMACTIVE_INFLIGHT_HOLD, DMACTIVE_REARM):
+        return True
+    return check == DMACTIVE_CLEAR and not request.dmactive
 
 
 def _grades_sbbusy(expected: _ExpectedAnswer) -> bool:
@@ -1628,6 +1762,8 @@ def _field_checks(request: _Request, answer: DmAnswer) -> tuple[tuple[str, int],
     errors = {(value & SBCS_SBERROR) >> SBCS_SBERROR_LSB for value in answer.data.allowed}
     if answer.data.mask & SBCS_SBERROR:
         checks += [(SBERROR_CHECKS[e], SBCS_SBERROR) for e in sorted(errors) if e in SBERROR_CHECKS]
+    if request.absent:
+        checks.append((SBADDRESS1_ABSENT, SBCS_SBBUSYERROR))
     return tuple(checks)
 
 

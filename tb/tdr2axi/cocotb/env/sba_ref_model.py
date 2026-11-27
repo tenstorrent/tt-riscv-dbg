@@ -103,6 +103,9 @@ _SBCS_RW = (
     | SBCS_SBAUTOINCREMENT
     | SBCS_SBREADONDATA
 )
+# The sbcs fields compared while dmactive = 0 outside a hold, or from a held access's
+# completion until sbbusy falls
+_SBCS_BUSY_PAIR = SBCS_SBBUSY | SBCS_SBBUSYERROR
 
 _SBA_DATA_REGS = frozenset({SBADDRESS0, SBADDRESS1, SBDATA0, SBDATA1})
 _SBADDRESS_REGS = frozenset({SBADDRESS0, SBADDRESS1})
@@ -147,6 +150,8 @@ _ATOMS_SBADDRESS = (
     "S-TDR2AXI-0061",
     "S-TDR2AXI-0079",
     "S-TDR2AXI-0081",
+    "S-TDR2AXI-0093",
+    "S-TDR2AXI-0094",
     "X-RISCV_DEBUG-sbaddress-regs",
     "X-RISCV_DEBUG-sbautoincrement",
     "X-RISCV_DEBUG-sbaddress0-read",
@@ -168,6 +173,13 @@ _ATOMS_BUSY = ("S-TDR2AXI-0043", "X-RISCV_DEBUG-sbbusy", "X-RISCV_DEBUG-sbbusyer
 # X-RISCV_DEBUG-sbbusy. S-TDR2AXI-0043 gives the TDR's sticky busy after a busy answer.
 _ATOMS_SBCS_BUSY = ("S-TDR2AXI-0043",)
 _ATOMS_OPEN = ("S-TDR2AXI-0072", "S-TDR2AXI-0078", "X-RISCV_DEBUG-sbbusy")
+# An access in flight across a dmactive = 0 write: the registers it holds, its drop on
+# completion, and the answer to an SBA register access meanwhile, which the R-RISCV_DEBUG
+# profile's dm_reset entry leaves free.
+_ATOMS_HOLD = ("S-TDR2AXI-0090", "X-RISCV_DEBUG-dmactive")
+_ATOMS_REARM = ("S-TDR2AXI-0091", "X-RISCV_DEBUG-dmactive")
+# sbaddress1 at AXI_ADDR_WIDTH <= 32, where it does not exist and reads 0.
+_ATOMS_ABSENT = ("S-TDR2AXI-0014", "X-RISCV_DEBUG-sbaddress-regs")
 _ATOMS_ACCESS = (
     "S-TDR2AXI-0060",
     "S-TDR2AXI-0071",
@@ -320,13 +332,16 @@ class DmAnswer:
     """The DM's predicted answer to one DMI request and the bus access the request starts.
 
     ``busy`` is the DM's busy answer of S-TDR2AXI-0043; the DM answers nothing else but
-    success. ``data`` is the read data, free for a write.
+    success. ``data`` is the read data, free for a write. ``open_status`` marks an answer
+    whose response code the spec leaves open, busy or success: ``busy`` is then False and
+    ``data`` free, and the DM's response code decides the TDR's status.
     """
 
     busy: bool
     data: Expected
     access: SbaBusAccess | None
     atoms: tuple[str, ...]
+    open_status: bool = False
 
 
 @dataclass(frozen=True)
@@ -337,7 +352,7 @@ class _Access:
     data: int
     data_known: int
     bus: SbaBusAccess | None = None
-    orphan: bool = False
+    held: bool = False
 
 
 @dataclass(frozen=True)
@@ -423,12 +438,14 @@ class SbaRefModel:
     Resynchronization: ``access_retired`` takes the point sbbusy falls from the DM's
     ``sbbusy`` observable, at the first ``i_clk`` edge in RESPONDED where it reads 0 and
     before any DMI request the DM takes at that edge, or from the poll that reads
-    sbbusy = 0. X-RISCV_DEBUG-sbbusy leaves that point open. No other DUT choice enters the
-    model.
+    sbbusy = 0; for a held access, after the request the DM takes at that edge, which
+    may see the held or the reset values. X-RISCV_DEBUG-sbbusy leaves that point open. No
+    other DUT choice enters the model.
 
     Readings: RISC-V Debug 0.13.2 throughout, except that an sbdata0 read without
     sbreadondata leaves sbaddress unchanged, and the read an sbdata0 read starts increments
-    sbaddress only when it succeeds, as Debug 1.0 reads both. A write of sbaddress0,
+    sbaddress only when it succeeds, as Debug 1.0 reads both (S-TDR2AXI-0094). A write of
+    sbaddress0,
     sbaddress1, sbdata0 or sbdata1, or a read of sbdata0 or sbdata1, while sbbusy or
     sbbusyerror is set collides (0.13.2 3.12.19, 3.12.20, 3.12.23, 3.12.24): the DM
     answers DMI busy, sets sbbusyerror and does nothing else. A read of sbaddress0 or
@@ -436,20 +453,36 @@ class SbaRefModel:
     X-RISCV_DEBUG-sbbusy, and 0.13.2 3.12.18 leaves its effect undefined. With sbbusyerror
     already set the model answers it busy and changes no field: the DV reading of the RTL
     (dm_csrs.sv:512-514) that the R-RISCV_DEBUG profile records in its departure_busy
-    entry; no spec text gives it. A failed read started by an sbaddress0 write and a
-    failed write started by an sbdata0 write leave sbaddress at the failing address, and a
-    failed read leaves sbdata unknown. An access in flight when dmactive drops completes
-    on the bus with its original payload, and no access starts while dmactive = 0. The
-    model predicts no sbcs value while dmactive = 0, no sbdata value after a bus write,
-    and no sbaddress bit at or above AXI_ADDR_WIDTH.
+    entry; no spec text gives it. With sbautoincrement set, a failed access leaves sbaddress
+    at the failing address, whether an sbaddress0 write, an sbdata0 write or an sbdata0
+    read started it (S-TDR2AXI-0093, S-TDR2AXI-0094), and a failed read leaves sbdata
+    unknown. No access starts while dmactive = 0, and one in
+    flight when dmactive drops completes on the bus with its original payload and is held
+    (S-TDR2AXI-0090): sbcs, sbaddress and sbdata keep their values until it completes,
+    sbcs reading them with sbbusy = 1, while dmcontrol and abstractcs reset at once. A
+    write of sbcs, sbaddress0, sbaddress1, sbdata0 or sbdata1 or a read of sbdata0 or
+    sbdata1 during the hold changes nothing, sbbusyerror included, and its DMI answer is
+    open, as Debug 1.0 lets any access fail while dmactive = 0 (the R-RISCV_DEBUG profile's
+    dm_reset entry). The held access's completion drops its read data and error, and the
+    SBA registers take their reset values. A dmactive = 1 write before that completion ends
+    the hold, and the access completes as if dmactive had stayed set (S-TDR2AXI-0091);
+    the model takes such a write as reaching the DM before the response, and S-TDR2AXI-0091
+    leaves a write in the response's own cycle open. While dmactive = 0 with no access
+    held, an sbcs read predicts sbbusy = 0 and sbbusyerror = 0, the other fields reading
+    the values of the profile's departure_open entry. From a held access's completion to
+    ``access_retired`` an sbcs read shows sbbusy and sbbusyerror both as held or both at
+    their reset value 0, since the register takes its reset value whole. At
+    AXI_ADDR_WIDTH <= 32 sbaddress1 does not exist: it reads 0 and a write of it changes
+    nothing, but collides as the present register does (the profile's departure_absent
+    entry). The model predicts no sbdata value after a bus write and no sbaddress bit at
+    or above AXI_ADDR_WIDTH.
 
     ``SbaStimulusError`` marks stimulus the spec and those readings leave open: an sbcs
     write while an access is in flight and sbbusyerror is clear, whose effect on sbbusyerror
     no reading gives; an sbcs write of 1s to sberror that leaves a set bit set; an sbaddress
-    bit at or above AXI_ADDR_WIDTH; an access whose auto-increment would reach
-    2**AXI_ADDR_WIDTH; an access both misaligned and wider than the bus; an access from an
-    unknown sbaddress; and an SBA register access or a dmactive = 1 write while an access
-    from before a dmactive = 0 write is in flight.
+    bit at or above AXI_ADDR_WIDTH written to a register that exists; an access whose
+    auto-increment would reach 2**AXI_ADDR_WIDTH; an access both misaligned and wider than
+    the bus; and an access from an unknown sbaddress.
 
     ``negative`` inverts the lowest compared bit of every predicted value and bit 0 of every
     predicted bus address; the bench sets it from the ``NEGATIVE_KNOB`` variable.
@@ -486,6 +519,11 @@ class SbaRefModel:
         """dmcontrol.dmactive."""
         return self._dmactive
 
+    @property
+    def held(self) -> bool:
+        """Whether an access in flight when dmactive fell holds the SBA registers."""
+        return self._access is not None and self._access.held
+
     def predict_dmi_read(self, addr: int) -> DmAnswer:
         """Predict the DM's answer to a DMI read of ``addr`` and apply its side effects.
 
@@ -495,12 +533,14 @@ class SbaRefModel:
         CHK-TDR-RATIO-INVARIANT and CHK-RESET-ASYNC-ANY-TIME. Atoms: S-TDR2AXI-0043,
         S-TDR2AXI-0062, S-TDR2AXI-0063, S-TDR2AXI-0077, S-TDR2AXI-0081,
         X-RISCV_DEBUG-dm-addresses, X-RISCV_DEBUG-sbdata0-read, X-RISCV_DEBUG-sbbusyerror.
+        Also serves CHK-DM-DMACTIVE-INFLIGHT-HOLD: S-TDR2AXI-0090, X-RISCV_DEBUG-dmactive.
 
         The answer is busy, with free data, for an sbdata0 or sbdata1 read while an access
         is PENDING or RESPONDED or sbbusyerror is set; the read then sets sbbusyerror and
-        starts nothing. Any other read, an sbaddress read included, answers success with the
-        register's predicted value. An sbdata0 read returns sbdata0, then with sbreadondata
-        set and sberror clear starts a read at sbaddress.
+        starts nothing. While an access is held, such a read changes nothing and its answer
+        is open (``open_status``). Any other read, an sbaddress read included, answers
+        success with the register's predicted value. An sbdata0 read returns sbdata0, then
+        with sbreadondata set and sberror clear starts a read at sbaddress.
         """
         _check_dmi(addr, 0)
         if addr in _SBA_DATA_REGS:
@@ -518,7 +558,9 @@ class SbaRefModel:
         S-TDR2AXI-0056, S-TDR2AXI-0060, S-TDR2AXI-0062, S-TDR2AXI-0064, S-TDR2AXI-0071,
         S-TDR2AXI-0076, S-TDR2AXI-0077, S-TDR2AXI-0079, X-RISCV_DEBUG-dmactive,
         X-RISCV_DEBUG-cmderr, X-RISCV_DEBUG-sbaddress0-read, X-RISCV_DEBUG-sbdata0-write,
-        X-RISCV_DEBUG-sberror.
+        X-RISCV_DEBUG-sberror. Also serves CHK-DM-DMACTIVE-INFLIGHT-HOLD and
+        CHK-DM-DMACTIVE-REARM: S-TDR2AXI-0090, S-TDR2AXI-0091. A write of the absent
+        sbaddress1 follows S-TDR2AXI-0014 and X-RISCV_DEBUG-sbaddress-regs.
 
         The answer's ``access`` is the bus access the write starts: a write for sbdata0, a
         read for sbaddress0 with sbreadonaddr set, each only with dmactive set, the engine
@@ -527,12 +569,17 @@ class SbaRefModel:
         while an access is in flight or sbbusyerror is set is answered busy, sets
         sbbusyerror and changes nothing else. An sbcs write while an access is in flight and
         sbbusyerror is set is answered busy and changes nothing, the RTL reading the class
-        docstring records. Every other write starts none and is answered success.
+        docstring records. While an access is held, a write of sbcs, sbaddress0,
+        sbaddress1, sbdata0 or sbdata1 changes nothing and its answer is open
+        (``open_status``). A dmcontrol write that clears dmactive holds the access in
+        flight, and one that sets it during the hold ends the hold. At AXI_ADDR_WIDTH <= 32
+        an sbaddress1 write that does not collide changes nothing. Every other write starts
+        none and is answered success.
         """
         _check_dmi(addr, data)
         if addr == DMCONTROL:
-            self._write_dmcontrol(data)
-            return self._answer(Expected.free(_ATOMS_DMCONTROL), None, _ATOMS_DMCONTROL)
+            atoms = self._write_dmcontrol(data)
+            return self._answer(Expected.free(atoms), None, atoms)
         if addr == SBCS or addr in _SBA_DATA_REGS:
             return self._write_sba(addr, data)
         if self._dmactive and addr == ABSTRACTCS:
@@ -548,18 +595,16 @@ class SbaRefModel:
         R data word the subordinate drives; both are inputs to the DUT. A read loads the
         addressed lanes into sbdata, or leaves sbdata unknown on an error; a write commits
         its bytes to the memory image, or makes them unknown on an error, which AXI leaves
-        open (X-AXI4-response-codes).
+        open (X-AXI4-response-codes). A held access's response lands in no register: the
+        SBA registers take their reset values (S-TDR2AXI-0090).
         """
         access = self._access
         if access is None or access.bus is None or self._phase is not SbaPhase.PENDING:
             raise SbaStimulusError("bus response with no bus access pending")
         if not 0 <= rdata < (1 << self.cfg.data_width):
             raise ValueError(f"R data 0x{rdata:x} is wider than {self.cfg.data_width} bits")
-        if access.orphan:
-            if access.bus.direction is BusDir.WRITE:
-                self._commit_memory(access, ok=not error)
-            self._access = None
-            self._phase = SbaPhase.IDLE
+        if access.held:
+            self._drop(access, error=error)
             return
         self._respond(SbError.BAD_ADDRESS if error else SbError.NONE, rdata)
 
@@ -601,11 +646,16 @@ class SbaRefModel:
         CHK-SBA-BUS-ERROR, CHK-SBA-MISALIGNED, CHK-SBA-OVERSIZE and CHK-DM-DMACTIVE-CLEAR.
         Atoms: S-TDR2AXI-0002, S-TDR2AXI-0014, S-TDR2AXI-0015, S-TDR2AXI-0023,
         S-TDR2AXI-0060, S-TDR2AXI-0061, X-RISCV_DEBUG-sbcs-fields, X-RISCV_DEBUG-sbbusy,
-        X-RISCV_DEBUG-sbbusyerror, X-RISCV_DEBUG-sberror, X-RISCV_DEBUG-dmactive.
+        X-RISCV_DEBUG-sbbusyerror, X-RISCV_DEBUG-sberror, X-RISCV_DEBUG-dmactive. Also serves
+        CHK-DM-DMACTIVE-INFLIGHT-HOLD and CHK-DM-DMACTIVE-REARM: S-TDR2AXI-0090,
+        S-TDR2AXI-0091.
 
         Exact in IDLE and PENDING (sbbusy 0 and 1); in RESPONDED the set of sbbusy = 1 with
-        the fields before or after the access's outcome, and sbbusy = 0 after it. Free while
-        dmactive = 0.
+        the fields before or after the access's outcome, and sbbusy = 0 after it. While
+        dmactive = 0: exact on the held value with sbbusy = 1 while an access is held; from
+        its completion to ``access_retired`` sbbusy and sbbusyerror compared as a pair, the
+        held pair (sbbusy 1 and the held sbbusyerror) or the reset pair (both 0); and
+        otherwise sbbusy = 0 and sbbusyerror = 0, nothing else compared.
         """
         return self._emit(self._sbcs())
 
@@ -615,13 +665,18 @@ class SbaRefModel:
         Serves CHK-SBA-ADDRESS-WIDTH, CHK-SBA-BLOCK-WRITE, CHK-SBA-BLOCK-READ,
         CHK-SBA-NO-INC-AFTER-ERROR, CHK-SBA-READ-NO-READONDATA, CHK-DM-DMACTIVE-CLEAR and
         CHK-DM-NDMRESET. Atoms: S-TDR2AXI-0014, S-TDR2AXI-0022, S-TDR2AXI-0061,
-        S-TDR2AXI-0079, S-TDR2AXI-0081, X-RISCV_DEBUG-sbaddress-regs,
-        X-RISCV_DEBUG-sbautoincrement, X-RISCV_DEBUG-sbaddress0-read,
-        X-RISCV_DEBUG-sbdata0-write, X-RISCV_DEBUG-sbdata0-read.
+        S-TDR2AXI-0079, S-TDR2AXI-0081, S-TDR2AXI-0093, S-TDR2AXI-0094,
+        X-RISCV_DEBUG-sbaddress-regs, X-RISCV_DEBUG-sbautoincrement,
+        X-RISCV_DEBUG-sbaddress0-read, X-RISCV_DEBUG-sbdata0-write,
+        X-RISCV_DEBUG-sbdata0-read.
 
         Exact on the bits below AXI_ADDR_WIDTH; in RESPONDED the set of the values before
-        and after the access's increment (X-RISCV_DEBUG-sbbusy). sbaddress1 compares nothing
-        when AXI_ADDR_WIDTH <= 32, where it does not exist.
+        and after the access's increment (X-RISCV_DEBUG-sbbusy). With sbautoincrement set,
+        the increment follows only a successful access, so a failed one started by an
+        sbaddress0 write, an sbdata0 write or an sbdata0 read leaves its own address. A held
+        access keeps its address until its completion, and the register then reads 0
+        (S-TDR2AXI-0090). sbaddress1 reads 0 when AXI_ADDR_WIDTH <= 32, where it does not
+        exist (S-TDR2AXI-0014, X-RISCV_DEBUG-sbaddress-regs).
         """
         return self._emit(self._sbaddress_reg(index))
 
@@ -636,8 +691,9 @@ class SbaRefModel:
         Exact on the bits the last successful read loaded from the addressed lanes of the R
         word (2**size bytes; the bits above are free) or the debugger last wrote; free after
         a bus write or a failed read. In RESPONDED, the set of the values before and after
-        the access's outcome, compared on the bits known in both (X-RISCV_DEBUG-sbbusy).
-        sbdata1 compares nothing with 32-bit data, where it does not exist.
+        the access's outcome, compared on the bits known in both (X-RISCV_DEBUG-sbbusy). A
+        held access's completion leaves 0, its read data dropped (S-TDR2AXI-0090). sbdata1
+        compares nothing with 32-bit data, where it does not exist.
         """
         return self._emit(self._sbdata_reg(index))
 
@@ -676,7 +732,7 @@ class SbaRefModel:
         X-RISCV_DEBUG-cmderr, X-RISCV_DEBUG-dmactive.
 
         Exact on cmderr: 2 after any command write, cleared bit by bit by writing ones, 0
-        while dmactive = 0.
+        while dmactive = 0, an access held or not, and 0 after dmactive is set again.
         """
         return self._emit(self._abstractcs())
 
@@ -709,10 +765,16 @@ class SbaRefModel:
         self._reset_registers()
 
     def _reset_registers(self) -> None:
+        self._reset_dm()
+        self._reset_sba()
+
+    def _reset_dm(self) -> None:
         self._dmactive = False
         self._ndmreset = 0
         self._ndmreset_known = True
         self._cmderr = 0
+
+    def _reset_sba(self) -> None:
         self._sbcs_rw = SBACCESS_RESET << SBCS_SBACCESS_LSB
         self._sberror = SbError.NONE
         self._sbbusyerror = False
@@ -731,19 +793,18 @@ class SbaRefModel:
     def _emit(self, expected: Expected) -> Expected:
         return expected.flipped() if self._negative else expected
 
-    def _refuse_orphan(self, addr: int) -> None:
-        if self._access is not None and self._access.orphan:
-            raise SbaStimulusError(
-                f"DMI access of 0x{addr:02x} while a bus access from before dmactive = 0 is "
-                "in flight: the spec leaves its answer open"
-            )
+    def _open(self) -> DmAnswer:
+        data = Expected.free(_ATOMS_HOLD)
+        return DmAnswer(busy=False, data=data, access=None, atoms=_ATOMS_HOLD, open_status=True)
 
     def _read_sba(self, addr: int) -> DmAnswer:
-        self._refuse_orphan(addr)
+        if addr in _SBADDRESS_REGS:
+            atoms = _ATOMS_MAP if self._dmactive else _ATOMS_DMACTIVE
+            return self._answer(self._register(addr), None, atoms)
+        if self.held:
+            return self._open()
         if not self._dmactive:
             return self._answer(self._register(addr), None, _ATOMS_DMACTIVE)
-        if addr in _SBADDRESS_REGS:
-            return self._answer(self._register(addr), None, _ATOMS_MAP)
         if self._phase is not SbaPhase.IDLE or self._sbbusyerror:
             return self._collide(addr, written=False)
         if addr == SBDATA1:
@@ -757,8 +818,10 @@ class SbaRefModel:
         return self._answer(data, access, _ATOMS_ACCESS)
 
     def _write_sba(self, addr: int, data: int) -> DmAnswer:
-        self._refuse_orphan(addr)
-        if addr in _SBADDRESS_REGS:
+        if self.held:
+            return self._open()
+        absent = addr == SBADDRESS1 and self.cfg.addr_width <= 32
+        if addr in _SBADDRESS_REGS and not absent:
             self._check_address(addr, data)
         if not self._dmactive:
             return self._answer(Expected.free(_ATOMS_DMACTIVE), None, _ATOMS_DMACTIVE)
@@ -768,7 +831,9 @@ class SbaRefModel:
             self._write_sbcs(data)
             return self._answer(Expected.free(_ATOMS_SBCS), None, _ATOMS_SBCS)
         if self._phase is not SbaPhase.IDLE or self._sbbusyerror:
-            return self._collide(addr, written=True)
+            return self._collide(addr, written=not absent)
+        if absent:
+            return self._answer(Expected.free(_ATOMS_ABSENT), None, _ATOMS_ABSENT)
         self._store(addr, data)
         access = None
         if addr == SBADDRESS0 and not self._sberror and self._sbcs_rw & SBCS_SBREADONADDR:
@@ -815,25 +880,38 @@ class SbaRefModel:
                 f"AXI_ADDR_WIDTH = {self.cfg.addr_width}"
             )
 
-    def _write_dmcontrol(self, data: int) -> None:
+    def _write_dmcontrol(self, data: int) -> tuple[str, ...]:
+        """Apply a dmcontrol write and return the atoms of its answer."""
         if not data & DMCONTROL_DMACTIVE:
-            if self._dmactive:
-                self._retire()
-                if self._access is not None:
-                    self._access = replace(self._access, orphan=True)
-                self._reset_registers()
+            if not self._dmactive:
+                return _ATOMS_DMCONTROL
+            self._retire()
+            self._reset_dm()
+            if self._access is None:
+                self._reset_sba()
+                return _ATOMS_DMCONTROL
+            self._access = replace(self._access, held=True)
+            return _ATOMS_DMCONTROL + _ATOMS_HOLD
+        if self._dmactive:
+            self._ndmreset = data & DMCONTROL_NDMRESET
+            self._ndmreset_known = True
+            return _ATOMS_DMCONTROL
+        rearmed = self.held
+        self._release_hold()
+        self._dmactive = True
+        self._ndmreset_known = not data & DMCONTROL_NDMRESET
+        return _ATOMS_DMCONTROL + _ATOMS_REARM if rearmed else _ATOMS_DMCONTROL
+
+    def _release_hold(self) -> None:
+        """dmactive set during a hold: an access awaiting its response completes as
+        with dmactive set throughout, and one already dropped is complete."""
+        access = self._access
+        if access is None or not access.held:
             return
-        if not self._dmactive:
-            if self._access is not None:
-                raise SbaStimulusError(
-                    "dmactive set while a bus access from before dmactive = 0 is in flight: "
-                    "the spec leaves its effect on the new DM state open"
-                )
-            self._dmactive = True
-            self._ndmreset_known = not data & DMCONTROL_NDMRESET
+        if self._phase is SbaPhase.RESPONDED:
+            self._retire()
             return
-        self._ndmreset = data & DMCONTROL_NDMRESET
-        self._ndmreset_known = True
+        self._access = replace(access, held=False)
 
     def _collide(self, addr: int, *, written: bool) -> DmAnswer:
         if written and self._phase is SbaPhase.IDLE:
@@ -916,6 +994,14 @@ class SbaRefModel:
             self._sbaddress += 1 << access.size
         self._phase = SbaPhase.RESPONDED
 
+    def _drop(self, access: _Access, *, error: bool) -> None:
+        self._busy_old = self._sbcs_value(busy=True)
+        self._before = self._snapshot()
+        if access.bus is not None and access.bus.direction is BusDir.WRITE:
+            self._commit_memory(access, ok=not error)
+        self._reset_sba()
+        self._phase = SbaPhase.RESPONDED
+
     def _snapshot(self) -> _Snapshot:
         return _Snapshot(self._sbaddress, self._sbaddress_known, self._sbdata, self._sbdata_known)
 
@@ -975,7 +1061,7 @@ class SbaRefModel:
 
     def _sbcs(self) -> Expected:
         if not self._dmactive:
-            return Expected.free(_ATOMS_DMACTIVE)
+            return self._sbcs_inactive()
         if self._phase is SbaPhase.IDLE:
             return Expected.exact(self._sbcs_value(busy=False), SBCS_DEFINED, _ATOMS_SBCS)
         if self._phase is SbaPhase.PENDING:
@@ -983,14 +1069,24 @@ class SbaRefModel:
         allowed = (self._busy_old, self._sbcs_value(busy=True), self._sbcs_value(busy=False))
         return Expected(tuple(dict.fromkeys(allowed)), SBCS_DEFINED, _ATOMS_SBCS)
 
+    def _sbcs_inactive(self) -> Expected:
+        if not self.held:
+            return Expected.exact(0, _SBCS_BUSY_PAIR, _ATOMS_DMACTIVE)
+        if self._phase is SbaPhase.PENDING:
+            return Expected.exact(self._sbcs_value(busy=True), SBCS_DEFINED, _ATOMS_HOLD)
+        held = self._busy_old & _SBCS_BUSY_PAIR
+        return Expected((held, 0), _SBCS_BUSY_PAIR, _ATOMS_HOLD + _ATOMS_OPEN)
+
     def _sbaddress_reg(self, index: int) -> Expected:
         shift = _word_shift(index)
+        if index == 1 and self.cfg.addr_width <= 32:
+            return Expected.exact(0, WORD_MASK, _ATOMS_ABSENT)
         before = self._before
         values, known = self._outcomes(
             self._sbaddress, self._sbaddress_known, before.sbaddress, before.sbaddress_known
         )
         mask = ((self.cfg.addr_mask & known) >> shift) & WORD_MASK
-        return self._word(values, mask, shift, _ATOMS_SBADDRESS)
+        return self._word(values, mask, shift, self._hold_atoms(_ATOMS_SBADDRESS))
 
     def _sbdata_reg(self, index: int) -> Expected:
         shift = _word_shift(index)
@@ -1001,7 +1097,10 @@ class SbaRefModel:
             self._sbdata, self._sbdata_known, before.sbdata, before.sbdata_known
         )
         mask = (known >> shift) & WORD_MASK
-        return self._word(values, mask, shift, _ATOMS_SBDATA)
+        return self._word(values, mask, shift, self._hold_atoms(_ATOMS_SBDATA))
+
+    def _hold_atoms(self, atoms: tuple[str, ...]) -> tuple[str, ...]:
+        return atoms + _ATOMS_HOLD if self.held else atoms
 
     def _dmcontrol(self) -> Expected:
         if not self._dmactive:

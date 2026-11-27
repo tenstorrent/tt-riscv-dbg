@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Tenstorrent USA, Inc.
 # SPDX-License-Identifier: Apache-2.0
 """tdr2axi Debug Module registers: the DMI register map, dmstatus, sbcs, the abstract command
-error and ndmreset.
+error, ndmreset and the absent sbaddress1.
 
 ``tdr2axi_dm_registers_test`` runs on the bench of ``Tdr2axiTb``. It reads dmstatus and the
 sbcs reset value, writes an abstract command and clears cmderr, sets and clears ndmreset,
@@ -45,6 +45,26 @@ The sweep starts no bus access: sbcs is written with sbreadonaddr and sbreadonda
 and sbaccess from 1 to the bus width, and sbaddress0 always holds an odd value, so an sbdata0
 write with sberror clear is refused for alignment and sets sberror = 3. Any AXI transaction
 is left unchecked in the subordinate and fails CHK-AXISUB-DRAIN.
+
+``tdr2axi_dm_write_ones_test`` runs two sequences in seeded order. The command sequence
+writes command with every bit set, reads abstractcs, clears cmderr with 0x700, reads
+abstractcs, then does the same with command = 0, so every command field rises and falls;
+the scoreboard grades cmderr 2 after each write and 0 after each clear, and any bus access
+after a command write, under CHK-DM-CMDERR, and the test checks that no AXI transaction
+follows. On a build whose AXI_ADDR_WIDTH is 32 or less, where sbaddress1 is absent
+(S-TDR2AXI-0014, X-RISCV_DEBUG-sbaddress-regs), the sbaddress1 sequence writes sbcs with
+sbreadondata and a seeded sbaccess, sbaddress0 with a seeded address in range aligned to
+that size, reads sbcs to confirm sbbusy and sbbusyerror clear, writes sbaddress1 with
+every bit set, and reads sbaddress1, sbaddress0 and sbcs. An sbdata0 read then starts one
+bus read at the address sbaddress0 holds; once sbcs reads idle, sbreadondata is cleared
+and sbdata is read. The scoreboard grades under CHK-SBA-SBADDRESS1-ABSENT the write's
+success answer, sbaddress1 reading 0, sbaddress0 reading what was written, sbbusyerror
+clear, the read's AR and any bus access before it; the test checks that the write and the
+reads after it start no AXI transaction and that the one AR carries the address
+sbaddress0 holds. On a wider build sbaddress1 is present, and the test writes none of its
+bits, since S-TDR2AXI-0014 leaves those at or above AXI_ADDR_WIDTH open. Every AXI
+transaction the subordinate records is checked, and one left over fails
+CHK-AXISUB-DRAIN.
 """
 
 from __future__ import annotations
@@ -63,6 +83,7 @@ from env.sba_ref_model import (
     SBCS_SBREADONDATA,
     Expected,
 )
+from env.tdr2axi_scoreboard import CMDERR, SBADDRESS1_ABSENT
 from env.tdr_host import (
     ABSTRACTCS,
     COMMAND,
@@ -74,9 +95,16 @@ from env.tdr_host import (
     SBDATA0,
     SBDATA1,
     DmiOp,
+    sbcs_value,
     tdr_word,
 )
-from tests.tdr2axi_base_test import TIMEOUT_MS, WORD_MASK, Tdr2axiTb
+from tests.tdr2axi_base_test import (
+    SBCS_SBBUSY,
+    SBCS_SBBUSYERROR,
+    TIMEOUT_MS,
+    WORD_MASK,
+    Tdr2axiTb,
+)
 
 # Access Register command for x0 (RISC-V External Debug Support 0.13.2, 3.6.1.1)
 COMMAND_ACCESS_REG = 0x0022_1000
@@ -150,6 +178,13 @@ SBCS_READ_TRIGGERS = SBCS_SBREADONADDR | SBCS_SBREADONDATA
 SBCS_SBACCESS = SBCS_SBACCESS_FIELD << SBCS_SBACCESS_LSB
 SBCS_SBERROR = SBCS_SBERROR_FIELD << SBCS_SBERROR_LSB
 SBCS_DRAWN = WORD_MASK & ~(SBCS_READ_TRIGGERS | SBCS_SBACCESS | SBCS_SBERROR)
+# The command values of the write-ones test, in order: every bit set, then every bit clear
+COMMAND_WRITES = (WORD_MASK, 0)
+# The widest AXI_ADDR_WIDTH at which sbaddress1 is absent (S-TDR2AXI-0014)
+SBADDRESS1_ABSENT_WIDTH = 32
+# Where in the test region the write-ones test reads, and the bytes it may read from
+WRITE_ONES_OFFSET = 0xA000
+WRITE_ONES_SPAN = 0x100
 
 
 @cocotb.test(timeout_time=DM_TIMEOUT_MS, timeout_unit="ms")
@@ -176,6 +211,85 @@ async def tdr2axi_dm_registers_test(dut: SimHandleBase) -> None:
     tb.log.info("Step 6: sweep the register map / each write changes only its own register")
     await _register_map(tb)
     tb.finish()
+
+
+@cocotb.test(timeout_time=TIMEOUT_MS, timeout_unit="ms")
+async def tdr2axi_dm_write_ones_test(dut: SimHandleBase) -> None:
+    """command written with every bit set and then zero fails as unsupported each time and
+    starts nothing, and where AXI_ADDR_WIDTH is 32 or less an sbaddress1 write of every bit
+    set has no effect: it reads 0, and sbaddress0 and the next bus read keep the address
+    written before it."""
+    tb = await Tdr2axiTb.setup(dut, "tdr2axi_dm_write_ones_test")
+    steps = [_command_ones_zero, _sbaddress1_ones]
+    tb.rng.shuffle(steps)
+    tb.log.info("sequence order: %s", " then ".join(step.__name__ for step in steps))
+    for index, step in enumerate(steps, start=1):
+        tb.log.info("Step %d: %s", index, (step.__doc__ or "").splitlines()[0])
+        await step(tb)
+    tb.finish()
+
+
+async def _command_ones_zero(tb: Tdr2axiTb) -> None:
+    """command all ones, then zero / cmderr 2 after each, 0 after each clear, no bus access.
+
+    Each write of ``COMMAND_WRITES`` is followed by an abstractcs read, a write of 0x700 that
+    clears cmderr and another abstractcs read, which the scoreboard grades."""
+    for value in COMMAND_WRITES:
+        tb.log.info("command write 0x%08x, then cmderr cleared", value)
+        await tb.dmi_write(COMMAND, value)
+        await tb.dmi_read(ABSTRACTCS)
+        await tb.dmi_write(ABSTRACTCS, ABSTRACTCS_CLEAR_CMDERR)
+        await tb.dmi_read(ABSTRACTCS)
+    tb.expect_no_bus(CMDERR, "command written all ones and zero")
+
+
+async def _sbaddress1_ones(tb: Tdr2axiTb) -> None:
+    """sbaddress1 all ones where it is absent / no effect, then one read at sbaddress0.
+
+    sbcs with sbreadondata and a seeded size, sbaddress0 with a seeded address, sbbusy and
+    sbbusyerror confirmed clear, sbaddress1 written with every bit set and read back with
+    sbaddress0 and sbcs, then an sbdata0 read that starts one bus read at the address
+    sbaddress0 holds. On a build wider than 32 bits nothing is written."""
+    width = tb.build.addr_width
+    if width > SBADDRESS1_ABSENT_WIDTH:
+        tb.log.info(
+            "AXI_ADDR_WIDTH = %d: sbaddress1 is present, no sbaddress1 bit at or above the "
+            "width is written",
+            width,
+        )
+        return
+    size = tb.rng.randint(0, tb.max_size)
+    base, span = tb.address_range(WRITE_ONES_OFFSET, WRITE_ONES_SPAN)
+    addr = base + tb.rng.randrange(0, span, 1 << size)
+    tb.mem_fill(addr, 1 << size)
+    tb.log.info(
+        "AXI_ADDR_WIDTH = %d: sbaddress0 0x%x, then sbaddress1 0x%08x, then a read of %d "
+        "bytes at sbaddress0",
+        width,
+        addr,
+        WORD_MASK,
+        1 << size,
+    )
+    await tb.dmi_write(SBCS, sbcs_value(size, readondata=True))
+    await tb.dmi_write(SBADDRESS0, addr)
+    sbcs = await tb.dmi_read(SBCS)
+    tb.checker.require_stimulus(
+        created=not (sbcs >> SBCS_SBBUSY) & 1 and not (sbcs >> SBCS_SBBUSYERROR) & 1,
+        reason=f"sbcs 0x{sbcs:08x} has sbbusy or sbbusyerror set before the sbaddress1 write",
+    )
+    mark = tb.bus_mark()
+    await tb.dmi_write(SBADDRESS1, WORD_MASK)
+    await tb.dmi_read(SBADDRESS1)
+    await tb.dmi_read(SBADDRESS0)
+    await tb.dmi_read(SBCS)
+    tb.expect_no_bus_since(mark, SBADDRESS1_ABSENT, "sbaddress1 written all ones, then read")
+    await tb.sba_read_data(size)
+    await tb.sba_idle()
+    tb.expect_read(addr, size, check_id=SBADDRESS1_ABSENT)
+    await tb.dmi_write(SBCS, sbcs_value(size))
+    data = await tb.sba_read_data(size)
+    tb.log.info("read of %d bytes at 0x%x returned 0x%x", 1 << size, addr, data)
+    tb.expect_no_bus(SBADDRESS1_ABSENT, "sbdata read with sbreadondata clear")
 
 
 async def _ndmreset(tb: Tdr2axiTb) -> None:

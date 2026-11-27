@@ -179,8 +179,10 @@ class AxiSub:
     """AXI subordinate, memory and port monitor on the flattened nets of tb_top.
 
     One read and one write are in flight at most: a channel's READY stays low while its
-    transaction waits for a response. ``stall`` holds every request READY low. Error
-    responses are set per address. An address armed as side-effecting may be read once.
+    transaction waits for a response. ``stall`` holds every request READY low, and
+    ``hold_responses`` holds RVALID and BVALID low: a response due while it is set waits,
+    its remaining latency included, until it is cleared. Error responses are set per
+    address. An address armed as side-effecting may be read once.
     ``handshakes`` counts the request handshakes of each channel since the start.
     """
 
@@ -196,6 +198,7 @@ class AxiSub:
         self._max_size = self._nbytes.bit_length() - 1
         self.mem: dict[int, int] = {}
         self.stall = False
+        self.hold_responses = False
         self.ar_q: list[AxiAddr] = []
         self.aw_q: list[AxiAddr] = []
         self.w_q: list[AxiW] = []
@@ -206,8 +209,6 @@ class AxiSub:
         self._passes: Counter[str] = Counter()
         self._tasks: list[Task] = []
         self._in_reset = True
-        self._dmactive_prev = 0
-        self._inflight_at_dmactive_fall: dict[str, AxiAddr | AxiW] = {}
         self._valid_wait = 0
         self._observers: list[Observer] = []
         self.handshakes: Counter[str] = Counter()
@@ -311,6 +312,9 @@ class AxiSub:
         self._wait_left: dict[str, int | None] = dict.fromkeys(CHANNELS)
         self._rd_owed = self._wr_owed = False
         self._first_after_reset = True
+        # A request ended by reset is not one withdrawn after the dmactive fall
+        self._dmactive_prev = 0
+        self._inflight_at_dmactive_fall: dict[str, AxiAddr | AxiW] = {}
 
     def _drive_idle(self) -> None:
         d = self._dut
@@ -705,6 +709,8 @@ class AxiSub:
         )
 
     def _issue_responses(self) -> None:
+        if self.hold_responses:
+            return
         d = self._dut
         if self._rd_pend is not None and not self._r_vld:
             if self._rd_pend[1] <= 0:

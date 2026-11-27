@@ -137,6 +137,16 @@ class TestCoverCounts(unittest.TestCase):
         )
         self.assertEqual(run_sim.vcs_cover_counts(report), Counter({"c_short": 3}))
 
+    def test_a_row_without_a_hierarchical_name_is_no_cover(self) -> None:
+        report = (
+            "Cover Properties Matches:\n"
+            "    COVER PROPERTIES    CATEGORY SEVERITY ATTEMPTS MATCHES INCOMPLETE\n"
+            "tb_top.u_fcov.c_short      0        0      100       3          0\n"
+            "Total 4 100\n"
+            "Total                      4        0      100       7          0\n"
+        )
+        self.assertEqual(run_sim.vcs_cover_counts(report), Counter({"c_short": 3}))
+
     def test_a_test_takes_its_passing_runs_and_legal_build_checks(self) -> None:
         runs = [
             result("t_a", run_sim.PASS),
@@ -220,9 +230,31 @@ class TestVerilatorHits(lsf_base.MainCase):
         entry = hits["tests"]["t_single"]
         self.assertEqual((entry["status"], entry["file"]), ("error", None))
         self.assertEqual(entry["reason"], run_sim.NO_COVERAGE)
+        self.assertEqual((entry["runs"], entry["expected_fail_runs"]), (1, 0))
         self.assertEqual(list(Path(hits["dir"]).iterdir()), [])
         self.assertIn(f"cover hits: 0 of 1 tests in {hits['dir']}", out)
         self.assertIn(f"cover hits error: t_single: {run_sim.NO_COVERAGE}", out)
+
+    def test_a_run_without_coverage_data_errs_its_test_beside_runs_with_data(self) -> None:
+        fake = base.FakeLauncher(
+            build_rc=lambda cmd: 0,
+            run_passes=lambda cmd: True,
+            covered=lambda cmd: "CONFIG=small" not in cmd,
+        )
+        argv = ["--test", "t_single", "--seed", "3", "--target", "big", "--target", "small"]
+        rc, manifest, out = self.run_local([*argv, "--cov"], fake)
+        self.assertEqual(rc, 1)
+        self.assertEqual(manifest["summary"], {"pass": 2, "fail": 0, "error": 0})
+        hits = manifest["cover_hits"]
+        entry = hits["tests"]["t_single"]
+        self.assertEqual((entry["status"], entry["file"]), ("error", None))
+        self.assertEqual((entry["runs"], entry["expected_fail_runs"]), (2, 0))
+        bare = [Path(run["run_dir"]).name for run in manifest["runs"] if run["build"] == "small"]
+        self.assertEqual(len(bare), 1)
+        reason = f"1 of 2 passing runs left no coverage data: {bare[0]}"
+        self.assertEqual(entry["reason"], reason)
+        self.assertEqual(list(Path(hits["dir"]).iterdir()), [])
+        self.assertIn(f"cover hits error: t_single: {reason}", out)
 
     def test_mutation_runs_write_no_file(self) -> None:
         fake = base.FakeLauncher(build_rc=lambda cmd: 0, run_passes=lambda cmd: False)

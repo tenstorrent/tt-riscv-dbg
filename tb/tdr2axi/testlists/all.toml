@@ -150,6 +150,15 @@ reseed = 20
 name = "tdr2axi_dmactive_inflight_test"
 reseed = 20
 
+[[tests]]
+name = "tdr2axi_dm_write_ones_test"
+reseed = 5
+bringup_targets = ["axi4_a2_d32_cachef_sync4", "axil_a2_d32_prot5", "axi4_a3_d32_cachef", "axil_a3_d64_prot5_sync4"]
+
+[[tests]]
+name = "tdr2axi_reset_during_clear_test"
+reseed = 20
+
 [[groups]]
 name = "smoke"
 tests = [
@@ -192,6 +201,8 @@ tests = [
   "tdr2axi_dmactive_reset_test",
   "tdr2axi_dmactive_no_bus_test",
   "tdr2axi_dmactive_inflight_test",
+  "tdr2axi_dm_write_ones_test",
+  "tdr2axi_reset_during_clear_test",
 ]
 
 [[groups]]
@@ -227,6 +238,8 @@ tests = [
   "tdr2axi_dmactive_reset_test",
   "tdr2axi_dmactive_no_bus_test",
   "tdr2axi_dmactive_inflight_test",
+  "tdr2axi_dm_write_ones_test",
+  "tdr2axi_reset_during_clear_test",
 ]
 
 [[groups]]
@@ -262,4 +275,6 @@ tests = [
   "tdr2axi_dmactive_reset_test",
   "tdr2axi_dmactive_no_bus_test",
   "tdr2axi_dmactive_inflight_test",
+  "tdr2axi_dm_write_ones_test",
+  "tdr2axi_reset_during_clear_test",
 ]

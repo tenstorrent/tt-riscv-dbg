@@ -187,6 +187,16 @@ def _sub_cfg(cfg: Tdr2axiTestCfg, build: Tdr2axiBuild) -> AxiSubCfg:
     )
 
 
+def _scoreboard_cfg(build: Tdr2axiBuild) -> Tdr2axiScoreboardCfg:
+    """The scoreboard's view of the build."""
+    return Tdr2axiScoreboardCfg(
+        lite=build.lite,
+        data_width=build.data_width,
+        sync_stages=build.sync_stages,
+        addr_width=build.addr_width,
+    )
+
+
 def _predictor(
     dut: SimHandleBase, cfg: Tdr2axiTestCfg, build: Tdr2axiBuild, scoreboard: Tdr2axiScoreboard
 ) -> Tdr2axiPredictor:
@@ -227,9 +237,9 @@ class Tdr2axiTb:
         self.rng = rng_for(cfg.seed, f"{name}:stimulus")
         self._tasks: list[Task] = []
         self._clk_en = True
-        # Set by _clock as it starts: i_clk changes only at clk_edge_ps plus a whole number
-        # of half periods
-        self.clk_edge_ps = cfg.clk_phase_ps
+        # i_clk changes only at clk_edge_ps plus a whole number of half periods; ``start``
+        # sets it as it starts the clock, and it has no value before then
+        self.clk_edge_ps: int
         self._unpolled_access = False
         self.sbcs_reads = 0
         self.sbbusy_reads = 0
@@ -237,10 +247,7 @@ class Tdr2axiTb:
         self._resets = 0
         self._sva_at_setup = self._sva_counts()
         self.ref_mem: dict[int, int] = {}
-        self.scoreboard = Tdr2axiScoreboard(
-            Tdr2axiScoreboardCfg(lite=b.lite, data_width=b.data_width, sync_stages=b.sync_stages),
-            report=self.checker.record,
-        )
+        self.scoreboard = Tdr2axiScoreboard(_scoreboard_cfg(b), report=self.checker.record)
         self.predictor = _predictor(dut, cfg, b, self.scoreboard)
         self.host = TdrHost(
             dut,
@@ -319,6 +326,7 @@ class Tdr2axiTb:
         self._tasks.append(cocotb.start_soon(self._feed_scoreboard()))
         self._tasks.append(cocotb.start_soon(self._watch_reset()))
         self._tasks.append(cocotb.start_soon(self._watch_scan_reset()))
+        self.clk_edge_ps = round(get_sim_time("ps")) + self.cfg.clk_phase_ps
         self._tasks.append(cocotb.start_soon(self._clock()))
         await RisingEdge(d.clk)
         d.sva_en.value = 1
@@ -329,15 +337,16 @@ class Tdr2axiTb:
             await self.dmi_write(DMCONTROL, 1)
 
     async def _clock(self) -> None:
-        """i_clk, paused low while the clock is stopped. Its edges fall at ``clk_edge_ps``,
-        ``clk_phase_ps`` after the task starts, plus whole half periods, and the host keeps TCK
-        on a grid from time 0, so ``clk_edge_ps`` sets where the edges of the two clocks fall."""
+        """i_clk, paused low while the clock is stopped. Its edges fall at ``clk_edge_ps``
+        plus whole half periods, and ``start`` sets ``clk_edge_ps`` to ``clk_phase_ps``
+        past the time it starts this task. The host keeps TCK on a grid from time 0, so
+        ``clk_edge_ps`` sets where the edges of the two clocks fall."""
         clk = self._dut.clk
         level = 0
         half = self.cfg.clk_ps // 2
-        self.clk_edge_ps = round(get_sim_time("ps")) + self.cfg.clk_phase_ps
-        if self.cfg.clk_phase_ps:
-            await Timer(self.cfg.clk_phase_ps, "ps")
+        delay = self.clk_edge_ps - round(get_sim_time("ps"))
+        if delay:
+            await Timer(delay, "ps")
         while True:
             await Timer(half, "ps")
             if self._clk_en or level:
@@ -428,6 +437,30 @@ class Tdr2axiTb:
         ``UnknownValueError``. Reads only: a test drives the DUT through the host and the
         subordinate."""
         return resolve(getattr(self._dut, net))
+
+    def observe_bits(self, net: str) -> str:
+        """The value of the tb_top observable ``net`` now as a bit string, X and Z included,
+        for a failure's detail."""
+        value = getattr(self._dut, net).value
+        return str(value) if isinstance(value, int) else value.binstr
+
+    def off_edge_delay(self, within: int | None = None) -> int:
+        """Picoseconds from now to a drawn time that is no rising or falling edge of i_clk or
+        TCK: within one period of the slower clock, or under ``within`` picoseconds when
+        given. i_clk changes at ``clk_edge_ps`` plus a whole number of half periods, and TCK
+        at whole half periods from time 0."""
+        now = round(get_sim_time("ps"))
+        span = within or max(self.cfg.clk_ps, self.cfg.tck_ps)
+        delay = self.rng.randrange(1, span)
+        while self._on_edge(now + delay):
+            delay = delay + 1 if within is None or delay + 1 < within else 1
+        return delay
+
+    def _on_edge(self, time_ps: int) -> bool:
+        """Whether ``time_ps`` is a rising or falling edge of i_clk or TCK."""
+        cfg = self.cfg
+        clk = (time_ps - self.clk_edge_ps) % (cfg.clk_ps // 2) == 0
+        return clk or time_ps % (cfg.tck_ps // 2) == 0
 
     def assert_reset(self) -> None:
         """Assert i_arst_n."""
@@ -698,26 +731,32 @@ class Tdr2axiTb:
             self.checker.expect_equal("CHK-AXI-AXI4-SIZE", ar.size, size, "ARSIZE")
             self.checker.expect_equal("CHK-AXI-AXI4-SIZE", ar.len, 0, "ARLEN")
 
-    def expect_write(self, addr: int, size: int, data: int, *, check_id: str) -> None:
+    def expect_write(
+        self, addr: int, size: int, data: int, *, check_id: str, addr_check_id: str | None = None
+    ) -> None:
         """Pop the next AW and W: address, AxSIZE, strobes of exactly the accessed lanes, and
-        the accessed bytes on those lanes."""
+        the accessed bytes on those lanes. The AW and W's presence and AWADDR grade under
+        ``addr_check_id`` when it is given, and the bytes under ``check_id``."""
         sub = self.sub
+        addr_id = addr_check_id or check_id
         self.checker.expect_true(
-            check_id,
+            addr_id,
             passed=bool(sub.aw_q and sub.w_q),
             detail=f"write 0x{addr:x}: AW {len(sub.aw_q)} W {len(sub.w_q)}",
         )
         aw, w = sub.aw_q.pop(0), sub.w_q.pop(0)
         off = addr % self.nbytes
         lanes_check = "CHK-AXI-LITE-FULL-WIDTH" if self.build.lite else "CHK-AXI-AXI4-SIZE"
-        self.checker.expect_equal(check_id, aw.addr, addr, "AWADDR")
+        self.checker.expect_equal(addr_id, aw.addr, addr, "AWADDR")
         if not self.build.lite:
             self.checker.expect_equal("CHK-AXI-AXI4-SIZE", aw.size, size, "AWSIZE")
             self.checker.expect_equal("CHK-AXI-AXI4-SIZE", aw.len, 0, "AWLEN")
         self.checker.expect_equal(lanes_check, w.strb, ((1 << (1 << size)) - 1) << off, "WSTRB")
         for i in range(1 << size):
             got = (w.data >> (8 * (off + i))) & 0xFF
-            self.checker.expect_equal(check_id, got, (data >> (8 * i)) & 0xFF, f"W lane {off + i}")
+            self.checker.expect_equal(
+                check_id, got, (data >> (8 * i)) & 0xFF, f"write 0x{addr:x}: W lane {off + i}"
+            )
 
     # --- System bus access ----------------------------------------------------------------
     async def sba_set_addr(self, addr: int) -> None:

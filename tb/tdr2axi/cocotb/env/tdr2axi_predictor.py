@@ -10,7 +10,9 @@ event order from stimulus and from the resynchronization points their contracts 
   update strobe high or ``predict_capture`` for one with the capture strobe high;
 * every i_clk rising edge: ``predict_dmi_read`` or ``predict_dmi_write`` with the request
   the TDR model predicted when a DMI request handshake takes place, then ``bus_response``
-  with the R or B the subordinate drives;
+  with the R or B the subordinate drives. A DM response handshake gives an answer whose
+  response code the SBA model leaves open (``DmAnswer.open_status``) the code the DM
+  sent, busy or success, before ``response`` delivers it;
 * ``access_retired``, by the DV reading of CHK-SBA-SBBUSY: every sbcs read reads
   sbbusy = 1 from the request that starts an access until its bus response; after the
   response at most one sbcs read reads 1, and every later one reads 0 until the next access
@@ -19,7 +21,11 @@ event order from stimulus and from the resynchronization points their contracts 
   RESPONDED, the point the debug specification leaves open, and the next sbcs read before
   another access starts may read sbbusy = 1. An sbcs read's answer carries that
   sbbusy window in ``dm_answers`` and reaches the TDR model with sbbusy free, so only the
-  scoreboard's CHK-SBA-SBBUSY comparison grades sbbusy;
+  scoreboard's CHK-SBA-SBBUSY comparison grades sbbusy. An access held across a
+  dmactive = 0 write retires after the request the DM takes at the first edge where
+  ``sbbusy`` reads 0, which the model predicts with the held or the reset values, or at
+  the next edge. A dmactive = 1 write the DM takes at the edge of a held access's R or B
+  handshake raises ``SbaStimulusError``: S-TDR2AXI-0091 leaves that order open;
 * the end of the post-reset CDC clear sequence, once every ``cdc_*_clear_pending``
   observable has risen and fallen again after the release: ``settled``;
 * each fall of the reset input in control, i_arst_n with i_test_mode = 0 and i_arst_scan_n
@@ -50,7 +56,14 @@ from cocotb.handle import SimHandleBase
 from cocotb.task import Task
 from cocotb.triggers import Edge, FallingEdge, First, RisingEdge
 
-from env.sba_ref_model import DmAnswer, SbaBusAccess, SbaPhase, SbaRefModel
+from env.sba_ref_model import (
+    DMCONTROL,
+    DmAnswer,
+    SbaBusAccess,
+    SbaPhase,
+    SbaRefModel,
+    SbaStimulusError,
+)
 from env.tdr_host import SBCS, resolve
 from env.tdr_status_model import DmiRequest, TdrCaptureExpect, TdrOp, TdrStatusModel
 
@@ -67,6 +80,8 @@ BRIDGE_IDLE = 0
 BRIDGE_BUSY_STATES = frozenset({1, 2, 3, 4})
 
 RESP_ERROR_MIN = 2  # SLVERR and DECERR
+DMI_RESP_BUSY = 3
+DMCONTROL_DMACTIVE = 1 << 0
 
 # sbcs.sbbusy (RISC-V External Debug Support 0.13.2, sbcs)
 SBCS_SBBUSY = 1 << 21
@@ -113,6 +128,8 @@ class Tdr2axiPredictor:
         self._log = logging.getLogger("cocotb.tdr2axi.predictor")
         self._requests: deque[_Predicted] = deque()
         self._answers: deque[DmAnswer] = deque()
+        # Answers at the head of ``_answers`` whose DM response handshake has been seen
+        self._responded = 0
         self._tasks: list[Task] = []
         self._bridge_prev = BRIDGE_IDLE
         self._clear_seen = False
@@ -170,7 +187,24 @@ class Tdr2axiPredictor:
         if not self._answers:
             raise PredictorSyncError("the bridge returned to IDLE with no DM answer predicted")
         answer = self._answers.popleft()
+        if self._responded:
+            self._responded -= 1
+        elif answer.open_status:
+            raise PredictorSyncError("the bridge returned an open DM answer the DM never sent")
         self.tdr.response(busy=answer.busy, allowed=answer.data.allowed, mask=answer.data.mask)
+
+    def _dm_responded(self, resp: int) -> None:
+        """A DM response handshake answers the oldest request without one; an open answer
+        takes its response code."""
+        index = self._responded
+        if index >= len(self._answers):
+            self._lost = PredictorSyncError("DM response handshake with no request awaiting one")
+            return
+        answer = self._answers[index]
+        if answer.open_status:
+            busy = resp == DMI_RESP_BUSY
+            self._answers[index] = replace(answer, busy=busy, open_status=False)
+        self._responded += 1
 
     def _watch_clear(self) -> None:
         """The CDC clear sequence after a reset ends when its pending flags have all fallen."""
@@ -208,24 +242,43 @@ class Tdr2axiPredictor:
             return
         self._watch_clear()
         if self.sba.phase is SbaPhase.RESPONDED and not resolve(d.sbbusy):
-            self._sbbusy_fell = True
+            if self.sba.held and self._sbbusy_fell:
+                self._retire()
+            else:
+                self._sbbusy_fell = True
+        if resolve(d.dmi_resp_valid) and resolve(d.dmi_resp_ready):
+            self._dm_responded(resolve(d.dmi_resp_resp))
+        r_done = resolve(d.r_valid) and resolve(d.r_ready)
+        b_done = resolve(d.b_valid) and resolve(d.b_ready)
         if resolve(d.dmi_req_valid) and resolve(d.dmi_req_ready):
-            self._take_dmi_request()
-        if resolve(d.r_valid) and resolve(d.r_ready):
+            self._take_dmi_request(responding=bool(r_done or b_done))
+        if r_done:
             self.sba.bus_response(
                 error=resolve(d.r_resp) >= RESP_ERROR_MIN, rdata=resolve(d.r_data)
             )
-        if resolve(d.b_valid) and resolve(d.b_ready):
+        if b_done:
             self.sba.bus_response(error=resolve(d.b_resp) >= RESP_ERROR_MIN)
 
-    def _take_dmi_request(self) -> None:
+    def _take_dmi_request(self, *, responding: bool) -> None:
+        """One DMI request the DM takes; ``responding`` is an R or B handshake at its edge."""
         self.dmi_requests += 1
         if not self._requests:
             self._lost = PredictorSyncError("DMI request handshake with no request predicted")
             return
         request = self._select_request()
         sbcs_read = request.op is TdrOp.READ and request.addr == SBCS
-        if self._sbbusy_fell and not sbcs_read:
+        held = self.sba.held
+        rearm = (
+            request.op is TdrOp.WRITE
+            and request.addr == DMCONTROL
+            and bool(request.data & DMCONTROL_DMACTIVE)
+        )
+        if held and rearm and responding and self.sba.phase is SbaPhase.PENDING:
+            raise SbaStimulusError(
+                "dmactive set at the edge of the held access's R or B handshake: "
+                "S-TDR2AXI-0091 leaves open whether the result lands"
+            )
+        if self._sbbusy_fell and not sbcs_read and not held:
             if self.sba.phase is SbaPhase.RESPONDED:
                 self._late_busy = True
             self._retire()
@@ -239,6 +292,8 @@ class Tdr2axiPredictor:
             self._late_busy = False
         elif self.sba.phase is not SbaPhase.IDLE:
             self._late_busy = False
+        if held and self._sbbusy_fell:
+            self._retire()
         self._answers.append(_sbbusy_free(answer) if sbcs_read else answer)
         self.dm_answers.append(answer)
         if answer.access is not None:
@@ -305,6 +360,7 @@ class Tdr2axiPredictor:
         self.tdr.reset(scope or "RST-ARST-TCK")
         self._requests.clear()
         self._answers.clear()
+        self._responded = 0
         self._bridge_prev = BRIDGE_IDLE
         self._clear_seen = False
         self._sbbusy_fell = False

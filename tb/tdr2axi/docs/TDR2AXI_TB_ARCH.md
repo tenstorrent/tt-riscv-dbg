@@ -46,7 +46,7 @@ the DUT, so `R-RISCV_DEBUG` behavior is checked by the reference models.
 
 | Model | Scope | Why it stays local | What would make it shareable |
 |---|---|---|---|
-| `AxiSub` | AXI4 and AXI4-Lite subordinate with sparse byte memory, per-address error injection, seeded READY delays and response latencies, W before AW, mid-cycle response changes, and a monitor reporting the `vip` checks below | No shared AXI VIP exists in the repository | A shared AXI VIP in the integrating project, which takes its place |
+| `AxiSub` | AXI4 and AXI4-Lite subordinate with sparse byte memory, per-address error injection, seeded READY delays and response latencies, READY and response holds a test sets and clears, W before AW, mid-cycle response changes, and a monitor reporting the `vip` checks below | No shared AXI VIP exists in the repository | A shared AXI VIP in the integrating project, which takes its place |
 | `TdrHost` | TAP-state walk of the TDR scan (Capture-DR, Shift-DR, Pause-DR, Update-DR, Run-Test/Idle), strobe and update-stage timing, the DMI flow with busy recovery, and a DMI-sequence checker for the assumption checks | Only the TDR bridge uses a 41-bit DMI TDR without a TAP | A second TDR-attached block, or a TAP model that drives a real TAP |
 | `SbaRefModel` | DM register file (map, reset values, `dmactive`, `cmderr`) and SBA engine: transactions, `sbcs` flags, auto-increment and memory image, predicted from the spec atoms | DUT-specific | None |
 | `TdrStatusModel` | Bridge status rules: capture image, sticky busy, op 3, and the result window of `T-TDR2AXI-resp-to-tdr` | DUT-specific | None |
@@ -110,7 +110,7 @@ tb/tdr2axi/
 | `i_clk`, `i_arst_n` | Exposed directly | `clk`, `rst_n` | `Tdr2axiTb` |
 | `i_test_mode`, `i_arst_scan_n` | Exposed directly; held at 0 and 1 outside the test-mode item | `test_mode`, `rst_scan_n` | `Tdr2axiTb` |
 | Build parameters | Read-only nets | `cfg_axi_lite`, `cfg_addr_width`, `cfg_data_width`, `cfg_axi_prot`, `cfg_axi_cache`, `cfg_sync_stages` | `Tdr2axiTb`, coverage |
-| Observables | Continuous assigns from DUT-internal nets | DMI request and response handshakes between the bridge and `u_dm_csrs`; the bridge's `state_q`, `error_q`, `address_q`, `data_q`; `arst_clk_n`, `arst_tck_n`; `dmactive`, `sbaccess`, `sbautoincrement`, `sbreadonaddr`, `sbreadondata`, `sbbusy`, dm_sba's `sberror` report, the sticky `sbcs_sberror` from `u_dm_csrs`; the CDCs' clear-pending outputs | checks and coverage |
+| Observables | Continuous assigns from DUT-internal nets | DMI request and response handshakes between the bridge and `u_dm_csrs`; the bridge's `state_q`, `error_q`, `address_q`, `data_q`; the request offered to the request CDC and the response leaving the response CDC, on TCK, and the request CDC's destination valid ahead of its isolation mask, `cdc_req_dst_valid`, on i_clk; `arst_clk_n`, `arst_tck_n`; `dmactive`, `sbaccess`, `sbautoincrement`, `sbreadonaddr`, `sbreadondata`, `sbbusy`, dm_sba's `sberror` report, the sticky `sbcs_sberror` and `sbcs_sbbusyerror`, and the `cmderr` field from `u_dm_csrs`; the CDCs' clear-pending outputs and the state of the `cdc_4phase_dst` receiver in each half of their reset controllers | checks and coverage |
 
 **Binds and assertions:** `tdr2axi_axi_mgr_sva` on the flattened AXI nets, enabled
 after the first `i_clk` edge of reset, and the `CHK-ENV-TDR-UPDATE-STABLE` assertion on
@@ -177,13 +177,16 @@ and `Tdr2axiTb` helpers on the directed comparisons of their scenarios.
 | `CHK-AXI-REQ-ATTRS-SVA` | assertion | `F-AXI-request-attributes` | `tdr2axi_axi_mgr_sva`, bound in `tb_top`; formal harness `tdr2axi_axi_attr_formal` | flattened AXI nets |  |  |  |
 | `CHK-CFG-BENDER-TARGET` | checker | `F-CFG-bender-target` | `scripts/run_sim.py` | Bender file list; build log |  |  |  |
 | `CHK-CFG-ILLEGAL-PARAMS` | checker | `F-CFG-param-checks` | `scripts/run_sim.py`, build-only mode | elaboration log per build |  |  |  |
-| `CHK-DM-CMDERR` | scoreboard | `F-DM-abstract-cmd-unsupported` | `tdr2axi_dm_registers_test` | `TdrHost` DMI results; `AxiSub` transaction stream |  | `SbaRefModel` (`predict_dmi_write`, `predict_abstractcs`) |  |
+| `CHK-DM-CMDERR` | scoreboard | `F-DM-abstract-cmd-unsupported` | `tdr2axi_dm_registers_test`, `tdr2axi_dm_write_ones_test` | `TdrHost` DMI results; `AxiSub` transaction stream |  | `SbaRefModel` (`predict_dmi_write`, `predict_abstractcs`) |  |
 | `CHK-DM-DMACTIVE-ALONE` | checker | `F-DM-dmactive-clear` | `tdr2axi_dmactive_reset_test` | `TdrHost` DMI results and scan records; `AxiSub` transaction stream; `AxiSub` memory |  | `SbaRefModel` (`predict_dmi_write`, `predict_dmcontrol`, `predict_sbcs`, `predict_memory`), `TdrStatusModel` (`predict_capture`) |  |
 | `CHK-DM-DMACTIVE-CLEAR` | scoreboard | `F-DM-dmactive-clear` | `Tdr2axiScoreboard` | DM answers |  | `SbaRefModel` (`predict_dmi_write`, `predict_sbcs`, `predict_sbaddress`, `predict_sbdata`, `predict_dmcontrol`, `predict_abstractcs`) | state |
 | `CHK-DM-DMACTIVE-INFLIGHT` | checker | `F-DM-dmactive-inflight` | `AxiSub` | AR, AW and W fields across the dmcontrol write |  |  |  |
+| `CHK-DM-DMACTIVE-INFLIGHT-HOLD` | scoreboard | `F-DM-dmactive-inflight` | `Tdr2axiScoreboard` | DM answers; bus transactions |  | `SbaRefModel` (`predict_dmi_read`, `predict_dmi_write`, `predict_dmcontrol`, `predict_sbcs`, `predict_sbaddress`, `predict_sbdata`) | state |
 | `CHK-DM-DMACTIVE-INFLIGHT-SVA` | assertion | `F-DM-dmactive-inflight` | formal harness `tdr2axi_dmactive_inflight_formal` | `o_axi_req` |  |  |  |
+| `CHK-DM-DMACTIVE-NO-ABORT` | checker | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `AxiSub` transaction stream; ARVALID, AWVALID, WVALID, RREADY and BREADY levels; `TdrHost` DMI results and scan records |  | `SbaRefModel` (`predict_dmi_read`, `predict_sbcs`), `TdrStatusModel` (`predict_update`, `predict_capture`) |  |
 | `CHK-DM-DMACTIVE-NO-BUS` | checker | `F-DM-dmactive-no-bus-access` | `Tdr2axiTb` | `AxiSub` transaction stream; `dmactive` observable |  | `SbaRefModel` (`predict_dmi_write`) |  |
 | `CHK-DM-DMACTIVE-NO-BUS-SVA` | assertion | `F-DM-dmactive-no-bus-access` | formal harness `tdr2axi_dmactive_no_bus_formal` | `o_axi_req`, `dmactive` |  |  |  |
+| `CHK-DM-DMACTIVE-REARM` | scoreboard | `F-DM-dmactive-inflight` | `Tdr2axiScoreboard` | DM answers; bus transactions |  | `SbaRefModel` (`predict_dmi_write`, `predict_dmcontrol`, `predict_sbcs`, `predict_sbaddress`, `predict_sbdata`) | state |
 | `CHK-DM-HART-UNAVAIL` | scoreboard | `F-DM-hart-unavailable` | `tdr2axi_dm_registers_test` | `TdrHost` DMI results |  | `SbaRefModel` (`predict_dmi_write`, `predict_dmstatus`) |  |
 | `CHK-DM-NDMRESET` | scoreboard | `F-DM-ndmreset-unconnected` | `tdr2axi_dm_registers_test` | `TdrHost` DMI results; `AxiSub` transaction stream; `AxiSub` memory |  | `SbaRefModel` (`predict_dmi_write`, `predict_memory`, `predict_sbaddress`, `predict_dmcontrol`) |  |
 | `CHK-DM-OP3-KEEPS-DM` | scoreboard | `F-DM-dmactive-clear` | `Tdr2axiScoreboard` | DM answers; capture status |  | `SbaRefModel`, `TdrStatusModel` (`predict_update`, `predict_capture`) | state |
@@ -191,13 +194,13 @@ and `Tdr2axiTb` helpers on the directed comparisons of their scenarios.
 | `CHK-DM-VERSION` | scoreboard | `F-DM-version` | `tdr2axi_dm_registers_test` | `TdrHost` DMI results |  | `SbaRefModel` (`predict_sbcs`, `predict_dmstatus`) |  |
 | `CHK-PORT-BUS-LIST` | checker | `F-PORT-bus-and-reset` | `Tdr2axiTb` | elaborated port list |  | port table of `doc/tdr2axi.md` |  |
 | `CHK-PORT-TDR-LIST` | checker | `F-PORT-tdr-interface` | `Tdr2axiTb` | elaborated port list |  | port table of `doc/tdr2axi.md` |  |
-| `CHK-RESET-ASYNC-ANY-TIME` | scoreboard | `F-RESET-async-any-time` | `tdr2axi_bringup_test`, `tdr2axi_reset_traffic_test` | `TdrHost` scan records; `TdrHost` DMI results |  | `TdrStatusModel` (`predict_update`, `predict_capture`), `SbaRefModel` (`predict_dmi_read`) |  |
+| `CHK-RESET-ASYNC-ANY-TIME` | scoreboard | `F-RESET-async-any-time` | `tdr2axi_bringup_test`, `tdr2axi_reset_during_clear_test`, `tdr2axi_reset_traffic_test` | `TdrHost` scan records; `TdrHost` DMI results; the request CDC's destination valid and destination clear-pending observables; the clear-sequence receiver states |  | `TdrStatusModel` (`predict_update`, `predict_capture`), `SbaRefModel` (`predict_dmi_read`) |  |
 | `CHK-RESET-CDC-CLEAR-1TO2` | checker | `F-RESET-sync-release` | `Tdr2axiTimingMonitor` | `TdrHost` TCK rising edges; synchronized reset and CDC clear-pending observables before each edge | `T-TDR2AXI-cdc-clear-1to2` | the timing item's bounds, stored in `Tdr2axiTimingMonitor` |  |
 | `CHK-RESET-CDC-CLEAR-1TO20` | checker | `F-RESET-sync-release` | `Tdr2axiTimingMonitor` | `TdrHost` TCK rising edges; synchronized reset and CDC clear-pending observables before each edge | `T-TDR2AXI-cdc-clear-1to20` | the timing item's bounds, stored in `Tdr2axiTimingMonitor` |  |
 | `CHK-RESET-CDC-CLEAR-20TO1` | checker | `F-RESET-sync-release` | `Tdr2axiTimingMonitor` | `TdrHost` TCK rising edges; synchronized reset and CDC clear-pending observables before each edge | `T-TDR2AXI-cdc-clear-20to1` | the timing item's bounds, stored in `Tdr2axiTimingMonitor` |  |
 | `CHK-RESET-CDC-CLEAR-20TO19` | checker | `F-RESET-sync-release` | `Tdr2axiTimingMonitor` | `TdrHost` TCK rising edges; synchronized reset and CDC clear-pending observables before each edge | `T-TDR2AXI-cdc-clear-20to19` | the timing item's bounds, stored in `Tdr2axiTimingMonitor` |  |
 | `CHK-RESET-CDC-CLEAR-20TO21` | checker | `F-RESET-sync-release` | `Tdr2axiTimingMonitor` | `TdrHost` TCK rising edges; synchronized reset and CDC clear-pending observables before each edge | `T-TDR2AXI-cdc-clear-20to21` | the timing item's bounds, stored in `Tdr2axiTimingMonitor` |  |
-| `CHK-RESET-NO-STALE-AXI` | checker | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | AXI handshakes across `i_arst_n` |  |  |  |
+| `CHK-RESET-NO-STALE-AXI` | checker | `F-RESET-async-any-time` | `tdr2axi_reset_during_clear_test`, `tdr2axi_reset_traffic_test` | AXI handshakes across `i_arst_n` |  |  |  |
 | `CHK-RESET-SYNC-RELEASE` | scoreboard | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | internal reset observables; clock edge counts | `T-TDR2AXI-tck-reset-release` | `TdrStatusModel` (`predict_reset_release`) |  |
 | `CHK-RESET-SYNC-RELEASE-SS4` | checker | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | internal reset observables; clock edge counts | `T-TDR2AXI-tck-reset-release-ss4` | `TdrStatusModel` (`predict_reset_release`) |  |
 | `CHK-RESET-SYNC-RELEASE-SVA` | assertion | `F-RESET-sync-release` | formal harness `tdr2axi_reset_sync_formal` | both `rstgen_bypass` outputs | `T-TDR2AXI-tck-reset-release` |  |  |
@@ -215,6 +218,7 @@ and `Tdr2axiTb` helpers on the directed comparisons of their scenarios.
 | `CHK-SBA-NO-READ-ON-ADDR` | checker | `F-SBA-single-read` | `Tdr2axiTb` | `AxiSub` transaction stream |  | `SbaRefModel` (`predict_dmi_write`) |  |
 | `CHK-SBA-OVERSIZE` | scoreboard | `F-SBA-access-errors` | `tdr2axi_sba_errors_test`, `Tdr2axiTb.sba_idle` | `TdrHost` DMI results; `AxiSub` transaction stream |  | `SbaRefModel` (`predict_dmi_write`, `predict_sbcs`) |  |
 | `CHK-SBA-READ-NO-READONDATA` | checker | `F-SBA-block-read` | `Tdr2axiTb` | `TdrHost` DMI results; `AxiSub` transaction stream |  | `SbaRefModel` (`predict_dmi_read`, `predict_sbaddress`) |  |
+| `CHK-SBA-SBADDRESS1-ABSENT` | scoreboard | `F-SBA-address-width` | `Tdr2axiScoreboard` | DM answers; bus transactions |  | `SbaRefModel` (`predict_dmi_write`, `predict_sbaddress`, `predict_bus_access`) | state |
 | `CHK-SBA-SBBUSY` | scoreboard | `F-SBA-busy-status` | `Tdr2axiScoreboard` | DM answers |  | `SbaRefModel` (`predict_sbcs`) | state |
 | `CHK-SBA-SBBUSYERROR` | scoreboard | `F-SBA-busy-status` | `Tdr2axiScoreboard` | DM answers |  | `SbaRefModel` (`predict_dmi_read`, `predict_dmi_write`, `predict_sbcs`), `TdrStatusModel` (`predict_capture`) | state |
 | `CHK-SBA-SBCS-FIELDS` | scoreboard | `F-SBA-sbcs-fields` | `tdr2axi_bringup_test`, `tdr2axi_dm_registers_test`, `tdr2axi_reset_traffic_test` | `TdrHost` DMI results |  | `SbaRefModel` (`predict_sbcs`) |  |
@@ -286,7 +290,7 @@ and `Tdr2axiTb` helpers on the directed comparisons of their scenarios.
 | `RST-ARST-TCK` | `i_arst_n` | low | async, sync | `CLK-TCK` | the bridge state machine, its registers and sticky status, and the TCK halves of both CDCs |
 | `RST-SCAN` | `i_arst_scan_n` | low | async, async | none | both internal resets while `i_test_mode` = 1 |
 | `RST-TRST` | none: the host TAP's | low | async, async | none | nothing in `tdr2axi`; the bench models it as a TDR deselect with TCK stopped |
-| `RST-DMACTIVE` | none: `dmcontrol.dmactive`, written over DMI | low | sync, sync | `CLK-BUS` | `dm_csrs` only: the SBA and abstract-command registers and `dmcontrol` except `dmactive`; `dm_sba`, the AXI adapter, both CDCs and the TCK side keep running, so an access in flight completes |
+| `RST-DMACTIVE` | none: `dmcontrol.dmactive`, written over DMI | low | sync, sync | `CLK-BUS` | `dm_csrs`: the SBA and abstract-command registers and `dmcontrol` except `dmactive`; `dm_sba` starts no access while it is low, and the AXI adapter, both CDCs and the TCK side keep running, so an access in flight completes with `sbcs`, `sbaddress` and `sbdata` held until it does, or landing its result if `dmactive` is set again in a cycle before the response |
 
 **Reset ladder.** `Tdr2axiTb.start()` holds `i_arst_n` low with `i_test_mode` = 0 and
 `i_arst_scan_n` = 1 for at least ten `i_clk` cycles with TCK idle, releases it, and runs
@@ -311,7 +315,7 @@ Tests call the helper's operations; each operation is one DUT-level action.
 | `sba_write(addr, size, data)`, `sba_read(addr, size)` | `Tdr2axiTb` | the single-access programming steps |
 | `sba_block_write`, `sba_block_read` | `Tdr2axiTb` | the block-access programming steps |
 | `sba_idle(err, busyerr)` | `Tdr2axiTb` | poll `sbcs` until `sbbusy` = 0, then return the flags |
-| `stall(channels)`, `inject(addr, resp)` | `AxiSub` | hold READY low on channels; answer an address with SLVERR or DECERR |
+| `stall`, `hold_responses`, `inject(addr, resp)` | `AxiSub` | hold every request READY low; hold RVALID and BVALID low, a response falling due meanwhile waiting with its remaining latency until the hold is cleared; answer an address with SLVERR or DECERR |
 | `stop_clk()`, `stop_tck(cycles)`, `reset(phase)`, `trst()` | `Tdr2axiTb`, `TdrHost` | clock stops, `i_arst_n` at a seeded phase, a TAP reset with TCK stopped |
 
 ## Checking

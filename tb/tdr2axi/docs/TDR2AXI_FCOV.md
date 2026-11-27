@@ -25,9 +25,9 @@ the feature whose behavior it measures, so each hole maps to a feature.
 | --- | --- | --- | --- | --- |
 | AXI manager | `axi_attr_cg`, `axi_cfg_cg`, `axi_size_cg` | 14 | 5 | `F-AXI-axi4-size`, `F-AXI-lite-full-width`, `F-AXI-manager-protocol`, `F-AXI-no-comb-path`, `F-AXI-one-outstanding`, `F-AXI-request-attributes` |
 | Ports and build | none | 18 | 0 | `F-AXI-manager-protocol`, `F-AXI-request-attributes`, `F-CFG-bender-target`, `F-CFG-param-checks`, `F-PORT-bus-and-reset`, `F-PORT-tdr-interface`, `F-SBA-address-width`, `F-SBA-data-lanes` |
-| Debug Module | `dm_reg_cg` | 12 | 1 | `F-DM-abstract-cmd-unsupported`, `F-DM-dmactive-clear`, `F-DM-dmactive-inflight`, `F-DM-dmactive-no-bus-access`, `F-DM-hart-unavailable`, `F-DM-ndmreset-unconnected`, `F-DM-register-map`, `F-DM-version` |
-| Reset | `rst_cfg_cg` | 28 | 1 | `F-DM-dmactive-clear`, `F-DM-dmactive-inflight`, `F-RESET-async-any-time`, `F-RESET-sync-release`, `F-RESET-test-mode-bypass`, `F-RESET-trst-independent` |
-| System bus access | `sba_block_cg`, `sba_busy_cg`, `sba_cfg_cg`, `sba_err_cg` | 27 | 5 | `F-SBA-access-errors`, `F-SBA-address-width`, `F-SBA-block-read`, `F-SBA-block-write`, `F-SBA-bus-error`, `F-SBA-busy-status`, `F-SBA-data-lanes`, `F-SBA-no-increment-after-error`, `F-SBA-sbcs-fields`, `F-SBA-single-read`, `F-SBA-single-write` |
+| Debug Module | `dm_hold_cg`, `dm_reg_cg` | 25 | 2 | `F-DM-abstract-cmd-unsupported`, `F-DM-dmactive-clear`, `F-DM-dmactive-inflight`, `F-DM-dmactive-no-bus-access`, `F-DM-hart-unavailable`, `F-DM-ndmreset-unconnected`, `F-DM-register-map`, `F-DM-version` |
+| Reset | `rst_cfg_cg` | 30 | 1 | `F-DM-dmactive-clear`, `F-DM-dmactive-inflight`, `F-RESET-async-any-time`, `F-RESET-sync-release`, `F-RESET-test-mode-bypass`, `F-RESET-trst-independent` |
+| System bus access | `sba_block_cg`, `sba_busy_cg`, `sba_cfg_cg`, `sba_err_cg` | 29 | 5 | `F-SBA-access-errors`, `F-SBA-address-width`, `F-SBA-block-read`, `F-SBA-block-write`, `F-SBA-bus-error`, `F-SBA-busy-status`, `F-SBA-data-lanes`, `F-SBA-no-increment-after-error`, `F-SBA-sbcs-fields`, `F-SBA-single-read`, `F-SBA-single-write` |
 | TDR and DMI | `tdr_latency_cg`, `tdr_op_cg`, `tdr_ratio_cg` | 40 | 4 | `F-TDR-any-clock-ratio`, `F-TDR-busy-recovery`, `F-TDR-capture-image`, `F-TDR-op-decode`, `F-TDR-result-latency`, `F-TDR-sticky-busy`, `F-TDR-strobes`, `F-TDR-tck-stop-hold` |
 
 ## Coverage Goals
@@ -46,8 +46,10 @@ the flattened AXI channels; the TDR nets and strobes; the DMI request and respon
 handshakes between the bridge and `u_dm_csrs`; the bridge's `state_q` and `error_q`;
 the internal resets; `dmactive` and the SBA controls `sbaccess`, `sbautoincrement`,
 `sbreadonaddr`, `sbreadondata` and `sbbusy`; dm_sba's one-cycle `sberror` report and the
-sticky `sbcs_sberror` and `sbcs_sbbusyerror` fields `u_dm_csrs` holds; the CDCs'
-clear-pending outputs; `i_test_mode` and `i_arst_scan_n`; and the build parameters.
+sticky `sbcs_sberror` and `sbcs_sbbusyerror` fields and the `cmderr` field `u_dm_csrs`
+holds; the CDCs' clear-pending outputs and the state of the `cdc_4phase_dst` receiver in
+each half of their reset controllers; `i_test_mode` and `i_arst_scan_n`; and the build
+parameters.
 Clock ratios come from the module's own measurement of the `i_clk` and `i_tck` periods
 between edges, and a TCK stop from the time since the last TCK edge.
 
@@ -55,6 +57,16 @@ The `c_sba_blocked_` points require `sbbusyerror` clear. `u_dm_csrs` tests `sbbu
 `sbbusyerror` before `sberror` on every `sbaddress0` and `sbdata0` access
 (`src/dm_csrs.sv:393-397`, `:525-530`, `:544-549`), so while `sbbusyerror` is set the
 access is refused for that reason, and only with it clear is `sberror` what blocks it.
+
+A point that names an `i_arst_n` fall counts only a fall taken with `i_test_mode` = 0.
+With `i_test_mode` = 1 both internal resets follow `i_arst_scan_n`, and an `i_arst_n`
+pulse resets nothing.
+
+The `dmactive` edges the points count are the ones a DMI write of `dmcontrol` makes. The
+module keeps the history of `dmactive`, and of the R or B the AXI manager waits for, on
+`arst_clk_n`, the reset of `u_dm_csrs` and of the manager. A reset of the DM, by
+`i_arst_n` or `i_arst_scan_n`, clears `dmactive` and that history together and is no
+fall, and an `i_arst_n` pulse in test mode leaves both as they were.
 
 A point that names an AXI handshake or a DMI request counts only on that event, so no
 point is hit by reset values or idle cycles alone.
@@ -157,15 +169,17 @@ or B handshake, so the shortest gap from a response to the next request is two e
 | `c_sba_blocked_read_on_addr` | A DMI write of `sbaddress0` with `sbreadonaddr` set while `sberror` is nonzero and `sbbusyerror` is clear | DMI request observables, `sbreadonaddr`, `sbcs_sberror`, `sbcs_sbbusyerror` | `F-SBA-bus-error` | `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` | none |
 | `c_sba_blocked_read_on_data` | A DMI read of `sbdata0` with `sbreadondata` set while `sberror` is nonzero and `sbbusyerror` is clear | DMI request observables, `sbreadondata`, `sbcs_sberror`, `sbcs_sbbusyerror` | `F-SBA-bus-error` | `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` | none |
 | `c_sba_read_error_autoinc_addr` | An R handshake with SLVERR or DECERR for a read an `sbaddress0` write started, while `sbautoincrement` is set | AXI R channel, DMI request observables, `sbautoincrement` | `F-SBA-no-increment-after-error` | `tdr2axi_sba_error_address_test` | none |
-| `c_sba_read_error_autoinc_data` | An R handshake with SLVERR or DECERR for a read an `sbdata0` read started, while `sbreadondata` and `sbautoincrement` are set | AXI R channel, DMI request observables, `sbreadondata`, `sbautoincrement` | `F-SBA-bus-error` | `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` | none |
+| `c_sba_read_error_autoinc_data` | An R handshake with SLVERR or DECERR for a read an `sbdata0` read started, while `sbreadondata` and `sbautoincrement` are set | AXI R channel, DMI request observables, `sbreadondata`, `sbautoincrement` | `F-SBA-no-increment-after-error` | `tdr2axi_sba_error_address_test`, `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` | none |
 | `c_sba_read_on_sbaddress0` | A DMI write of `sbaddress0` followed by an AR handshake | DMI request observables, AXI AR channel | `F-SBA-single-read` | `tdr2axi_smoke_test`, `tdr2axi_sba_single_test`, `tdr2axi_sba_stress_test` | none |
 | `c_sba_sbaddress0_no_read` | A DMI write of `sbaddress0` with `sbreadonaddr` clear | DMI request observables, `sbreadonaddr` | `F-SBA-single-read` | `tdr2axi_sba_single_test` | none |
+| `c_sba_sbaddress1_write_absent` | A DMI write of `sbaddress1` with every bit set on a build whose `AXI_ADDR_WIDTH` is 32 or less | DMI request observables, build parameter | `F-SBA-address-width` | `tdr2axi_dm_write_ones_test` | `CFG-AXI-ADDR-WIDTH` |
 | `c_sba_sbaddress_read_while_busy` | A DMI read of `sbaddress0` or `sbaddress1` while `sbbusy` is high, which is no collision | DMI request observables, `sbbusy` | `F-SBA-busy-status` | `tdr2axi_sba_busy_test` | none |
 | `c_sba_sbbusy_held` | `sbbusy` high for at least 16 `i_clk` cycles | `sbbusy` | `F-SBA-busy-status` | `tdr2axi_sba_busy_test` | none |
 | `c_sba_sbbusy_read_after_response` | A DMI read of `sbcs` the DM takes on the `i_clk` edge after the access's R or B handshake, the one cycle in which `u_dm_csrs` answers `sbbusy` = 1 from its registered copy after `sbbusy` itself has fallen. Observed behavior, not a requirement: the debug specification leaves the time `sbbusy` falls open, and `CHK-SBA-SBBUSY` allows one such read | DMI request observables, `sbbusy`, AXI R and B channels | `F-SBA-busy-status` | `tdr2axi_sba_busy_test` | `CFG-CLK-RATIO` |
 | `c_sba_sbbusyerror_set` | While `sbbusy` is high, a DMI write of `sbaddress0`, `sbaddress1`, `sbdata0` or `sbdata1`, or a DMI read of `sbdata0` or `sbdata1` | DMI request observables, `sbbusy` | `F-SBA-busy-status` | `tdr2axi_sba_busy_test` | none |
 | `c_sba_sbcs_active` | A DMI read of `sbcs` while `dmactive` is 1 | DMI request observables, `dmactive` | `F-SBA-sbcs-fields` | `tdr2axi_smoke_test` | none |
-| `c_sba_sbcs_write_while_busy` | A DMI write of `sbcs` while `sbbusy` is high. Observed behavior, not a requirement: the debug specification leaves the result undefined, and this DUT sets `sbbusyerror` and answers DMI busy (`src/dm_csrs.sv:512-514`) | DMI request observables, `sbbusy` | `F-SBA-busy-status` | `tdr2axi_sba_busy_test` | none |
+| `c_sba_sbcs_write_busy_same_size` | A DMI write of `sbcs` while `sbbusy` is high whose `sbaccess` equals the size of the access in flight | DMI request observables, `sbbusy`, `sbaccess` | `F-SBA-busy-status` | `tdr2axi_sba_busy_test` | none |
+| `c_sba_sbcs_write_while_busy` | A DMI write of `sbcs` while `sbbusy` is high. The debug specification leaves the result undefined; the bench makes the write only with `sbbusyerror` already set, and `CHK-SBA-SBBUSYERROR` grades the DUT's answer, DMI busy with no field changed (`src/dm_csrs.sv:512-514`) | DMI request observables, `sbbusy` | `F-SBA-busy-status` | `tdr2axi_sba_busy_test` | none |
 | `c_sba_sbdata0_read_no_readondata` | A DMI read of `sbdata0` with `sbreadondata` clear | DMI request observables, `sbreadondata` | `F-SBA-block-read` | `tdr2axi_sba_block_test` | none |
 | `c_sba_sbdata1_no_bus` | A DMI read or write of `sbdata1` with the bus idle | DMI request observables | `F-SBA-data-lanes` | `tdr2axi_sba_single_test` | none |
 | `c_sba_sberror_align` | `sberror` becomes 3 | `sberror` | `F-SBA-access-errors` | `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` | none |
@@ -184,41 +198,57 @@ or B handshake, so the shortest gap from a response to the next request is two e
 
 | Point | Event | Feed | Feature | Items | Model entries |
 | --- | --- | --- | --- | --- | --- |
-| `c_dm_command_write` | A DMI write of `command` | DMI request observables | `F-DM-abstract-cmd-unsupported` | `tdr2axi_dm_registers_test` | none |
-| `c_dm_dmactive_fall` | `dmactive` falls | `dmactive` | `F-DM-dmactive-clear` | `tdr2axi_dmactive_clear_test`, `tdr2axi_dmactive_inflight_test`, `tdr2axi_dmactive_no_bus_test` | none |
-| `c_dm_dmactive_fall_ar_wait` | `dmactive` falls while ARVALID is high and ARREADY low | `dmactive`, AXI AR channel | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
-| `c_dm_dmactive_fall_aw_wait` | `dmactive` falls while AWVALID is high and AWREADY low | `dmactive`, AXI AW channel | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
-| `c_dm_dmactive_fall_w_wait` | `dmactive` falls while WVALID is high and WREADY low | `dmactive`, AXI W channel | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
+| `c_dm_command_ones` | A DMI write of `command` with every bit set | DMI request observables | `F-DM-abstract-cmd-unsupported` | `tdr2axi_dm_write_ones_test` | none |
+| `c_dm_command_write` | A DMI write of `command` | DMI request observables | `F-DM-abstract-cmd-unsupported` | `tdr2axi_dm_registers_test`, `tdr2axi_dm_write_ones_test` | none |
+| `c_dm_command_zero_after_ones` | A DMI write of `command` = 0 after a write of `command` with every bit set | DMI request observables | `F-DM-abstract-cmd-unsupported` | `tdr2axi_dm_write_ones_test` | none |
+| `c_dm_dmactive_fall` | A `dmcontrol` write takes `dmactive` to 0 | `dmactive` | `F-DM-dmactive-clear` | `tdr2axi_dmactive_clear_test`, `tdr2axi_dmactive_inflight_test`, `tdr2axi_dmactive_no_bus_test` | none |
+| `c_dm_dmactive_fall_ar_wait` | A `dmcontrol` write takes `dmactive` to 0 while ARVALID is high and ARREADY low | `dmactive`, AXI AR channel | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
+| `c_dm_dmactive_fall_aw_wait` | A `dmcontrol` write takes `dmactive` to 0 while AWVALID is high and AWREADY low | `dmactive`, AXI AW channel | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
+| `c_dm_dmactive_fall_b_wait` | A `dmcontrol` write takes `dmactive` to 0 between a W handshake and its B handshake | `dmactive`, AXI W and B channels | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
+| `c_dm_dmactive_fall_cmderr` | A `dmcontrol` write takes `dmactive` to 0 with `cmderr` nonzero and `sbbusy` high | `dmactive`, `cmderr`, `sbbusy` | `F-DM-dmactive-clear` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
+| `c_dm_dmactive_fall_r_wait` | A `dmcontrol` write takes `dmactive` to 0 between an AR handshake and its R handshake | `dmactive`, AXI AR and R channels | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
+| `c_dm_dmactive_fall_sbbusyerror` | A `dmcontrol` write takes `dmactive` to 0 with `sbbusyerror` and `sbbusy` high | `dmactive`, `sbcs_sbbusyerror`, `sbbusy` | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
+| `c_dm_dmactive_fall_w_wait` | A `dmcontrol` write takes `dmactive` to 0 while WVALID is high and WREADY low | `dmactive`, AXI W channel | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | none |
+| `c_dm_dmactive_rise_b_wait` | A `dmcontrol` write takes `dmactive` to 1 between a W handshake and its B handshake | `dmactive`, AXI W and B channels | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
+| `c_dm_dmactive_rise_inflight` | A `dmcontrol` write takes `dmactive` to 1 while `sbbusy` is high, so the access in flight when it fell lands its result | `dmactive`, `sbbusy` | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
+| `c_dm_dmactive_rise_r_wait` | A `dmcontrol` write takes `dmactive` to 1 between an AR handshake and its R handshake | `dmactive`, AXI AR and R channels | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
 | `c_dm_dmstatus_read` | A DMI read of `dmstatus` | DMI request observables | `F-DM-version` | `tdr2axi_smoke_test`, `tdr2axi_dm_registers_test` | none |
 | `c_dm_hart_request_write` | A DMI write of `dmcontrol` with `haltreq` or `resumereq` set | DMI request observables | `F-DM-hart-unavailable` | `tdr2axi_dm_registers_test` | none |
 | `c_dm_ndmreset_set` | A DMI write of `dmcontrol` with `ndmreset` set | DMI request observables | `F-DM-ndmreset-unconnected` | `tdr2axi_dm_registers_test` | none |
-| `c_dm_op3_dm_written` | An update with op 3 after a DMI write of an SBA register | update strobe, DMI request observables | `F-DM-dmactive-clear` | `tdr2axi_dmactive_clear_test` | none |
+| `c_dm_op3_dm_written` | An update with op 3 after a DMI write of an SBA register | update strobe, DMI request observables | `F-DM-dmactive-clear` | `tdr2axi_dmactive_clear_test`, `tdr2axi_sba_busy_test` | none |
+| `c_dm_op3_while_held` | An update with op 3 while `dmactive` is 0 and `sbbusy` is high | update strobe, `dmactive`, `sbbusy` | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
+| `c_dm_response_while_inactive` | An R or B handshake while `dmactive` is 0 | `dmactive`, AXI R and B channels | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
+| `c_dm_sba_access_held` | While `dmactive` is 0 and `sbbusy` is high, a DMI write of `sbcs`, `sbaddress0`, `sbaddress1`, `sbdata0` or `sbdata1`, or a DMI read of `sbdata0` or `sbdata1` | DMI request observables, `dmactive`, `sbbusy` | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
 | `c_dm_sbaddress0_write_inactive` | A DMI write of `sbaddress0` while `dmactive` is 0 | DMI request observables, `dmactive` | `F-DM-dmactive-no-bus-access` | `tdr2axi_dmactive_no_bus_test` | none |
+| `c_dm_sbcs_read_held` | A DMI read of `sbcs` while `dmactive` is 0 and `sbbusy` is high | DMI request observables, `dmactive`, `sbbusy` | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
 | `c_dm_sbdata0_write_inactive` | A DMI write of `sbdata0` while `dmactive` is 0 | DMI request observables, `dmactive` | `F-DM-dmactive-no-bus-access` | `tdr2axi_dmactive_no_bus_test` | none |
 | `c_dm_unmapped_access` | A DMI access to an address outside the register map | DMI request observables | `F-DM-register-map` | `tdr2axi_dm_registers_test` | none |
+| `dm_hold_cg.cx_resp_dmactive` | R or B handshake of an access in flight when a `dmcontrol` write took `dmactive` to 0, by `dmactive` at the handshake (0, held; 1, set again), response (OKAY, SLVERR, DECERR) and `sbautoincrement` | `dmactive`, `sbbusy`, AXI R and B channels, `sbautoincrement` | `F-DM-dmactive-inflight` | none | `RST-DMACTIVE` |
 | `dm_reg_cg.cx_addr_op` | DMI address by op | DMI request observables | `F-DM-register-map` | none | none |
 
 ## Reset
 
 | Point | Event | Feed | Feature | Items | Model entries |
 | --- | --- | --- | --- | --- | --- |
-| `c_rst_ar_wait` | `i_arst_n` falls with ARVALID high and ARREADY low | `i_arst_n`, AXI AR channel | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
-| `c_rst_b_pending` | `i_arst_n` falls between a W handshake and its B handshake | `i_arst_n`, AXI W and B channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
-| `c_rst_bridge_busy` | `i_arst_n` falls with the bridge outside IDLE | `i_arst_n`, bridge `state_q` | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-TCK` |
+| `c_rst_ar_wait` | With `i_test_mode` = 0, `i_arst_n` falls with ARVALID high and ARREADY low | `i_arst_n`, `i_test_mode`, AXI AR channel | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
+| `c_rst_b_pending` | With `i_test_mode` = 0, `i_arst_n` falls between a W handshake and its B handshake | `i_arst_n`, `i_test_mode`, AXI W and B channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
+| `c_rst_bridge_busy` | With `i_test_mode` = 0, `i_arst_n` falls with the bridge outside IDLE | `i_arst_n`, `i_test_mode`, bridge `state_q` | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-TCK` |
 | `c_rst_busy_after_release` | A capture reads busy before the first request after a release is accepted | capture strobe, `o_dmi_tdr[1:0]`, request CDC ready | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test`, `tdr2axi_reset_release_test` | `RDC-ARST` |
 | `c_rst_cdc_clear_1to2` | The last isolate request of both CDCs falls after a release, with TCK 1.5 to 4 times faster than `i_clk` | the CDCs' clear-pending outputs, TCK-side reset, measured periods | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `T-TDR2AXI-cdc-clear-1to2`, `RDC-ARST`, `CFG-CLK-RATIO` |
 | `c_rst_cdc_clear_1to20` | The last isolate request of both CDCs falls after a release, with TCK at least 6 times faster than `i_clk` | the CDCs' clear-pending outputs, TCK-side reset, measured periods | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `T-TDR2AXI-cdc-clear-1to20`, `RDC-ARST`, `CFG-CLK-RATIO` |
 | `c_rst_cdc_clear_20to1` | The last isolate request of both CDCs falls after a release, with `i_clk` at least 10 times faster than TCK | the CDCs' clear-pending outputs, TCK-side reset, measured periods | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `T-TDR2AXI-cdc-clear-20to1`, `RDC-ARST`, `CFG-CLK-RATIO` |
 | `c_rst_cdc_clear_20to19` | The last isolate request of both CDCs falls after a release, with `i_clk` faster than TCK by at most 10% | the CDCs' clear-pending outputs, TCK-side reset, measured periods | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `T-TDR2AXI-cdc-clear-20to19`, `RDC-ARST`, `CFG-CLK-RATIO` |
 | `c_rst_cdc_clear_20to21` | The last isolate request of both CDCs falls after a release, with TCK faster than `i_clk` by at most 10% | the CDCs' clear-pending outputs, TCK-side reset, measured periods | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `T-TDR2AXI-cdc-clear-20to21`, `RDC-ARST`, `CFG-CLK-RATIO` |
-| `c_rst_cdc_req_inflight` | `i_arst_n` falls with a request in the request CDC | `i_arst_n`, request CDC valid and ready | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-TCK`, `CDC-REQ` |
-| `c_rst_dmactive_alone` | `dmactive` rises again after falling with the bus idle, with no SBA register access and no AXI request between the fall and the rise | `dmactive`, `sbbusy`, DMI request observables, AXI channels | `F-DM-dmactive-clear` | `tdr2axi_dmactive_reset_test` | `RST-DMACTIVE` |
-| `c_rst_dmactive_idle` | `dmactive` falls with no AXI request valid, no response owed and `sbbusy` low | `dmactive`, `sbbusy`, AXI channels | `F-DM-dmactive-clear` | `tdr2axi_dmactive_reset_test`, `tdr2axi_dmactive_clear_test` | `RST-DMACTIVE` |
-| `c_rst_dmactive_sba_access` | `dmactive` falls with `sbbusy` high, an AXI request valid or a response owed | `dmactive`, `sbbusy`, AXI channels | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
-| `c_rst_during_cdc_clear` | `i_arst_n` falls while a CDC's clear sequence is pending | `i_arst_n`, the CDCs' clear-pending outputs | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RDC-ARST` |
-| `c_rst_during_live_cdc_clear` | `i_arst_n` falls while a CDC's clear sequence is pending and both internal resets are high, so neither side holds the sequence in reset | `i_arst_n`, the CDCs' clear-pending outputs, both internal resets | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RDC-ARST`, `RST-ARST-BUS`, `RST-ARST-TCK` |
-| `c_rst_idle` | `i_arst_n` falls with the bridge in IDLE and no AXI VALID high | `i_arst_n`, bridge `state_q`, AXI channels | `F-RESET-async-any-time` | `tdr2axi_reset_release_test`, `tdr2axi_reset_traffic_test` | `RST-ARST-BUS`, `RST-ARST-TCK` |
-| `c_rst_r_pending` | `i_arst_n` falls between an AR handshake and its R handshake | `i_arst_n`, AXI AR and R channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
+| `c_rst_cdc_dst_wait_ack` | With `i_test_mode` = 0, `i_arst_n` falls while the `cdc_4phase_dst` receiver of a reset-controller half of either CDC is in `WAIT_DOWNSTREAM_ACK` | `i_arst_n`, `i_test_mode`, the clear-sequence receivers' states | `F-RESET-async-any-time` | `tdr2axi_reset_during_clear_test` | `RST-ARST-BUS`, `RST-ARST-TCK`, `RDC-ARST` |
+| `c_rst_cdc_req_inflight` | With `i_test_mode` = 0, `i_arst_n` falls with a request in the request CDC | `i_arst_n`, `i_test_mode`, request CDC valid and ready | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-TCK`, `CDC-REQ` |
+| `c_rst_dmactive_alone` | A `dmcontrol` write takes `dmactive` to 1 after another took it to 0 with the bus idle, with no SBA register access, no AXI request and no reset of the DM between the two writes | `dmactive`, `sbbusy`, `arst_clk_n`, DMI request observables, AXI channels | `F-DM-dmactive-clear` | `tdr2axi_dmactive_reset_test` | `RST-DMACTIVE` |
+| `c_rst_dmactive_held` | With `i_test_mode` = 0, `i_arst_n` falls while `dmactive` is 0 and `sbbusy` is high | `i_arst_n`, `i_test_mode`, `dmactive`, `sbbusy` | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-ARST-BUS`, `RST-DMACTIVE` |
+| `c_rst_dmactive_idle` | A `dmcontrol` write takes `dmactive` to 0 with no AXI request valid, no response owed and `sbbusy` low | `dmactive`, `sbbusy`, AXI channels | `F-DM-dmactive-clear` | `tdr2axi_dmactive_reset_test`, `tdr2axi_dmactive_clear_test` | `RST-DMACTIVE` |
+| `c_rst_dmactive_sba_access` | A `dmcontrol` write takes `dmactive` to 0 with `sbbusy` high, an AXI request valid or a response owed | `dmactive`, `sbbusy`, AXI channels | `F-DM-dmactive-inflight` | `tdr2axi_dmactive_inflight_test` | `RST-DMACTIVE` |
+| `c_rst_during_cdc_clear` | With `i_test_mode` = 0, `i_arst_n` falls while a CDC's clear sequence is pending | `i_arst_n`, `i_test_mode`, the CDCs' clear-pending outputs | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RDC-ARST` |
+| `c_rst_during_live_cdc_clear` | With `i_test_mode` = 0, `i_arst_n` falls while a CDC's clear sequence is pending and both internal resets are high, so neither side holds the sequence in reset | `i_arst_n`, `i_test_mode`, the CDCs' clear-pending outputs, both internal resets | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RDC-ARST`, `RST-ARST-BUS`, `RST-ARST-TCK` |
+| `c_rst_idle` | With `i_test_mode` = 0, `i_arst_n` falls with the bridge in IDLE and no AXI VALID high | `i_arst_n`, `i_test_mode`, bridge `state_q`, AXI channels | `F-RESET-async-any-time` | `tdr2axi_reset_release_test`, `tdr2axi_reset_traffic_test` | `RST-ARST-BUS`, `RST-ARST-TCK` |
+| `c_rst_r_pending` | With `i_test_mode` = 0, `i_arst_n` falls between an AR handshake and its R handshake | `i_arst_n`, `i_test_mode`, AXI AR and R channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
 | `c_rst_release_clk_first` | The `i_clk`-side reset releases before the TCK-side reset | both internal resets | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `RST-ARST-BUS`, `RST-ARST-TCK` |
 | `c_rst_release_tck_first` | The TCK-side reset releases before the `i_clk`-side reset | both internal resets | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `RST-ARST-BUS`, `RST-ARST-TCK` |
 | `c_rst_release_tck_stopped` | `i_arst_n` rises with TCK stopped, and the TCK-side reset releases after TCK resumes | `i_arst_n`, TCK-side reset, TCK activity | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `RST-ARST-TCK` |
@@ -228,8 +258,8 @@ or B handshake, so the shortest gap from a response to the next request is two e
 | `c_rst_tck_release_ss4` | The TCK-side reset releases on a `SYNC_STAGES` = 4 build | TCK-side reset, build parameter | `F-RESET-sync-release` | `tdr2axi_reset_release_test` | `T-TDR2AXI-tck-reset-release-ss4`, `RST-ARST-TCK`, `CFG-SYNC-STAGES` |
 | `c_rst_test_mode_access` | An AXI handshake while `i_test_mode` = 1 | `i_test_mode`, AXI handshakes | `F-RESET-test-mode-bypass` | `tdr2axi_reset_test_mode_test` | `CFG-TEST-MODE` |
 | `c_rst_trst_op_in_flight` | Both TDR strobes low for a stop of at least 100 `i_clk` cycles with the bridge outside IDLE, followed by a capture with status 0 | TCK activity, strobes, bridge `state_q` | `F-RESET-trst-independent` | `tdr2axi_trst_test` | `RST-TRST` |
-| `c_rst_w_alone` | `i_arst_n` falls with WVALID high, WREADY low and AWVALID low, after the write's AW handshake | `i_arst_n`, AXI AW and W channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
-| `c_rst_w_wait` | `i_arst_n` falls with AWVALID or WVALID high and its READY low | `i_arst_n`, AXI AW and W channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
+| `c_rst_w_alone` | With `i_test_mode` = 0, `i_arst_n` falls with WVALID high, WREADY low and AWVALID low, after the write's AW handshake | `i_arst_n`, `i_test_mode`, AXI AW and W channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
+| `c_rst_w_wait` | With `i_test_mode` = 0, `i_arst_n` falls with AWVALID or WVALID high and its READY low | `i_arst_n`, `i_test_mode`, AXI AW and W channels | `F-RESET-async-any-time` | `tdr2axi_reset_traffic_test` | `RST-ARST-BUS` |
 | `rst_cfg_cg.cp_sync_stages` | `SYNC_STAGES` of the build at each reset release | build parameter, internal resets | `F-RESET-sync-release` | none | `CFG-SYNC-STAGES` |
 
 ## Ports and Build
@@ -247,7 +277,7 @@ or B handshake, so the shortest gap from a response to the next request is two e
 | `c_cfg_cache_1111` | An AR or AW handshake on AXI4 with AxCACHE = 4'b1111 | AXI AR and AW channels | `F-AXI-request-attributes` | `tdr2axi_axi_attributes_test` | `CFG-AXI-CACHE`, `CFG-USE-AXI-LITE` |
 | `c_cfg_data_width_32` | An AR or AW handshake on a build with `AXI_DATA_WIDTH` = 32 | build parameter, AXI handshakes | `F-SBA-data-lanes` | `tdr2axi_smoke_test`, `tdr2axi_sba_single_test` | `CFG-AXI-DATA-WIDTH` |
 | `c_cfg_data_width_64` | An AR or AW handshake on a build with `AXI_DATA_WIDTH` = 64 | build parameter, AXI handshakes | `F-SBA-data-lanes` | `tdr2axi_smoke_test`, `tdr2axi_sba_single_test` | `CFG-AXI-DATA-WIDTH` |
-| `c_cfg_first_access` | The first AXI handshake after `dmactive` rises | `dmactive`, AXI handshakes | `F-CFG-bender-target` | `tdr2axi_smoke_test` | none |
+| `c_cfg_first_access` | The first AR or AW handshake after a `dmcontrol` write takes `dmactive` to 1 | `dmactive`, AXI handshakes | `F-CFG-bender-target` | `tdr2axi_smoke_test` | none |
 | `c_cfg_min_addr_width` | An AXI handshake on a build whose `AXI_ADDR_WIDTH` is the minimum for its data width | build parameters, AXI handshakes | `F-CFG-param-checks` | `tdr2axi_axi_attributes_test`, `tdr2axi_sba_address_width_test` | `CFG-AXI-ADDR-WIDTH`, `CFG-AXI-DATA-WIDTH` |
 | `c_cfg_min_addr_width_sbcs` | A DMI read of `sbcs` while `dmactive` is 1 on a build whose `AXI_ADDR_WIDTH` is the minimum for its data width | build parameters, DMI request observables, `dmactive` | `F-CFG-param-checks` | `tdr2axi_param_checks_test` | `CFG-AXI-ADDR-WIDTH`, `CFG-AXI-DATA-WIDTH` |
 | `c_cfg_prot_010` | An AR or AW handshake with AxPROT = 3'b010 | AXI AR and AW channels | `F-AXI-request-attributes` | `tdr2axi_axi_attributes_test` | `CFG-AXI-PROT` |
@@ -278,7 +308,16 @@ with `CFG-CLK-RATIO` in its model adds samples when the signoff spread draws a r
 ratio. Every bin and cross of `tdr_ratio_cg` is reachable, so none is ignored.
 `CFG-TEST-MODE` = 0 is `c_rst_release_test_mode_off` and 1 is `c_rst_test_mode_access`.
 `RST-DMACTIVE` is cleared while idle (`c_rst_dmactive_idle`), during an SBA access
-(`c_rst_dmactive_sba_access`) and alone (`c_rst_dmactive_alone`).
+(`c_rst_dmactive_sba_access`) and alone (`c_rst_dmactive_alone`), and during an access
+with `cmderr` set (`c_dm_dmactive_fall_cmderr`) or `sbbusyerror` set
+(`c_dm_dmactive_fall_sbbusyerror`). While an access in flight holds the SBA registers with
+`dmactive` at 0, `sbcs` is read (`c_dm_sbcs_read_held`), another SBA register is accessed
+(`c_dm_sba_access_held`), op 3 is scanned (`c_dm_op3_while_held`), the response arrives
+(`c_dm_response_while_inactive`), `dmactive` is set again (`c_dm_dmactive_rise_inflight`),
+also while the access waits for its R or B response (`c_dm_dmactive_rise_r_wait`,
+`c_dm_dmactive_rise_b_wait`), and `i_arst_n` falls with `i_test_mode` = 0
+(`c_rst_dmactive_held`). `dm_hold_cg.cx_resp_dmactive` crosses that response with
+`dmactive`, the response type and `sbautoincrement`.
 
 | Point | Entries | Feature |
 | --- | --- | --- |
@@ -307,6 +346,15 @@ ratio. Every bin and cross of `tdr_ratio_cg` is reachable, so none is ignored.
 | `c_cfg_min_addr_width_sbcs` | `CFG-AXI-ADDR-WIDTH`, `CFG-AXI-DATA-WIDTH` | `F-CFG-param-checks` |
 | `c_cfg_prot_010` | `CFG-AXI-PROT` | `F-AXI-request-attributes` |
 | `c_cfg_prot_101` | `CFG-AXI-PROT` | `F-AXI-request-attributes` |
+| `c_dm_dmactive_fall_cmderr` | `RST-DMACTIVE` | `F-DM-dmactive-clear` |
+| `c_dm_dmactive_fall_sbbusyerror` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
+| `c_dm_dmactive_rise_b_wait` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
+| `c_dm_dmactive_rise_inflight` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
+| `c_dm_dmactive_rise_r_wait` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
+| `c_dm_op3_while_held` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
+| `c_dm_response_while_inactive` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
+| `c_dm_sba_access_held` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
+| `c_dm_sbcs_read_held` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
 | `c_port_axi_read_write` | `CFG-USE-AXI-LITE` | `F-PORT-bus-and-reset` |
 | `c_rst_ar_wait` | `RST-ARST-BUS` | `F-RESET-async-any-time` |
 | `c_rst_b_pending` | `RST-ARST-BUS` | `F-RESET-async-any-time` |
@@ -317,8 +365,10 @@ ratio. Every bin and cross of `tdr_ratio_cg` is reachable, so none is ignored.
 | `c_rst_cdc_clear_20to1` | `T-TDR2AXI-cdc-clear-20to1`, `RDC-ARST`, `CFG-CLK-RATIO` | `F-RESET-sync-release` |
 | `c_rst_cdc_clear_20to19` | `T-TDR2AXI-cdc-clear-20to19`, `RDC-ARST`, `CFG-CLK-RATIO` | `F-RESET-sync-release` |
 | `c_rst_cdc_clear_20to21` | `T-TDR2AXI-cdc-clear-20to21`, `RDC-ARST`, `CFG-CLK-RATIO` | `F-RESET-sync-release` |
+| `c_rst_cdc_dst_wait_ack` | `RST-ARST-BUS`, `RST-ARST-TCK`, `RDC-ARST` | `F-RESET-async-any-time` |
 | `c_rst_cdc_req_inflight` | `RST-ARST-TCK`, `CDC-REQ` | `F-RESET-async-any-time` |
 | `c_rst_dmactive_alone` | `RST-DMACTIVE` | `F-DM-dmactive-clear` |
+| `c_rst_dmactive_held` | `RST-ARST-BUS`, `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
 | `c_rst_dmactive_idle` | `RST-DMACTIVE` | `F-DM-dmactive-clear` |
 | `c_rst_dmactive_sba_access` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
 | `c_rst_during_cdc_clear` | `RDC-ARST` | `F-RESET-async-any-time` |
@@ -339,6 +389,7 @@ ratio. Every bin and cross of `tdr_ratio_cg` is reachable, so none is ignored.
 | `c_sba_access_64bit` | `CFG-AXI-DATA-WIDTH` | `F-SBA-data-lanes` |
 | `c_sba_addr_above_32` | `CFG-AXI-ADDR-WIDTH` | `F-SBA-address-width` |
 | `c_sba_addr_msb` | `CFG-AXI-ADDR-WIDTH` | `F-SBA-address-width` |
+| `c_sba_sbaddress1_write_absent` | `CFG-AXI-ADDR-WIDTH` | `F-SBA-address-width` |
 | `c_sba_sbbusy_read_after_response` | `CFG-CLK-RATIO` | `F-SBA-busy-status` |
 | `c_tdr_capture_at_bound` | `T-TDR2AXI-resp-to-tdr` | `F-TDR-result-latency` |
 | `c_tdr_capture_at_bound_ss4` | `T-TDR2AXI-resp-to-tdr-ss4`, `CFG-SYNC-STAGES` | `F-TDR-result-latency` |
@@ -363,6 +414,7 @@ ratio. Every bin and cross of `tdr_ratio_cg` is reachable, so none is ignored.
 | `c_tdr_tck_stop_bus_pending` | `CLK-TCK` | `F-TDR-tck-stop-hold` |
 | `c_tdr_tck_stop_result_pending` | `CLK-TCK`, `T-TDR2AXI-resp-to-tdr` | `F-TDR-tck-stop-hold` |
 | `c_tdr_tck_stop_result_pending_ss4` | `CLK-TCK`, `T-TDR2AXI-resp-to-tdr-ss4`, `CFG-SYNC-STAGES` | `F-TDR-tck-stop-hold` |
+| `dm_hold_cg.cx_resp_dmactive` | `RST-DMACTIVE` | `F-DM-dmactive-inflight` |
 | `rst_cfg_cg.cp_sync_stages` | `CFG-SYNC-STAGES` | `F-RESET-sync-release` |
 | `sba_cfg_cg.cp_addr_width` | `CFG-AXI-ADDR-WIDTH` | `F-SBA-address-width` |
 | `sba_cfg_cg.cp_data_width` | `CFG-AXI-DATA-WIDTH` | `F-SBA-data-lanes` |
@@ -399,9 +451,9 @@ ratio. Every bin and cross of `tdr_ratio_cg` is reachable, so none is ignored.
 | `F-AXI-request-attributes` | `axi_attr_cg.cp_cache`, `axi_attr_cg.cp_prot`, `c_axi_attr_read`, `c_axi_attr_write`, `c_cfg_cache_0000`, `c_cfg_cache_1111`, `c_cfg_prot_010`, `c_cfg_prot_101` | `tdr2axi_axi_attributes_test` |
 | `F-CFG-bender-target` | `c_cfg_first_access` | `tdr2axi_smoke_test` |
 | `F-CFG-param-checks` | `c_cfg_min_addr_width`, `c_cfg_min_addr_width_sbcs` | `tdr2axi_axi_attributes_test`, `tdr2axi_param_checks_test`, `tdr2axi_sba_address_width_test` |
-| `F-DM-abstract-cmd-unsupported` | `c_dm_command_write` | `tdr2axi_dm_registers_test` |
-| `F-DM-dmactive-clear` | `c_dm_dmactive_fall`, `c_dm_op3_dm_written`, `c_rst_dmactive_alone`, `c_rst_dmactive_idle` | `tdr2axi_dmactive_clear_test`, `tdr2axi_dmactive_inflight_test`, `tdr2axi_dmactive_no_bus_test`, `tdr2axi_dmactive_reset_test` |
-| `F-DM-dmactive-inflight` | `c_dm_dmactive_fall_ar_wait`, `c_dm_dmactive_fall_aw_wait`, `c_dm_dmactive_fall_w_wait`, `c_rst_dmactive_sba_access` | `tdr2axi_dmactive_inflight_test` |
+| `F-DM-abstract-cmd-unsupported` | `c_dm_command_ones`, `c_dm_command_write`, `c_dm_command_zero_after_ones` | `tdr2axi_dm_registers_test`, `tdr2axi_dm_write_ones_test` |
+| `F-DM-dmactive-clear` | `c_dm_dmactive_fall`, `c_dm_dmactive_fall_cmderr`, `c_dm_op3_dm_written`, `c_rst_dmactive_alone`, `c_rst_dmactive_idle` | `tdr2axi_dmactive_clear_test`, `tdr2axi_dmactive_inflight_test`, `tdr2axi_dmactive_no_bus_test`, `tdr2axi_dmactive_reset_test`, `tdr2axi_sba_busy_test` |
+| `F-DM-dmactive-inflight` | `c_dm_dmactive_fall_ar_wait`, `c_dm_dmactive_fall_aw_wait`, `c_dm_dmactive_fall_b_wait`, `c_dm_dmactive_fall_r_wait`, `c_dm_dmactive_fall_sbbusyerror`, `c_dm_dmactive_fall_w_wait`, `c_dm_dmactive_rise_b_wait`, `c_dm_dmactive_rise_inflight`, `c_dm_dmactive_rise_r_wait`, `c_dm_op3_while_held`, `c_dm_response_while_inactive`, `c_dm_sba_access_held`, `c_dm_sbcs_read_held`, `c_rst_dmactive_held`, `c_rst_dmactive_sba_access`, `dm_hold_cg.cx_resp_dmactive` | `tdr2axi_dmactive_inflight_test` |
 | `F-DM-dmactive-no-bus-access` | `c_dm_sbaddress0_write_inactive`, `c_dm_sbdata0_write_inactive` | `tdr2axi_dmactive_no_bus_test` |
 | `F-DM-hart-unavailable` | `c_dm_hart_request_write` | `tdr2axi_dm_registers_test` |
 | `F-DM-ndmreset-unconnected` | `c_dm_ndmreset_set` | `tdr2axi_dm_registers_test` |
@@ -409,18 +461,18 @@ ratio. Every bin and cross of `tdr_ratio_cg` is reachable, so none is ignored.
 | `F-DM-version` | `c_dm_dmstatus_read` | `tdr2axi_dm_registers_test`, `tdr2axi_smoke_test` |
 | `F-PORT-bus-and-reset` | `c_port_axi_read_write` | `tdr2axi_smoke_test` |
 | `F-PORT-tdr-interface` | `c_port_tdr_scan` | `tdr2axi_smoke_test` |
-| `F-RESET-async-any-time` | `c_rst_ar_wait`, `c_rst_b_pending`, `c_rst_bridge_busy`, `c_rst_busy_after_release`, `c_rst_cdc_req_inflight`, `c_rst_during_cdc_clear`, `c_rst_during_live_cdc_clear`, `c_rst_idle`, `c_rst_r_pending`, `c_rst_w_alone`, `c_rst_w_wait` | `tdr2axi_reset_release_test`, `tdr2axi_reset_traffic_test` |
+| `F-RESET-async-any-time` | `c_rst_ar_wait`, `c_rst_b_pending`, `c_rst_bridge_busy`, `c_rst_busy_after_release`, `c_rst_cdc_dst_wait_ack`, `c_rst_cdc_req_inflight`, `c_rst_during_cdc_clear`, `c_rst_during_live_cdc_clear`, `c_rst_idle`, `c_rst_r_pending`, `c_rst_w_alone`, `c_rst_w_wait` | `tdr2axi_reset_during_clear_test`, `tdr2axi_reset_release_test`, `tdr2axi_reset_traffic_test` |
 | `F-RESET-sync-release` | `c_rst_cdc_clear_1to2`, `c_rst_cdc_clear_1to20`, `c_rst_cdc_clear_20to1`, `c_rst_cdc_clear_20to19`, `c_rst_cdc_clear_20to21`, `c_rst_release_clk_first`, `c_rst_release_tck_first`, `c_rst_release_tck_stopped`, `c_rst_tck_release_ss3`, `c_rst_tck_release_ss4`, `rst_cfg_cg.cp_sync_stages` | `tdr2axi_reset_release_test` |
 | `F-RESET-test-mode-bypass` | `c_rst_release_test_mode_off`, `c_rst_scan_reset`, `c_rst_test_mode_access` | `tdr2axi_reset_test_mode_test` |
 | `F-RESET-trst-independent` | `c_rst_trst_op_in_flight` | `tdr2axi_trst_test` |
 | `F-SBA-access-errors` | `c_sba_sberror_align`, `c_sba_sberror_size` | `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` |
-| `F-SBA-address-width` | `c_cfg_addr_width_2`, `c_cfg_addr_width_3`, `c_cfg_addr_width_32`, `c_cfg_addr_width_48`, `c_cfg_addr_width_64`, `c_sba_addr_above_32`, `c_sba_addr_msb`, `sba_cfg_cg.cp_addr_width` | `tdr2axi_sba_address_width_test`, `tdr2axi_smoke_test` |
+| `F-SBA-address-width` | `c_cfg_addr_width_2`, `c_cfg_addr_width_3`, `c_cfg_addr_width_32`, `c_cfg_addr_width_48`, `c_cfg_addr_width_64`, `c_sba_addr_above_32`, `c_sba_addr_msb`, `c_sba_sbaddress1_write_absent`, `sba_cfg_cg.cp_addr_width` | `tdr2axi_dm_write_ones_test`, `tdr2axi_sba_address_width_test`, `tdr2axi_smoke_test` |
 | `F-SBA-block-read` | `c_sba_block_read`, `c_sba_sbdata0_read_no_readondata`, `sba_block_cg.cx_len_readondata` | `tdr2axi_sba_block_test`, `tdr2axi_sba_stress_test`, `tdr2axi_tdr_pipelined_test` |
 | `F-SBA-block-write` | `c_sba_block_write` | `tdr2axi_sba_block_test`, `tdr2axi_sba_stress_test` |
-| `F-SBA-bus-error` | `c_sba_block_write_error_mid`, `c_sba_blocked_by_sberror`, `c_sba_blocked_read_on_addr`, `c_sba_blocked_read_on_data`, `c_sba_read_error_autoinc_data`, `c_sba_sberror_bus_read`, `c_sba_sberror_bus_write`, `sba_err_cg.cx_resp_dir` | `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` |
-| `F-SBA-busy-status` | `c_sba_sbaddress_read_while_busy`, `c_sba_sbbusy_held`, `c_sba_sbbusy_read_after_response`, `c_sba_sbbusyerror_set`, `c_sba_sbcs_write_while_busy`, `sba_busy_cg.cp_cause` | `tdr2axi_sba_busy_test` |
+| `F-SBA-bus-error` | `c_sba_block_write_error_mid`, `c_sba_blocked_by_sberror`, `c_sba_blocked_read_on_addr`, `c_sba_blocked_read_on_data`, `c_sba_sberror_bus_read`, `c_sba_sberror_bus_write`, `sba_err_cg.cx_resp_dir` | `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` |
+| `F-SBA-busy-status` | `c_sba_sbaddress_read_while_busy`, `c_sba_sbbusy_held`, `c_sba_sbbusy_read_after_response`, `c_sba_sbbusyerror_set`, `c_sba_sbcs_write_busy_same_size`, `c_sba_sbcs_write_while_busy`, `sba_busy_cg.cp_cause` | `tdr2axi_sba_busy_test` |
 | `F-SBA-data-lanes` | `c_cfg_data_width_32`, `c_cfg_data_width_64`, `c_sba_access_64bit`, `c_sba_sbdata1_no_bus`, `sba_cfg_cg.cp_data_width` | `tdr2axi_sba_single_test`, `tdr2axi_sba_stress_test`, `tdr2axi_smoke_test` |
-| `F-SBA-no-increment-after-error` | `c_sba_read_error_autoinc_addr`, `c_sba_write_error_autoinc` | `tdr2axi_sba_error_address_test` |
+| `F-SBA-no-increment-after-error` | `c_sba_read_error_autoinc_addr`, `c_sba_read_error_autoinc_data`, `c_sba_write_error_autoinc` | `tdr2axi_sba_error_address_test`, `tdr2axi_sba_errors_test`, `tdr2axi_sba_stress_test` |
 | `F-SBA-sbcs-fields` | `c_sba_sbcs_active` | `tdr2axi_smoke_test` |
 | `F-SBA-single-read` | `c_sba_read_on_sbaddress0`, `c_sba_sbaddress0_no_read` | `tdr2axi_sba_single_test`, `tdr2axi_sba_stress_test`, `tdr2axi_smoke_test` |
 | `F-SBA-single-write` | `c_sba_write_on_sbdata0` | `tdr2axi_sba_single_test`, `tdr2axi_sba_stress_test`, `tdr2axi_smoke_test` |
